@@ -20,6 +20,8 @@ use constant DBS => {hsref => {name => 'Human Reference GRCh37',  #database name
                                db => 'hs_ref_GRCh37_s1,hs_ref_GRCh37_s2,hs_ref_GRCh37_s3'},            #database name as defined with -p for bwa index -p ...
                      bact => {name => 'Bacterial genomes',
                               db => 'bactDB_s1,bactDB_s2,bactDB_s3'},
+                     bos => {name => 'Bos Taurus reference UMD 3.1',
+                             db => 'bt_ref_Bos_taurus_UMD_3_1'},
                      vir => {name => 'Viral genomes',
                              db => 'virDB_s1'}};
 use constant DB_DEFAULT => 'hsref';
