@@ -35,9 +35,9 @@ rm intermediate.fastq
 echo ''
 
 echo `date`
-echo 'decontaminating from human and bacterial with deconseq'
-deconseq -f good.fastq -dbs hsref,bact,bos -id $DEC_OUT_NAME -keep_tmp_files &> \
-	deconseq.log
+echo 'decontaminating from human, bacterial and bovine with deconseq'
+deconseq -f good.fastq -dbs hsref,bact,bos -id $DEC_OUT_NAME -keep_tmp_files \
+         -c 80 -i 80 &> deconseq.log
 echo ''
 
 # convert fastq to fasta
