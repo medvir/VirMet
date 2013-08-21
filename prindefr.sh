@@ -3,6 +3,7 @@ FILEIN=$1
 DEC_OUT_NAME=decon_out
 FASTAFILE=processed.fasta
 
+OWNDIR=$(dirname $(readlink -f "$BASH_SOURCE"))
 
 DB="/data/databases/rins_viral_database.fasta"
 KMER=11  # default=11
@@ -11,11 +12,8 @@ MATCH=75
 
 
 prinseq() { /usr/local/bin/prinseq-lite.pl "$@"; }
-deconseq() { /home/ozagordi/Dropbox/Software/VirMet/deconseq.pl "$@"; }
-list_organisms() { /home/ozagordi/Dropbox/Software/VirMet/list_organisms.py\
-	 "$@"; }
-
-tax_orgs() { /home/ozagordi/Dropbox/Software/VirMet/tax_orgs.py "$@"; }
+deconseq() { $OWNDIR/deconseq.pl "$@"; }
+tax_orgs() { $OWNDIR/tax_orgs.py "$@"; }
 
 # print the number of reads to analyze
 echo 'Reads to analyze'
@@ -40,19 +38,7 @@ deconseq -f good.fastq -dbs hsref,bact,bos -id $DEC_OUT_NAME -keep_tmp_files \
          -c 80 -i 80 &> deconseq.log
 echo ''
 
-# convert fastq to fasta
-#CONV_STR="from Bio import SeqIO; rs = SeqIO.convert('${DEC_OUT_NAME}_clean.fq',\
-#	 'fastq', '$FASTAFILE', 'fasta'); print str(rs) + ' reads converted'"
-#python -c "$CONV_STR"
-
 seqret ${DEC_OUT_NAME}_clean.fq fasta::$FASTAFILE
-
-#echo `date`
-#echo 'running fr-hit'
-#fr-hit -T 28 -r 1 -k $KMER -g $GLOBAL -m $MATCH -o \
-#	clean-r_1-k_${KMER}-m_${MATCH}-global_${GLOBAL}.tsv -d $DB -a $FASTAFILE \
-#		&> fr-hit.log
-#echo ''
 
 echo `date`
 echo 'running blast'
@@ -64,8 +50,7 @@ blastn -query $FASTAFILE -db /data/databases/rins_viral_blast_db \
 echo `date`
 echo 'listing organisms'
 tax_orgs results.tsv
-#list_organisms clean-r_1-k_${KMER}-m_${MATCH}-global_${GLOBAL}.tsv > \
-#	 orgs_list.csv 2> all_reads_id_orgs.log
+
 echo ''
 echo -e "\033[1;31m===========================================================\033[0m"
 echo ''
