@@ -15,22 +15,39 @@ prinseq() { /usr/local/bin/prinseq-lite.pl "$@"; }
 deconseq() { $OWNDIR/deconseq.pl "$@"; }
 tax_orgs() { $OWNDIR/tax_orgs.py "$@"; }
 
-# print the number of reads to analyze
-echo 'Reads to analyze'
-echo `wc -l $FILEIN | cut -f 1 -d " "` / 4 | bc
+# number of reads to analyze and lines for the splitting into 8 processes
+# integer division so that it stays divisible by 4
+NREADS=`wc -l $FILEIN | cut -f 1 -d " "`
+let "NREADS /= 4"
+echo 'Reads to analyze:' $NREADS
+let "MAX_L = NREADS / 16"
+let "MAX_L *= 4"
+echo $MAX_L
 
 echo `date`
 echo 'cleaning with seqtk'
 seqtk trimfq $FILEIN | seqtk seq -L 75 - > intermediate.fastq
 echo ''
 
+split -l $MAX_L -d intermediate.fastq splitted
+find . -name "splitted*" | xargs -I % mv % %.fastq
+rm intermediate.fastq
+
+
 echo `date`
 echo 'cleaning with prinseq'
-prinseq -fastq intermediate.fastq -lc_method entropy -lc_threshold 70 \
-        -log prinseq.log -min_qual_mean 20 -ns_max_p 25 \
-		-out_good ./good -out_bad ./bad
-rm intermediate.fastq
+seq -w 0 15 | xargs -P 0 -I {} /usr/local/bin/prinseq-lite.pl -fastq splitted{}.fastq -lc_method entropy -lc_threshold 70 \
+        -log prinseq{}.log -min_qual_mean 20 -ns_max_p 25 \
+		-out_good ./good{} -out_bad ./bad{}
+
 echo ''
+
+cat good??.fastq > good.fastq
+cat bad??.fastq > bad.fastq
+cat prinseq??.log > prinseq.log
+seq -w 0 15 | xargs -I {} rm splitted{}.fastq good{}.fastq bad{}.fastq \
+	prinseq{}.log
+
 
 echo `date`
 echo 'decontaminating from human, bacterial and bovine with deconseq'
