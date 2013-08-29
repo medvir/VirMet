@@ -68,6 +68,21 @@ echo `date`
 echo 'listing organisms'
 tax_orgs results.tsv
 
+echo `summary statistics`
+echo 'total_reads,passing_quality,from_human,from_bacteria,from_bos_taurus,clean,matching_viral_db' > stats.csv
+
+PASS_READS=`wc -l good.fastq | cut -f 1 -d " "`
+let "PASS_READS /= 4"
+
+H_READS=`cut -f 1 decon_out_hsr*tsv | sort | uniq | wc -l | cut -f -1 -d " "`
+BAC_READS=`cut -f 1 decon_out_bac*tsv | sort | uniq | wc -l | cut -f -1 -d " "`
+BOS_READS=`cut -f 1 decon_out_bt*tsv | sort | uniq | wc -l | cut -f -1 -d " "`
+
+CLEAN_READS=`grep -c ">" processed.fasta`
+VIR_READS=`cut -f 1 results.tsv | sort | uniq`
+let "VIR_READS -= 1"
+echo $NREADS,$PASS_READS,$H_READS,$BAC_READS,$BOS_READS,$VIR_READS >> stats.csv
+
 echo ''
 echo -e "\033[1;31m===========================================================\033[0m"
 echo ''
