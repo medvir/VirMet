@@ -17,7 +17,7 @@ tax_orgs() { $OWNDIR/tax_orgs.py "$@"; }
 
 echo 'Analysing file' $1
 
-# number of reads to analyze and lines for the splitting into 16 processes
+# number of reads to analyse and lines for the splitting into 16 processes
 # integer division so that it stays divisible by 4
 NREADS=`wc -l $FILEIN | cut -f 1 -d " "`
 let "NREADS /= 4"
