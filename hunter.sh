@@ -24,6 +24,7 @@ tax_orgs() { $OWNDIR/tax_orgs.py "$@"; }
 
 if [ -f $LOCKFILE ] ; then
 	echo 'pipeline lock file exists'
+	exit
 else
 	echo "$VERSION" > $LOCKFILE
 fi
@@ -31,21 +32,37 @@ fi
 echo 'Pipeline version' $VERSION
 echo 'Analysing file' $1
 
-# number of reads to analyse and lines for the splitting into 16 processes
-# integer division so that it stays divisible by 4
-NREADS=`wc -l $FILEIN | cut -f 1 -d " "`
+# Counts the reads correctly even if the file is gzipped
+if [[ $FILEIN == *fastq ]];
+	then
+	echo 'here'
+	NREADS=`wc -l $FILEIN | cut -f 1 -d " "`
+elif [[ $FILEIN == *fastq.gz ]];
+	then
+	echo 'there'
+	NREADS=`gunzip -c $FILEIN | wc -l | cut -f 1 -d " "`
+fi
+
 let "NREADS /= 4"
 echo 'Reads to analyze:' $NREADS
-let "MAX_L = NREADS / 16"
-let "MAX_L *= 4"
-#echo $MAX_L
-
+	
 echo `date`
 echo 'cleaning with seqtk'
 seqtk trimfq $FILEIN | seqtk seq -L 75 - > intermediate.fastq
 echo ''
 
+INTREADS=`wc -l intermediate.fastq | cut -f 1 -d " "`
+let "INTREADS /= 4"
+echo 'Reads passing seqtk:' $INTREADS
+# We want to split in 16 processors, so each file has at most
+# (NREADS / 16) + 1 reads and 4 times as many lines
+let "MAX_READS_PER_FILE = INTREADS / 16"
+let "MAX_READS_PER_FILE += 1"
+let "MAX_L = MAX_READS_PER_FILE * 4"
+echo 'Max lines per file is:' $MAX_L
+
 split -l $MAX_L -d intermediate.fastq splitted
+
 find . -name "splitted*" | xargs -I % mv % %.fastq
 rm intermediate.fastq
 
@@ -88,7 +105,7 @@ echo `date`
 echo 'listing organisms'
 tax_orgs unique.tsv
 
-echo `summary statistics`
+echo 'summary statistics'
 echo 'total_reads,passing_quality,from_human,from_bacteria,from_bos_taurus,clean,matching_viral_db' > stats.csv
 
 PASS_READS=`wc -l good.fastq | cut -f 1 -d " "`
