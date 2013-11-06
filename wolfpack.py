@@ -49,7 +49,7 @@ for smp in samples_to_run:
     fq_to_run.append(full_f[0])
 
 
-out_dir = os.path.join('/VirMetResults', run_name)
+out_dir = os.path.join('/data/VirMetResults', run_name)
 try:
     os.mkdir(out_dir)
 except OSError:
