@@ -16,7 +16,8 @@ DB="/data/databases/rins_viral_database.fasta"
 KMER=11  # default=11
 GLOBAL=1  # 0:local, 1:global
 MATCH=75
-
+THRESHDECONCOV=90
+THRESHDECONID=94
 
 prinseq() { /usr/local/bin/prinseq-lite.pl "$@"; }
 deconseq() { $OWNDIR/deconseq.pl "$@"; }
@@ -85,7 +86,7 @@ seq -w 0 15 | xargs -I {} rm splitted{}.fastq good{}.fastq bad{}.fastq \
 echo `date`
 echo 'decontaminating from human, bacterial and bovine with deconseq'
 deconseq -f good.fastq -dbs hsref,bact,bos -id $DEC_OUT_NAME -keep_tmp_files \
-         -c 90 -i 94 &> deconseq.log
+         -c THRESHDECONCOV -i THRESHDECONID &> deconseq.log
 echo ''
 
 seqret ${DEC_OUT_NAME}_clean.fq fasta::$FASTAFILE
@@ -111,9 +112,9 @@ echo 'total_reads,passing_quality,from_human,from_bacteria,from_bos_taurus,clean
 PASS_READS=`wc -l good.fastq | cut -f 1 -d " "`
 let "PASS_READS /= 4"
 
-H_READS=`cut -f 1 decon_out_hsr*tsv | sort | uniq | wc -l | cut -f 1 -d " "`
-BAC_READS=`cut -f 1 decon_out_bac*tsv | sort | uniq | wc -l | cut -f 1 -d " "`
-BOS_READS=`cut -f 1 decon_out_bos*tsv | sort | uniq | wc -l | cut -f 1 -d " "`
+H_READS=$(awk -v TC="${THRESHDECONCOV}" -v TI="${THRESHDECONID}" 'BEGIN{c=0} {if ($5 > $TC && $6 > $TI) c+= 1} END{print c}' decon_out_hsr*tsv)
+BAC_READS=$(awk -v TC="${THRESHDECONCOV}" -v TI="${THRESHDECONID}" 'BEGIN{c=0} {if ($5 > $TC && $6 > $TI) c+= 1} END{print c}' decon_out_bac*tsv)
+BOS_READS=$(awk -v TC="${THRESHDECONCOV}" -v TI="${THRESHDECONID}" 'BEGIN{c=0} {if ($5 > $TC && $6 > $TI) c+= 1} END{print c}' decon_out_bos*tsv)
 
 CLEAN_READS=`grep -c ">" processed.fasta`
 VIR_READS=`wc -l unique.tsv | cut -f 1 -d " "`
