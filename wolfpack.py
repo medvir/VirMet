@@ -2,9 +2,11 @@
 '''Runs hunter on all samples of a single MiSeq run'''
 import sys
 import os
+import os.path
 import glob
 
-hunter_exe = '/home/ozagordi/Dropbox/Software/VirMet/hunter.sh'
+dn = os.path.dirname(__file__)
+hunter_exe = os.path.join(dn, 'hunter.sh')
 
 def run_child(exe_name, arg_string):
     '''use subrocess to run an external program with arguments'''
