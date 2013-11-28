@@ -5,7 +5,7 @@ import os
 import os.path
 import glob
 
-dn = os.path.dirname(__file__)
+dn = os.path.abspath(os.path.dirname(__file__))
 hunter_exe = os.path.join(dn, 'hunter.sh')
 
 def run_child(exe_name, arg_string):
