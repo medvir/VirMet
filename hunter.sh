@@ -4,7 +4,7 @@
 # to filter, decontaminate and then blast reads to viral database.
 # Finally, it writes files of taxonomy and summary statistics
 
-VERSION=0.1.1
+VERSION=0.1.2
 LOCKFILE="pipeline_version.lock"
 FILEIN=$1
 DEC_OUT_NAME=decon_out
