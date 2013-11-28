@@ -86,7 +86,7 @@ seq -w 0 15 | xargs -I {} rm splitted{}.fastq good{}.fastq bad{}.fastq \
 echo `date`
 echo 'decontaminating from human, bacterial and bovine with deconseq'
 deconseq -f good.fastq -dbs hsref,bact,bos -id $DEC_OUT_NAME -keep_tmp_files \
-         -c THRESHDECONCOV -i THRESHDECONID &> deconseq.log
+         -c $THRESHDECONCOV -i $THRESHDECONID &> deconseq.log
 echo ''
 
 seqret ${DEC_OUT_NAME}_clean.fq fasta::$FASTAFILE
