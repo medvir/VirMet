@@ -23,7 +23,10 @@ use constant DBS => {hsref => {name => 'Human Reference GRCh37',  #database name
                      bos => {name => 'Bos Taurus reference UMD 3.1',
                              db => 'bt_ref_Bos_taurus_UMD_3_1'},
                      vir => {name => 'Viral genomes',
-                             db => 'virDB_s1'}};
+                             db => 'virDB_s1'},
+					 canis => {name => 'Canis familiaris RefSeq 3.1',
+				               db => 'CanFam3_1'}
+						 };
 use constant DB_DEFAULT => 'hsref';
 
 #######################################################################

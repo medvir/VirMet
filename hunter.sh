@@ -4,7 +4,7 @@
 # to filter, decontaminate and then blast reads to viral database.
 # Finally, it writes files of taxonomy and summary statistics
 
-VERSION=0.1.2
+VERSION=0.1.3
 LOCKFILE="pipeline_version.lock"
 FILEIN=$1
 DEC_OUT_NAME=decon_out
@@ -84,8 +84,8 @@ seq -w 0 15 | xargs -I {} rm splitted{}.fastq good{}.fastq bad{}.fastq \
 
 
 echo `date`
-echo 'decontaminating from human, bacterial and bovine with deconseq'
-deconseq -f good.fastq -dbs hsref,bact,bos -id $DEC_OUT_NAME -keep_tmp_files \
+echo 'decontaminating from human, bacterial, bovine and canine with deconseq'
+deconseq -f good.fastq -dbs hsref,bact,bos,canis -id $DEC_OUT_NAME -keep_tmp_files \
          -c $THRESHDECONCOV -i $THRESHDECONID &> deconseq.log
 echo ''
 
@@ -107,7 +107,7 @@ echo 'listing organisms'
 tax_orgs unique.tsv
 
 echo 'summary statistics'
-echo 'total_reads,passing_quality,from_human,from_bacteria,from_bos_taurus,clean,matching_viral_db' > stats.csv
+echo 'total_reads,passing_quality,from_human,from_bacteria,from_bos_taurus,from_canis,clean,matching_viral_db' > stats.csv
 
 PASS_READS=`wc -l good.fastq | cut -f 1 -d " "`
 let "PASS_READS /= 4"
@@ -115,11 +115,11 @@ let "PASS_READS /= 4"
 H_READS=$(awk -v TC="${THRESHDECONCOV}" -v TI="${THRESHDECONID}" 'BEGIN{c=0} {if ($5 > $TC && $6 > $TI) c+= 1} END{print c}' decon_out_hsr*tsv)
 BAC_READS=$(awk -v TC="${THRESHDECONCOV}" -v TI="${THRESHDECONID}" 'BEGIN{c=0} {if ($5 > $TC && $6 > $TI) c+= 1} END{print c}' decon_out_bac*tsv)
 BOS_READS=$(awk -v TC="${THRESHDECONCOV}" -v TI="${THRESHDECONID}" 'BEGIN{c=0} {if ($5 > $TC && $6 > $TI) c+= 1} END{print c}' decon_out_bos*tsv)
-
+DOG_READS=$(awk -v TC="${THRESHDECONCOV}" -v TI="${THRESHDECONID}" 'BEGIN{c=0} {if ($5 > $TC && $6 > $TI) c+= 1} END{print c}' decon_out_can*tsv)
 CLEAN_READS=`grep -c ">" processed.fasta`
 VIR_READS=`wc -l unique.tsv | cut -f 1 -d " "`
 let "VIR_READS -= 1"
-echo $NREADS,$PASS_READS,$H_READS,$BAC_READS,$BOS_READS,$CLEAN_READS,$VIR_READS >> stats.csv
+echo $NREADS,$PASS_READS,$H_READS,$BAC_READS,$BOS_READS,$DOG_READS,$CLEAN_READS,$VIR_READS >> stats.csv
 
 echo 'cleaning and zipping'
 rm good.fastq
