@@ -128,7 +128,7 @@ echo $NREADS,$PASS_READS,$H_READS,$BAC_READS,$BOS_READS,$DOG_READS,$CLEAN_READS,
 echo 'cleaning and zipping'
 gzip good.fastq
 rm bad.fastq good_*.fastq
-gzip decon_out_clean.fq
+gzip decon_out_clean.fastq
 
 for SAMFILE in good_human good_human_bact1 good_human_bact1_bact2 \
 	good_human_bact1_bact2_bact3 good_human_bact1_bact2_bact3_bos \
