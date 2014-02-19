@@ -105,7 +105,6 @@ sort -k1,1 -u results.tsv >> unique.tsv
 echo `date`
 echo 'listing organisms'
 tax_orgs unique.tsv
-exit
 
 echo 'summary statistics'
 echo 'total_reads,passing_quality,from_human,from_bacteria,from_bos_taurus,from_canis,clean,matching_viral_db' > stats.csv
