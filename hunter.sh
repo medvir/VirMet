@@ -4,7 +4,7 @@
 # to filter, decontaminate and then blast reads to viral database.
 # Finally, it writes files of taxonomy and summary statistics
 
-VERSION=0.1.3
+VERSION=0.2.0
 LOCKFILE="pipeline_version.lock"
 FILEIN=$1
 DEC_OUT_NAME=decon_out
@@ -12,7 +12,6 @@ FASTAFILE=processed.fasta
 
 OWNDIR=$(dirname $(readlink -f "$BASH_SOURCE"))
 
-DB="/data/databases/rins_viral_database.fasta"
 KMER=11  # default=11
 GLOBAL=1  # 0:local, 1:global
 MATCH=75
@@ -22,6 +21,7 @@ THRESHDECONID=94
 prinseq() { /usr/local/bin/prinseq-lite.pl "$@"; }
 deconseq() { $OWNDIR/deconseq.pl "$@"; }
 tax_orgs() { $OWNDIR/tax_orgs.py "$@"; }
+victor() { $OWNDIR/victor.py "$@"; }
 
 if [ -f $LOCKFILE ] ; then
 	echo 'pipeline lock file exists'
@@ -84,12 +84,12 @@ seq -w 0 15 | xargs -I {} rm splitted{}.fastq good{}.fastq bad{}.fastq \
 
 
 echo `date`
-echo 'decontaminating from human, bacterial, bovine and canine with deconseq'
-deconseq -f good.fastq -dbs hsref,bact,bos,canis -id $DEC_OUT_NAME -keep_tmp_files \
-         -c $THRESHDECONCOV -i $THRESHDECONID &> deconseq.log
+echo 'decontaminating from human, bacterial, bovine with victor'
+victor -r good.fastq -d human -d bact1 -d bact2 -d bact3 -d bos -d dog \
+	-o ${DEC_OUT_NAME}
 echo ''
 
-seqret ${DEC_OUT_NAME}_clean.fq fasta::$FASTAFILE
+seqret ${DEC_OUT_NAME}_clean.fastq fasta::$FASTAFILE
 
 echo `date`
 echo 'running blast'
@@ -105,6 +105,7 @@ sort -k1,1 -u results.tsv >> unique.tsv
 echo `date`
 echo 'listing organisms'
 tax_orgs unique.tsv
+exit
 
 echo 'summary statistics'
 echo 'total_reads,passing_quality,from_human,from_bacteria,from_bos_taurus,from_canis,clean,matching_viral_db' > stats.csv
@@ -112,20 +113,31 @@ echo 'total_reads,passing_quality,from_human,from_bacteria,from_bos_taurus,from_
 PASS_READS=`wc -l good.fastq | cut -f 1 -d " "`
 let "PASS_READS /= 4"
 
-H_READS=$(awk -v TC="${THRESHDECONCOV}" -v TI="${THRESHDECONID}" 'BEGIN{c=0} {if ($5 > $TC && $6 > $TI) c+= 1} END{print c}' decon_out_hsr*tsv)
-BAC_READS=$(awk -v TC="${THRESHDECONCOV}" -v TI="${THRESHDECONID}" 'BEGIN{c=0} {if ($5 > $TC && $6 > $TI) c+= 1} END{print c}' decon_out_bac*tsv)
-BOS_READS=$(awk -v TC="${THRESHDECONCOV}" -v TI="${THRESHDECONID}" 'BEGIN{c=0} {if ($5 > $TC && $6 > $TI) c+= 1} END{print c}' decon_out_bos*tsv)
-DOG_READS=$(awk -v TC="${THRESHDECONCOV}" -v TI="${THRESHDECONID}" 'BEGIN{c=0} {if ($5 > $TC && $6 > $TI) c+= 1} END{print c}' decon_out_can*tsv)
+H_READS=$(grep -v '^@\w\w' good_human.sam | cut -f 1 | sort -u | wc -l)
+BAC1_READS=$(grep -v '^@\w\w' good_human_bact1.sam | cut -f 1 | sort -u | wc -l)
+BAC2_READS=$(grep -v '^@\w\w' good_human_bact1_bact2.sam | cut -f 1 | sort -u | wc -l)
+BAC3_READS=$(grep -v '^@\w\w' good_human_bact1_bact2_bact3.sam | cut -f 1 | sort -u | wc -l)
+BOS_READS=$(grep -v '^@\w\w' good_human_bact1_bact2_bact3_bos.sam | cut -f 1 | sort -u | wc -l)
+DOG_READS=$(grep -v '^@\w\w' good_human_bact1_bact2_bact3_bos_dog.sam | cut -f 1 | sort -u | wc -l)
+let "BAC_READS = BAC1_READS + BAC2_READS + BAC3_READS"
+
 CLEAN_READS=`grep -c ">" processed.fasta`
 VIR_READS=`wc -l unique.tsv | cut -f 1 -d " "`
 let "VIR_READS -= 1"
 echo $NREADS,$PASS_READS,$H_READS,$BAC_READS,$BOS_READS,$DOG_READS,$CLEAN_READS,$VIR_READS >> stats.csv
 
 echo 'cleaning and zipping'
-rm good.fastq
-gzip bad.fastq
-gzip decon_out_cont.fq
+gzip good.fastq
+rm bad.fastq good_*.fastq
 gzip decon_out_clean.fq
+
+for SAMFILE in good_human good_human_bact1 good_human_bact1_bact2 \
+	good_human_bact1_bact2_bact3 good_human_bact1_bact2_bact3_bos \
+		good_human_bact1_bact2_bact3_bos_dog
+do
+	samtools view -Su ${SAMFILE}.sam | samtools sort - ${SAMFILE}_sorted
+	rm ${SAMFILE}.sam
+done
 
 echo ''
 echo -e "\033[1;31m===========================================================\033[0m"
