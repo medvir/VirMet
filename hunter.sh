@@ -22,6 +22,7 @@ prinseq() { /usr/local/bin/prinseq-lite.pl "$@"; }
 deconseq() { $OWNDIR/deconseq.pl "$@"; }
 tax_orgs() { $OWNDIR/tax_orgs.py "$@"; }
 victor() { $OWNDIR/victor.py "$@"; }
+sift_reads() { $OWNDIR/sift_reads.py "$@"; }
 
 if [ -f $LOCKFILE ] ; then
 	echo 'pipeline lock file exists'
@@ -125,10 +126,14 @@ VIR_READS=`wc -l unique.tsv | cut -f 1 -d " "`
 let "VIR_READS -= 1"
 echo $NREADS,$PASS_READS,$H_READS,$BAC_READS,$BOS_READS,$DOG_READS,$CLEAN_READS,$VIR_READS >> stats.csv
 
-echo 'cleaning and zipping'
+
+echo 'sifting, cleaning and zipping'
+sift_reads decon_out_clean.fastq results.tsv
+gzip viral_reads.fastq
+gzip undetermined_reads.fastq
 gzip good.fastq
 rm bad.fastq good_*.fastq
-gzip decon_out_clean.fastq
+rm decon_out_clean.fastq
 
 for SAMFILE in good_human good_human_bact1 good_human_bact1_bact2 \
 	good_human_bact1_bact2_bact3 good_human_bact1_bact2_bact3_bos \

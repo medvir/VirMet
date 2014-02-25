@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# !/opt/python2.7/bin/python2.7
 '''Decontaminate reads by aligning against contaminants with STAR'''
 
 import sys
