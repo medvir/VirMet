@@ -3,14 +3,23 @@
 # This program takes a fastq file as input, then it runs several tools
 # to filter, decontaminate and then blast reads to viral database.
 # Finally, it writes files of taxonomy and summary statistics
+# It can be called with option 'quality' (as from wolfpack.py), and it
+# stops after quality filtering
 
 VERSION=0.2.0
 LOCKFILE="pipeline_version.lock"
 FILEIN=$1
-DEC_OUT_NAME=decon_out
-FASTAFILE=processed.fasta
+RUNTYPE=$2
+# allowed runtype:
+# - quality (stops after seqtk and prinseq)
+# - if runtype is not set, full hunter is run
+echo $FILEIN $RUNTYPE
 
-OWNDIR=$(dirname $(readlink -f "$BASH_SOURCE"))
+DEC_OUT_NAME=clean_filtered_reads
+FASTAFILE=clean_filtered_reads.fasta
+
+#OWNDIR=$(dirname $(readlink -f "$BASH_SOURCE"))
+OWNDIR=$(dirname $0)
 
 KMER=11  # default=11
 GLOBAL=1  # 0:local, 1:global
@@ -23,6 +32,11 @@ deconseq() { $OWNDIR/deconseq.pl "$@"; }
 tax_orgs() { $OWNDIR/tax_orgs.py "$@"; }
 victor() { $OWNDIR/victor.py "$@"; }
 sift_reads() { $OWNDIR/sift_reads.py "$@"; }
+
+if [[ "$RUNTYPE" != "" && "$RUNTYPE" != "quality" ]]; then
+		echo 'RUNTYPE can only be quality or undefined'
+		exit
+fi
 
 if [ -f $LOCKFILE ] ; then
 	echo 'pipeline lock file exists'
@@ -53,7 +67,7 @@ echo 'cleaning with seqtk'
 seqtk trimfq $FILEIN | seqtk seq -L 75 - > intermediate.fastq
 echo ''
 
-INTREADS=`wc -l intermediate.fastq | cut -f 1 -d " "`
+INTREADS=`wc -l intermediate.fastq | sed 's/^ *//' | cut -f 1 -d " "`
 let "INTREADS /= 4"
 echo 'Reads passing seqtk:' $INTREADS
 # We want to split in 16 processors, so each file has at most
@@ -63,15 +77,29 @@ let "MAX_READS_PER_FILE += 1"
 let "MAX_L = MAX_READS_PER_FILE * 4"
 echo 'Max lines per file is:' $MAX_L
 
-split -l $MAX_L -d intermediate.fastq splitted
-
+#split -l $MAX_L -d intermediate.fastq splitted
+split -l $MAX_L intermediate.fastq splitted
 find . -name "splitted*" | xargs -I % mv % %.fastq
 rm intermediate.fastq
 
+c=0
+for SPF in $(ls splitted*fastq)
+do
+	cc=`printf '%0.2d' $c`
+	mv $SPF splitted${cc}.fastq
+	let "c += 1"
+done
 
 echo `date`
 echo 'cleaning with prinseq'
-seq -w 0 15 | xargs -P 0 -I {} /usr/local/bin/prinseq-lite.pl \
+if [[ $HOSTNAME == "virologymc17.local" ]];
+	then
+	XARGS_THREAD=4
+elif [[ $HOSTNAME == "virologysrv04.uzh.ch" ]];
+	then
+	XARGS_THREAD=0
+fi
+seq -w 0 15 | xargs -P $XARGS_THREAD -I {} /usr/local/bin/prinseq-lite.pl \
 	    -fastq splitted{}.fastq -lc_method entropy -lc_threshold 70 \
         -log prinseq{}.log -min_qual_mean 20 -ns_max_p 25 \
 		-out_good ./good{} -out_bad ./bad{}
@@ -83,65 +111,27 @@ cat prinseq??.log > prinseq.log
 seq -w 0 15 | xargs -I {} rm splitted{}.fastq good{}.fastq bad{}.fastq \
 	prinseq{}.log
 
+# wolfpack stops here
+if [ -z "$RUNTYPE" ] ; then
+	echo "Continuing to decontamination"
+elif [ "$RUNTYPE" = "quality" ] ; then
+	echo "Exiting after quality filter"
+	exit
+fi
 
 echo `date`
 echo 'decontaminating from human, bacterial, bovine with victor'
 victor -r good.fastq -d human -d bact1 -d bact2 -d bact3 -d bos -d dog \
-	-o ${DEC_OUT_NAME}
+	-o ${DEC_OUT_NAME} &> victor.err.log
 echo ''
 
-seqret ${DEC_OUT_NAME}_clean.fastq fasta::$FASTAFILE
+echo `date`
+echo `blasting against viral database and extracting best matches`
+viral_blast.sh ${DEC_OUT_NAME}
 
 echo `date`
-echo 'running blast'
-blastn -query $FASTAFILE -db /data/databases/rins_viral_blast_db \
--perc_identity 75 -max_target_seqs 1 -num_threads 24 \
--outfmt  '6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send' > results.tsv
-
-echo `date`
-echo 'extracting unique high-scoring segment pairs (HSP)'
-echo 'qseqid sseqid pident length mismatch gapopen qstart qend sstart send' > unique.tsv
-sort -k1,1 -u results.tsv >> unique.tsv
-
-echo `date`
-echo 'listing organisms'
-tax_orgs unique.tsv
-
-echo 'summary statistics'
-echo 'total_reads,passing_quality,from_human,from_bacteria,from_bos_taurus,from_canis,clean,matching_viral_db' > stats.csv
-
-PASS_READS=`wc -l good.fastq | cut -f 1 -d " "`
-let "PASS_READS /= 4"
-
-H_READS=$(grep -v '^@\w\w' good_human.sam | cut -f 1 | sort -u | wc -l)
-BAC1_READS=$(grep -v '^@\w\w' good_human_bact1.sam | cut -f 1 | sort -u | wc -l)
-BAC2_READS=$(grep -v '^@\w\w' good_human_bact1_bact2.sam | cut -f 1 | sort -u | wc -l)
-BAC3_READS=$(grep -v '^@\w\w' good_human_bact1_bact2_bact3.sam | cut -f 1 | sort -u | wc -l)
-BOS_READS=$(grep -v '^@\w\w' good_human_bact1_bact2_bact3_bos.sam | cut -f 1 | sort -u | wc -l)
-DOG_READS=$(grep -v '^@\w\w' good_human_bact1_bact2_bact3_bos_dog.sam | cut -f 1 | sort -u | wc -l)
-let "BAC_READS = BAC1_READS + BAC2_READS + BAC3_READS"
-
-CLEAN_READS=`grep -c ">" processed.fasta`
-VIR_READS=`wc -l unique.tsv | cut -f 1 -d " "`
-let "VIR_READS -= 1"
-echo $NREADS,$PASS_READS,$H_READS,$BAC_READS,$BOS_READS,$DOG_READS,$CLEAN_READS,$VIR_READS >> stats.csv
-
-
-echo 'sifting, cleaning and zipping'
-sift_reads decon_out_clean.fastq results.tsv
-gzip viral_reads.fastq
-gzip undetermined_reads.fastq
-gzip good.fastq
-rm bad.fastq good_*.fastq
-rm decon_out_clean.fastq
-
-for SAMFILE in good_human good_human_bact1 good_human_bact1_bact2 \
-	good_human_bact1_bact2_bact3 good_human_bact1_bact2_bact3_bos \
-		good_human_bact1_bact2_bact3_bos_dog
-do
-	samtools view -Su ${SAMFILE}.sam | samtools sort - ${SAMFILE}_sorted
-	rm ${SAMFILE}.sam
-done
+echo 'summary statistics and clean up'
+summarise.sh 
 
 echo ''
 echo -e "\033[1;31m===========================================================\033[0m"

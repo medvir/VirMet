@@ -15,7 +15,9 @@ loc_dir = {'human': '/data/databases/Homo_sapiens',
            'bact2': '/data/databases/Bacteria/db2',
            'bact3': '/data/databases/Bacteria/db3',
            'bos': '/data/databases/Bos_taurus',
-           'dog': '/data/databases/Canis_lupus'
+           'dog': '/data/databases/Canis_lupus',
+           'hiv': '/Users/ozagordi/References/HIV-STAR',
+           'pcv': '/Users/ozagordi/References/PCV1-STAR'
            }
 
 cont_desc = {'human': 'Homo sapiens genome',
@@ -33,19 +35,26 @@ def run_child(exe_name, arg_string):
     if not arg_string.startswith(' '):
         arg_string = ' ' + arg_string
 
-    viclog.debug(exe_name + arg_string)
-
+    try:
+        viclog.debug(exe_name + arg_string)
+    except:
+        print >> sys.stderr, exe_name + arg_string
     try:
         retcode = subprocess.call(exe_name + arg_string, shell=True)
         if retcode > 0:
-            viclog.error(exe_name + arg_string)
-            viclog.error("Child %s terminated by signal" % exe_name, retcode)
+            try:
+                viclog.error("Child %s terminated by signal" % exe_name, retcode)
+            except:
+                pass
             print "Child %s terminated by signal" % exe_name, retcode
         else:
-            viclog.debug("Child %s returned %i" % (exe_name, retcode))
+            try:
+                viclog.debug("Child %s returned %i" % (exe_name, retcode))
+            except:
+                pass
             print "Child %s returned %i" % (exe_name, retcode)
     except OSError as ee:
-        viclog.error("Execution of %s failed:" % exe_name, ee)
+        #viclog.error("Execution of %s failed:" % exe_name, ee)
         print "Execution of %s failed:" % exe_name, ee
     return retcode
 
@@ -61,9 +70,8 @@ def parse_com_line():
                                      epilog='%(prog) -l for a list of contaminants')
     parser.add_argument('-r', '--readfile', dest='readfile',
                         help='fastq/fasta file with reads')
-    parser.add_argument('-d', '--contaminants', dest='contaminants',
-                        action='append', help='contaminant organism (repeat \
-                        -d to add more)')
+    parser.add_argument('-d', '--contaminant', dest='contaminant',
+                        help='contaminant organism')
     parser.add_argument('-o', '--output', dest='output',
                         help='output file name stem')
     parser.add_argument('-c', '--coverage', dest='coverage', default=0.90,
@@ -94,9 +102,13 @@ def remove_reads(sam_file, contaminated_reads):
 
     clean_name = '.'.join(sam_file.split('.')[:-1]) + '.fastq'
     output_handle = open(clean_name, 'w')
-    viclog.info('Cleaning reads in %s with alignments in %s' %
-                (contaminated_reads, sam_file))
-    viclog.info('Writing to %s' % clean_name)
+    try:
+        viclog.info('Cleaning reads in %s with alignments in %s' %
+                    (contaminated_reads, sam_file))
+        viclog.info('Writing to %s' % clean_name)
+    except:
+        print >> sys.stderr, 'Cleaning reads in %s with alignments in %s' % (contaminated_reads, sam_file)
+        print >> sys.stderr, 'Writing to %s' % clean_name
 
     if contaminated_reads.endswith('.gz'):
         cont_handle = gzip.open(contaminated_reads)
@@ -129,6 +141,7 @@ def run_star(readfile, contaminant, overlap, identity):
     arg_string += ' --outFilterScoreMinOverLread %f' % overlap
     arg_string += ' --outFilterMatchNminOverLread %f' % identity
     arg_string += ' --outFilterMultimapNmax %d' % multimapNmax
+    arg_string += ' --genomeLoad LoadAndKeep'
     run_child(exe_name, arg_string)
 
     rf_head = os.path.split(readfile)[1]
@@ -142,8 +155,41 @@ def run_star(readfile, contaminant, overlap, identity):
     sj_name = 'SJ_%s.tab' % contaminant
     os.rename('SJ.out.tab', sj_name)
     os.rename('Log.final.out', 'Log_%s.final.out' % contaminant)
-    viclog.info('Alignment written to %s' % sam_name)
+    try:
+        viclog.info('Alignment written to %s' % sam_name)
+    except:
+        print >> sys.stderr, 'Alignment written to %s' % sam_name
     return sam_name
+
+
+def main(input_reads='', contaminant='', coverage=0.90, identity=0.90,
+         remove=False):
+
+    # Make a global logging object.
+    viclog = logging.getLogger(__name__)
+
+    # set logging level
+    viclog.setLevel(logging.DEBUG)
+    # This handler writes everything to a file.
+    LOG_FILENAME = './victor.log'
+    hl = logging.handlers.RotatingFileHandler(LOG_FILENAME, 'w',
+                                              maxBytes=100000, backupCount=5)
+    f = logging.Formatter("%(levelname)s %(asctime)s %(funcName)s\
+                          %(lineno)d %(message)s")
+    hl.setFormatter(f)
+    viclog.addHandler(hl)
+
+    if remove:
+        exe_name = 'STAR'
+        arg_string = '--genomeDir %s --genomeLoad Remove' % loc_dir[contaminant] 
+        run_child(exe_name, arg_string)
+        return 'Genome from %s removed' % contaminant
+
+    sam_cont = run_star(input_reads, contaminant, coverage,
+                        identity)
+    clean_name = remove_reads(sam_cont, input_reads)
+
+    return clean_name
 
 
 if __name__ == '__main__':
@@ -163,15 +209,12 @@ if __name__ == '__main__':
     hl.setFormatter(f)
     viclog.addHandler(hl)
     viclog.info(' '.join(sys.argv))
-    for cont in cml_args.contaminants:
-        viclog.info('Will clean against %s' % cont)
 
     input_reads = cml_args.readfile
-    for cont in cml_args.contaminants:
-        viclog.info('Aligning %s againts %s' % (input_reads, cont))
-        sam_cont = run_star(input_reads, cont, cml_args.coverage,
-                            cml_args.identity)
-        input_reads = remove_reads(sam_cont, input_reads)
+    # for cont in cml_args.contaminants:
+    viclog.info('Aligning %s againts %s' % (input_reads, cml_args.contaminant))
+    sam_cont = run_star(input_reads, cml_args.contaminant, cml_args.coverage,
+                        cml_args.identity)
+    clean_name = remove_reads(sam_cont, input_reads)
     os.rename(input_reads, '%s_clean.fastq' % cml_args.output)
     print >> sys.stderr, 'Clean reads now in %s_clean.fastq' % cml_args.output
-    
