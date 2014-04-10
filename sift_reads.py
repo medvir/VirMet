@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/opt/python2.7/bin/python2.7
 '''Write viral and undetermined reads into different files.
 Usage: sift_reads.py all_reads.fastq blast_results.tsv'''
 

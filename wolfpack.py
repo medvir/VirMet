@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# !/opt/python2.7/bin/python2.7
+#!/opt/python2.7/bin/python2.7
 '''Runs hunter on all samples of a single MiSeq run'''
 import sys
 import os

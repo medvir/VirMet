@@ -7,7 +7,7 @@ FILEIN=$1
 FASTAFILE=clean_filtered_reads.fasta
 
 
-#seqret -auto $FILEIN fasta::$FASTAFILE
+seqret -auto $FILEIN fasta::$FASTAFILE
 
 export BLASTDB="/data/databases"
 echo `date`
