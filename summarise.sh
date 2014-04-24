@@ -2,23 +2,27 @@
 OWNDIR=$(dirname $0)
 sift_reads() { $OWNDIR/sift_reads.py "$@"; }
 FILEIN=$1
+echo 'Analysing file' $FILEIN
 
 # Counts the reads correctly even if the file is gzipped
 if [[ $FILEIN == *fastq ]];
 	then
-	echo 'here'
+	echo 'counting original reads'
 	NREADS=`wc -l $FILEIN | cut -f 1 -d " "`
 elif [[ $FILEIN == *fastq.gz ]];
 	then
-	echo 'there'
+	echo 'counting reads gzipped'
 	NREADS=`gunzip -c $FILEIN | wc -l | cut -f 1 -d " "`
 fi
 
 let "NREADS /= 4"
+echo 'found' $NREADS
 
 PASS_READS=`wc -l good.fastq | cut -f 1 -d " "`
 let "PASS_READS /= 4"
+echo $PASS_READS 'of which passed the quality filter'
 
+echo 'writing stat files'
 H_READS=$(grep -v '^@\w\w' good_human.sam | cut -f 1 | sort -u | wc -l)
 BAC1_READS=$(grep -v '^@\w\w' good_human_bact1.sam | cut -f 1 | sort -u | wc -l)
 BAC2_READS=$(grep -v '^@\w\w' good_human_bact1_bact2.sam | cut -f 1 | sort -u | wc -l)
@@ -45,8 +49,6 @@ echo canine,$DOG_READS,contaminated >> hier_stats.csv
 echo unknown,$UNKN_READS,clean >> hier_stats.csv
 echo viral,$VIR_READS,clean >> hier_stats.csv
 
-exit
-
 echo 'sifting, cleaning and zipping'
 sift_reads clean_filtered_reads.fastq results.tsv
 gzip viral_reads.fastq
@@ -54,6 +56,7 @@ gzip undetermined_reads.fastq
 gzip good.fastq
 rm bad.fastq good_*.fastq
 rm clean_filtered_reads.fastq
+rm splitted_clean*fasta
 
 for SAMFILE in good_human good_human_bact1 good_human_bact1_bact2 \
 	good_human_bact1_bact2_bact3 good_human_bact1_bact2_bact3_bos \

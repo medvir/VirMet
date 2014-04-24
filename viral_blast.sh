@@ -53,5 +53,5 @@ rm tmp.tsv
 
 echo `date`
 echo 'listing organisms'
-tax_orgs results.tsv
+tax_orgs unique.tsv
 
