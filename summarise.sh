@@ -49,11 +49,15 @@ echo canine,$DOG_READS,contaminated >> hier_stats.csv
 echo unknown,$UNKN_READS,clean >> hier_stats.csv
 echo viral,$VIR_READS,clean >> hier_stats.csv
 
+echo 'treemap plot with R'
+Rscript $OWNDIR/treemap.R hier_stats.csv
+mv Rplots.pdf read_origin_treemap.pdf
+
 echo 'sifting, cleaning and zipping'
 sift_reads clean_filtered_reads.fastq results.tsv
 gzip viral_reads.fastq
 gzip undetermined_reads.fastq
-gzip good.fastq
+rm good.fastq
 rm bad.fastq good_*.fastq
 rm clean_filtered_reads.fastq
 rm splitted_clean*fasta

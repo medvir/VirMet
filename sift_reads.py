@@ -3,17 +3,17 @@
 Usage: sift_reads.py all_reads.fastq blast_results.tsv'''
 
 import sys
-import os
 
 try:
     args = sys.argv[1:]
     all_reads, blast_res = args
-except:
+except ValueError:
     sys.exit('usage: %s all_reads.fastq blast_results.tsv' % sys.argv[0])
 
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
-viral_ids = set([l.split()[0] for l in open(blast_res)])
+viral_ids = set([l.split()[0] for l in open(blast_res)
+                 if int(l.split()[5]) > 75])
 
 viral_c = 0
 undet_c = 0
@@ -34,7 +34,7 @@ for title, seq, qual in FastqGeneralIterator(all_handle):
         viral_handle.write("@%s\n%s\n+\n%s\n" % (title, seq, qual))
         if viral_c % 1000 == 0:
             print >> sys.stderr, 'written %d viral reads' % viral_c
-            
+
 
 undet_handle.close()
 viral_handle.close()
