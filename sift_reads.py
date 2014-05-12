@@ -10,10 +10,12 @@ try:
 except ValueError:
     sys.exit('usage: %s all_reads.fastq blast_results.tsv' % sys.argv[0])
 
+import pandas as pd
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
-viral_ids = set([l.split()[0] for l in open(blast_res)
-                 if int(l.split()[5]) > 75])
+# selects reads with coverage and identity higher than 75
+df = pd.read_csv('unique.tsv', sep='\t')
+viral_ids = set(df[(df.qcovs > 75) & (df.pident > 75)].qseqid)
 
 viral_c = 0
 undet_c = 0
@@ -32,7 +34,7 @@ for title, seq, qual in FastqGeneralIterator(all_handle):
     else:
         viral_c += 1
         viral_handle.write("@%s\n%s\n+\n%s\n" % (title, seq, qual))
-        if viral_c % 1000 == 0:
+        if viral_c % 10000 == 0:
             print >> sys.stderr, 'written %d viral reads' % viral_c
 
 

@@ -33,14 +33,14 @@ elif [[ $HOSTNAME == "virologysrv04.uzh.ch" ]];
 	then
 	XARGS_THREAD=0
 fi
-seq 0 7 | xargs -P $XARGS_THREAD -I {} blastn -task megablast \
+seq 0 15 | xargs -P $XARGS_THREAD -I {} blastn -task megablast \
 	    -query splitted_clean_{}.fasta -db /data/databases/viral_db \
-		-perc_identity 75 -max_target_seqs 1 -out tmp_{}.tsv \
+		-out tmp_{}.tsv \
 		-outfmt '6 qseqid sseqid sscinames stitle pident qcovs score length mismatch gapopen qstart qend sstart send staxids' 
 echo ''
 
 cat tmp_*.tsv > tmp.tsv
-seq 0 7 | xargs -I {} rm splitted_clean_{}.fasta tmp_{}.tsv
+seq 0 15 | xargs -I {} rm splitted_clean_{}.fasta tmp_{}.tsv
 
 echo -e 'qseqid\tsseqid\tsscinames\tstitle\tpident\tqcovs\tscore\tlength\tmismatch\tgapopen\tqstart\tqend\tsstart\tsend\tstaxids' > unique.tsv
 # save the header
