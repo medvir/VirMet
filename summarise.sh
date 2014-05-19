@@ -32,8 +32,8 @@ DOG_READS=$(grep -v '^@\w\w' good_human_bact1_bact2_bact3_bos_dog.sam | cut -f 1
 let "BAC_READS = BAC1_READS + BAC2_READS + BAC3_READS"
 
 CLEAN_READS=`grep -c ">" clean_filtered_reads.fasta`
-VIR_READS=`wc -l unique.tsv | cut -f 1 -d " "`
-let "VIR_READS -= 1"
+VIR_READS=`cut -d "," -f 2 orgs_list.csv | paste -sd+ | bc`
+
 echo 'total_reads,passing_quality,from_human,from_bacteria,from_bos_taurus,from_canis,clean,matching_viral_db' > stats.csv
 echo $NREADS,$PASS_READS,$H_READS,$BAC_READS,$BOS_READS,$DOG_READS,$CLEAN_READS,$VIR_READS >> stats.csv
 
