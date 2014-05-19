@@ -67,15 +67,17 @@ os.chdir(out_dir)
 
 
 # Run hunter stopping at quality
-
+fq_to_decontaminate = []
 for fq in fq_to_run:
     sample_n = os.path.split(fq)[1].split('_')[1]
     try:
         os.mkdir(sample_n)
     except OSError:
         print 'directory %s exists' % sample_n
+        continue
+    fq_to_decontaminate.append(fq)
     os.chdir(sample_n)
-    print sample_n
+    print 'Running on ', sample_n
     run_child(hunter_exe, ' %s quality > hunter.log' % fq)
     # hunter finished
     os.chdir('../')
@@ -87,9 +89,10 @@ for fq in fq_to_run:
 cont_reads = 'good.fastq'
 
 # contaminant loop
+orh = open('genome_removed', 'w+')
 for cont in contaminants:
     # sample loop
-    for fq in fq_to_run:
+    for fq in fq_to_decontaminate:
         sample_n = os.path.split(fq)[1].split('_')[1]
         os.chdir(sample_n)
         out1 = victor.main(input_reads=cont_reads, contaminant=cont)
@@ -101,13 +104,14 @@ for cont in contaminants:
     except NameError:
         print >> sys.stderr, 'Did not decontaminate'
 
-    # at the end of mapping runs, remove genomve from memory
+    # at the end of mapping runs, remove genome from memory
     rmout = victor.main(contaminant=cont, remove=True)
+    orh.write(rmout + '\n')
     os.remove('Log.progress.out')
     os.remove('Log.out')
     os.remove('Aligned.out.sam')
     print >> sys.stderr, rmout
-
+orh.close()
 
 # Now run viral_blast (blast against viral database) and summarise/clean
 # first change name
