@@ -107,6 +107,8 @@ for cont in contaminants:
     # at the end of mapping runs, remove genome from memory
     rmout = victor.main(contaminant=cont, remove=True)
     orh.write(rmout + '\n')
+    orh.flush()
+    os.fsync(orh.fileno())
     os.remove('Log.progress.out')
     os.remove('Log.out')
     os.remove('Aligned.out.sam')
