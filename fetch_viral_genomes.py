@@ -33,7 +33,7 @@ c_code = run_child('econtact', '-email \"%s\"' % Entrez.email)
 
 print('Parsing sequences already present')
 p_code = run_child('grep',
-                   ' \">\" viral_database.fasta | cut -f 2 -d \"|\" > old_ids')
+                   ' \"^>\" viral_database.fasta | cut -f 2 -d \"|\" > old_ids')
 old_ids = [l.strip() for l in open('old_ids')]
 os.remove('old_ids')
 assert len(old_ids) == len(set(old_ids)), 'Duplicate in old seqs: solve it'
@@ -45,19 +45,56 @@ print("Running NCBI search...")
 # Human adenovirus A, Taxonomy ID: 129875 (only for testing, 7 hits)
 # Mastadenovirus, Taxonomy ID: 10509 (only for testing, 341 hits)
 # Cellular organisms, Taxonomy ID: 131567 (to avoid chimeras)
-txid = '10509'  # change here for viruses or smaller taxa
-search_text = "txid%s [orgn] " % txid + \
+# txid = '10239'  # change here for viruses or smaller taxa
+txids = {
+    '39759': 'Deltaviruses',
+    '35237': 'dsDNA viruses, no RNA stage',
+    '35325': 'dsRNA viruses',
+    '35268': 'retrotranscribingviruses',
+    '12877': 'Satellites',
+    '29258': 'ssDNA viruses',
+    '439488': 'ssRNA viruses',
+    '686617': 'unassigned viruses',
+    '451344': 'unclassified archaeal viruses',
+    '12333': 'unclassified phages',
+    '552364': 'unclassified virophages',
+    '12429': 'unclassified viruses'
+    }
+for txid, v in txids.items():
+    search_text = "txid%s [orgn] " % txid + \
+                  "AND \\\"complete genome\\\" [Title] " + \
+                  "NOT txid131567 [orgn]"
+    s_code = run_child('esearch',
+                       '-db nucleotide -query \"%s\" > vir_search_%s' \
+                       % (search_text, txid))
+
+# get the number of hits
+count = 0
+for txid, v in txids.items():
+    for l in open('vir_search_%s' % txid):
+        if l.lstrip().startswith('<Count'):
+            ch = int(re.search('Count>(\d+)</Count', l).group(1))
+            print('Found %d %s' % (ch, v))
+            count += ch
+            break
+print('Summing these, NCBI search returned %d hits' % count)
+
+search_text = "txid10239 [orgn] " + \
               "AND \\\"complete genome\\\" [Title] " + \
               "NOT txid131567 [orgn]"
 s_code = run_child('esearch',
                    '-db nucleotide -query \"%s\" > vir_search' % search_text)
 
-# get the number of hits
 for l in open('vir_search'):
     if l.lstrip().startswith('<Count'):
-        count = int(re.search('Count>(\d+)</Count', l).group(1))
-print('NCBI search returned %d hits' % count)
+        ch = int(re.search('Count>(\d+)</Count', l).group(1))
+        print('NCBI search on all viruses returned %d hits' % ch)
 
+try:
+    os.remove('tmp.dmp')
+except OSError:
+    pass
+    
 print('Saving Gi <-> TaxId <-> Acc relationship of the search')
 s_code = run_child('efetch',
                    '-format docsum < vir_search | ' +
@@ -75,7 +112,7 @@ os.remove('tmp.dmp')
 print('Now the manually picked sequences')
 id_file = 'picked_seqs.txt'
 try:
-    picked_ids = [line.strip() for line in open(id_file)]
+    picked_ids = [line.strip().split()[0] for line in open(id_file)]
 except IOError:
     picked_ids = []
 ids_count = len(picked_ids)
@@ -101,3 +138,12 @@ if to_add:
 else:
     print('No new sequences to add')
 os.remove('vir_search')
+
+# TODO When picked_seqs are present, they must be added to viral_gi_taxid.dmp
+
+# TODO update blast database
+'''
+makeblastdb -in viral_database.fasta -dbtype nucl -hash_index
+-title "Viral database 35045 sequences 9th April 2014" -out viral_db
+-logfile blast.log -parse_seqids -taxid_map viral_gi_taxid.dmp
+'''
