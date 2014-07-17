@@ -4,6 +4,14 @@ OWNDIR=$(dirname $0)
 tax_orgs() { $OWNDIR/tax_orgs.py "$@"; }
 
 FILEIN=$1
+
+if [-z "$2"]
+then
+	NPROC=12
+elif
+	NPROC=$2
+fi
+
 FASTAFILE=clean_filtered_reads.fasta
 NPROC=12
 
