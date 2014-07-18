@@ -5,15 +5,14 @@ tax_orgs() { $OWNDIR/tax_orgs.py "$@"; }
 
 FILEIN=$1
 
-if [-z "$2"]
+if [ -z "$2" ]
 then
 	NPROC=12
-elif
+else
 	NPROC=$2
 fi
 
 FASTAFILE=clean_filtered_reads.fasta
-NPROC=12
 
 seqret -auto $FILEIN fasta::$FASTAFILE
 
@@ -24,6 +23,7 @@ echo 'splitting input file'
 
 FASTAREADS=`grep -c ">" $FASTAFILE`
 echo 'Reads to blast:' $FASTAREADS
+echo 'Cores that will be used:' $NPROC
 # We want to split in NPROC processors, so each file has at most
 # (FASTAREADS / NPROC) + 1 reads
 let "MAX_N = FASTAREADS / NPROC"
