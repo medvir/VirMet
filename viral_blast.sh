@@ -2,6 +2,7 @@
 
 OWNDIR=$(dirname $0)
 tax_orgs() { $OWNDIR/tax_orgs.py "$@"; }
+parse_blast() { $owndir/parse_blast.py "$@"; }
 
 FILEIN=$1
 
@@ -47,19 +48,16 @@ seq 0 $((NPROC-1)) | xargs -P $XARGS_THREAD -I {} blastn -task megablast \
 		-outfmt '6 qseqid sseqid sscinames stitle pident qcovs score length mismatch gapopen qstart qend sstart send staxids' 
 echo ''
 
-cat tmp_*.tsv > tmp.tsv
-seq 0 $((NPROC-1)) | xargs -I {} rm splitted_clean_{}.fasta tmp_{}.tsv
-
+echo `date`
+echo 'extracting best HSP'
+# write the best hit (lowest e-value) to unique.tsv
 echo -e 'qseqid\tsseqid\tsscinames\tstitle\tpident\tqcovs\tscore\tlength\tmismatch\tgapopen\tqstart\tqend\tsstart\tsend\tstaxids' > unique.tsv
-# save the header
-cp unique.tsv results.tsv
-
-sort -k1,1 -u tmp.tsv >> unique.tsv
-
-cat tmp.tsv >> results.tsv
-rm tmp.tsv
+for i in 0..$((NPROC-1))
+do
+	parse_blast tmp_{$i}.tsv >> unique.tsv
+	rm tmp_{$i}.tsv splitted_clean_{}.fasta
+done
 
 echo `date`
 echo 'listing organisms'
 tax_orgs unique.tsv
-
