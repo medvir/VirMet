@@ -54,8 +54,8 @@ echo 'extracting best HSP'
 echo -e 'qseqid\tsseqid\tsscinames\tstitle\tpident\tqcovs\tscore\tlength\tmismatch\tgapopen\tqstart\tqend\tsstart\tsend\tstaxids' > unique.tsv
 for ((i=0; i < $NPROC; i++ ))
 do
-	parse_blast tmp_{$i}.tsv >> unique.tsv
-	rm tmp_{$i}.tsv splitted_clean_{}.fasta
+	parse_blast tmp_${i}.tsv >> unique.tsv
+	rm tmp_${i}.tsv splitted_clean_${i}.fasta
 done
 
 echo `date`
