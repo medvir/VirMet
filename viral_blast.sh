@@ -44,7 +44,7 @@ elif [[ $HOSTNAME == "virologysrv04.uzh.ch" ]];
 fi
 seq 0 $((NPROC-1)) | xargs -P $XARGS_THREAD -I {} blastn -task megablast \
 	    -query splitted_clean_{}.fasta -db /data/databases/viral_db \
-		-out tmp_{}.tsv -max_target_seqs 10 -max_hsps 10 \
+		-out tmp_{}.tsv \
 		-outfmt '6 qseqid sseqid sscinames stitle pident qcovs score length mismatch gapopen qstart qend sstart send staxids'
 echo ''
 
