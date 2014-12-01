@@ -9,9 +9,9 @@ import logging
 import logging.handlers
 
 nthreads = 12  # not too many processors, huge RAM requirements
-multimapNmax = 30  # reads mapping more times are not reported
+multimapNmax = 300  # reads mapping more times are not reported
 
-loc_dir = {'human': '/data/databases/Homo_sapiens',
+loc_dir = {'human': '/data/databases/Homo_sapiens/STAR_index/',
            'bact1': '/data/databases/Bacteria/db1',
            'bact2': '/data/databases/Bacteria/db2',
            'bact3': '/data/databases/Bacteria/db3',
