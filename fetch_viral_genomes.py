@@ -166,7 +166,7 @@ else:
 os.remove('vir_search')
 
 # update blast database
-cml_str = 'makeblastdb -in viral_database.fasta -dbtype '
+cml_str = '-in viral_database.fasta -dbtype '
 if db_type == 'nuccore':
     cml_str += 'nucl '
 else:
@@ -179,4 +179,4 @@ cml_str += "-hash_index \
 -out viral_db \
 -logfile blast.log -parse_seqids -taxid_map viral_gi_taxid.dmp".format(tl, dt)
 
-run_child(cml_str)
+run_child('makeblastdb', cml_str)
