@@ -6,7 +6,7 @@
 # It can be called with option 'quality' (as from wolfpack.py), and it
 # stops after quality filtering
 
-VERSION=0.3.3
+VERSION=0.3.4
 LOCKFILE="pipeline_version.lock"
 FILEIN=$1
 RUNTYPE=$2

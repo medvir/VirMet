@@ -95,6 +95,7 @@ for cont in contaminants:
     for fq in fq_to_decontaminate:
         sample_n = os.path.split(fq)[1].split('_')[1]
         os.chdir(sample_n)
+        print 'Running on ', sample_n
         out1 = victor.main(input_reads=cont_reads, contaminant=cont)
         os.chdir('../')
 
