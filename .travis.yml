@@ -1,8 +1,11 @@
 before_install:
     - sudo apt-get update -qq
-    - sudo apt-get install -qq -y curl build-essential ncurses-dev byacc zlib1g-dev python-dev git cmake samtools ncbi-blast+
+    - sudo apt-get install -qq -y build-essential ncurses-dev git cmake ncbi-blast+
 
 install: ./install-dependencies.sh
 
 after_install:
     - export PATH=$PATH:$PWD/edirect/
+
+script:
+    - true
