@@ -1,5 +1,6 @@
 #!/usr/bin/env python3.4
 import os
+import sys
 import unittest
 import subprocess
 
