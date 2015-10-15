@@ -11,4 +11,4 @@ tar -xvf /tmp/prinseq-lite-0.20.4.tar.gz
 # STAR
 wget https://github.com/alexdobin/STAR/archive/STAR_2.4.2a.tar.gz -O /tmp/STAR_2.4.2a.tar.gz
 tar -xvf /tmp/STAR_2.4.2a.tar.gz
-cd STAR-STAR_2.4.2a && make STAR
+cd STAR-STAR_2.4.2a/source && make STAR
