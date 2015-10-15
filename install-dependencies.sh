@@ -12,10 +12,3 @@ tar -xvf /tmp/prinseq-lite-0.20.4.tar.gz
 wget https://github.com/alexdobin/STAR/archive/STAR_2.4.2a.tar.gz -O /tmp/STAR_2.4.2a.tar.gz
 tar -xvf /tmp/STAR_2.4.2a.tar.gz
 cd STAR-STAR_2.4.2a && make STAR
-
-# pip
-wget https://bootstrap.pypa.io/get-pip.py -O /tmp/get-pip.py
-sudo python3 /tmp/get-pip.py
-
-# nose
-pip install nose

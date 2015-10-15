@@ -1,3 +1,6 @@
+language: python
+python:
+    - "3.4"
 before_install:
     - sudo apt-get update -qq
     - sudo apt-get install -qq -y build-essential ncurses-dev git cmake ncbi-blast+
@@ -10,4 +13,4 @@ after_install:
     - export PATH=$PATH:$PWD/STAR-STAR_2.4.2a/source
 
 script:
-    - true
+    - nosetests
