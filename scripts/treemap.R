@@ -20,4 +20,3 @@ tm <- treemap(hier, index=c('category', 'id'), vSize='reads',
 
 # This does not work in scripting
 #lapply(tail(grid.ls(print=FALSE)$name, 2), grid.remove)
-
