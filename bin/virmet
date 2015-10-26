@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import argparse
+
+
+if __name__ == "__main__" and __package__ is None:
+
+    # parse command line
+    parser = argparse.ArgumentParser()
+    # First define all option groups
+    group1 = parser.add_argument_group('Input files', 'Required input')
+    group1.add_argument("-f", "--fastq", default="", type=str, dest="f",
+                        help="input reads in fastq format")
+    args = parser.parse_args()
+
+    # manipulate path to import functions
+    parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    os.sys.path.insert(1, parent_dir)
+    mod = __import__('virmet')
+    sys.modules["virmet"] = mod
+
+
+    import logging
+    import logging.handlers
+
+    # Make a global logging object.
+    mylog = logging.getLogger(__name__)
+    dn = os.path.dirname(__file__)
+    # set logging level
+    mylog.setLevel(logging.DEBUG)
+    # This handler writes everything to a file.
+    LOG_FILENAME = './minvar.log'
+    h = logging.handlers.RotatingFileHandler(LOG_FILENAME, 'w',
+                                             maxBytes=100000, backupCount=5)
+    f = logging.Formatter("%(levelname)s %(asctime)s %(funcName)s\
+                          %(lineno)d %(message)s")
+    h.setFormatter(f)
+    mylog.addHandler(h)
+    mylog.info(' '.join(sys.argv))
