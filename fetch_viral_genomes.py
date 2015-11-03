@@ -6,6 +6,7 @@ file picked_seqs.txt.
 '''
 import sys
 import os
+import os.path
 import re
 import datetime
 
@@ -38,14 +39,6 @@ if db_type not in ['nuccore', 'protein']:
     sys.exit('db_type: %s, must be nuccore or protein' % db_type)
 
 os.chdir('/data/databases/viral_%s' % db_type)
-
-print('Parsing sequences already present')
-p_code = run_child('grep',
-                   ' \"^>\" viral_database.fasta | cut -f 2 -d \"|\" > old_ids')
-old_ids = [l.strip() for l in open('old_ids')]
-os.remove('old_ids')
-assert len(old_ids) == len(set(old_ids)), 'Duplicate in old seqs: solve it'
-print('%d sequences found' % len(old_ids))
 
 print("Running NCBI search...")
 # Run the search again
@@ -114,12 +107,26 @@ for l in open('vir_search'):
         ch = int(re.search('Count>(\d+)</Count', l).group(1))
         print('NCBI search on all viruses returned %d hits' % ch)
 
+print('Parsing sequences already present')
+
+if not os.path.exists('viral_database.fasta'):
+    # needed te first time, otherwise the following command lines are too long
+    run_child('efetch', '-db nuccore -format fasta < vir_search > viral_database.fasta')
+
+p_code = run_child('grep',
+                   ' \"^>\" viral_database.fasta | cut -f 2 -d \"|\" > old_ids')
+old_ids = [l.strip() for l in open('old_ids')]
+os.remove('old_ids')
+assert len(old_ids) == len(set(old_ids)), 'Duplicate in old seqs: solve it'
+print('%d sequences found' % len(old_ids))
+
 try:
     os.remove('tmp.dmp')
 except OSError:
     pass
 
 print('Saving Gi <-> TaxId <-> Acc relationship of the search')
+#for txid, v in txids.items():
 s_code = run_child('efetch',
                    '-format docsum < vir_search | ' +
                    'xtract -pattern DocumentSummary ' +
