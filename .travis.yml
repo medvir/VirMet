@@ -15,4 +15,4 @@ after_install:
     - export PATH=$PATH:$PWD/STAR-STAR_2.4.2a/source
 
 script:
-    - nose2
+    - nose2 -s virmet
