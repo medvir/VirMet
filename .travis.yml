@@ -4,8 +4,7 @@ python:
 before_install:
     - sudo apt-get update -qq
     - sudo apt-get install -qq -y build-essential ncurses-dev git cmake \
-      ncbi-blast+ unzip bwa tabix python3-pandas python3-numpy python3-scipy \
-      python-biopython
+      ncbi-blast+ unzip bwa tabix python-pandas python-numpy python-scipy
 
 install:
     - ./install-dependencies.sh
