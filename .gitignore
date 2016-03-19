@@ -5,3 +5,4 @@ viral_dates.txt
 */*/__pycache__
 .dropbox.attr
 */.dropbox.attr
+*pyc

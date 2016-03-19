@@ -16,4 +16,4 @@ after_install:
     - export PATH=/usr/local/bin:$PATH
 
 script:
-    - nose2 -s virmet
+    - python -m unittest
