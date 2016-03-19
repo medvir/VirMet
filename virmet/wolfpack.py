@@ -51,7 +51,6 @@ def hunter(fq_file):
         s_dir = os.getcwd()
 
     oh = open('stats.tsv', 'a')
-
     # count raw reads
     if fq_file.endswith('gz'):
         out1 = run_child('gunzip', '-c %s | wc -l' % fq_file)
@@ -86,7 +85,7 @@ def hunter(fq_file):
     cml = '-w 0 %d | xargs -P %d -I {} %s \
             -fastq splitted{}.fastq -lc_method entropy -lc_threshold 70 \
             -log prinseq{}.log -min_qual_mean 20 -ns_max_p 25 \
-            -out_good ./good{} -out_bad ./bad{} &> ./prinseq.err' % (n_splitted - 1, n_splitted, prinseq_exe)
+            -out_good ./good{} -out_bad ./bad{} > ./prinseq.err 2>&1' % (n_splitted - 1, n_splitted, prinseq_exe)
     run_child('seq', cml)
 
     logging.info('cleaning up')
@@ -191,7 +190,7 @@ def viral_blast(file_in, n_proc):
            -query splitted_clean_{}.fasta -db %s \
            -out tmp_{}.tsv \
            -outfmt \'6 qseqid sseqid sscinames stitle pident qcovs score length mismatch gapopen qstart qend sstart send staxids\'' \
-        % (n_proc - 1, xargs_thread, os.path.join('/data/databases', 'viral_nuccore/viral_db'))
+        % (n_proc - 1, xargs_thread, os.path.join('/data/virmet_databases', 'viral_nuccore/viral_db'))
     logging.info('running blast now')
     run_child('seq', cml)
 
