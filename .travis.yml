@@ -1,10 +1,13 @@
+sudo: required
+dist: trusty
 language: python
 python:
     - "3.4"
+
 before_install:
     - sudo apt-get update -qq
-    - sudo apt-get install -qq -y build-essential ncurses-dev git cmake \
-      ncbi-blast\+ unzip bwa tabix python-pandas python-numpy python-scipy
+    - sudo apt-get install -qq -y build-essential ncurses-dev git ncbi-blast+ \
+      cmake unzip bwa tabix python-pandas python-numpy python-scipy
 
 install:
     - ./install-dependencies.sh
