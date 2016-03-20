@@ -13,18 +13,22 @@ sys.modules["virmet"] = mod
 from virmet.common import run_child
 
 
-class Testbwa(unittest.TestCase):
+class TestToolsCallable(unittest.TestCase):
+    '''calls help of external tools just to check that they are installed
+    '''
 
     def setUp(self):
-        self.remote_1 = 'ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_24/gencode.v24.primary_assembly.annotation.gtf.gz'
-        self.remote_2 = 'ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_24/_README.TXT'
+        self.log_file = os.path.join(tempfile.gettempdir(), 'tmp.log')
 
-    def test_help(self):
-        out_file = os.path.join(tempfile.gettempdir(), 'tmp.log')
-        out = run_child('bwa', 'index > %s 2>&1' % out_file)
-        l = sum(1 for l in open(out_file))
+    def test_bwa(self):
+        out = run_child('bwa', 'index > %s 2>&1' % self.log_file)
+        l = sum(1 for l in open(self.log_file))
         self.assertGreater(l, 6)
-        os.remove(out_file)
 
-#    def tearDown(self):
-#        os.remove('/tmp/tmp.log')
+    def test_blast(self):
+        out = run_child('blastn', '-H > %s 2>&1' % self.log_file)
+        l = sum(1 for l in open(self.log_file))
+        self.assertGreater(l, 6)
+
+    def tearDown(self):
+        os.remove(self.log_file)
