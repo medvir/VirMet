@@ -2,6 +2,7 @@
 import os
 import sys
 import unittest
+import tempfile
 import subprocess
 
 virmet_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
