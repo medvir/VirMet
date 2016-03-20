@@ -7,7 +7,9 @@ python:
 before_install:
     - sudo add-apt-repository universe
     - sudo apt-get update -qq
-    - sudo apt-get install -qq -y build-essential ncurses-dev git ncbi-blast+ cmake unzip bwa tabix python3-pandas python3-numpy python3-scipy python-biopython
+    - sudo apt-get install -qq -y build-essential ncurses-dev git ncbi-blast+
+      cmake unzip bwa tabix python3-pandas python3-numpy python3-scipy python-biopython
+      libwww-perl
 
 install:
     - ./install-dependencies.sh

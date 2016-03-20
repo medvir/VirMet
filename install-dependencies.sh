@@ -2,6 +2,7 @@
 
 #  NCBI edirect tools
 cd /tmp
+
 perl -MNet::FTP -e \
    '$ftp = new Net::FTP("ftp.ncbi.nlm.nih.gov", Passive => 1); $ftp->login;
     $ftp->binary; $ftp->get("/entrez/entrezdirect/edirect.zip");'
