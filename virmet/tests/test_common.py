@@ -47,8 +47,10 @@ class TestFTPDown(unittest.TestCase):
     def test_append(self):
         out_file = os.path.join(tempfile.gettempdir(), 'README.TXT')
         ftp_down(self.remote_2, out_file)
-        n_lines_1 = sum((1 for l in open(out_file)))
+        with open(out_file) as f:
+            n_lines_1 = sum(1 for _ in f)
         ftp_down(self.remote_2, out_file)
-        n_lines_2 = sum((1 for l in open(out_file)))
+        with open(out_file) as f:
+            n_lines_2 = sum(1 for _ in f)
         self.assertEqual(n_lines_2, 2 * n_lines_1)
         os.remove(out_file)

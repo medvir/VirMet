@@ -21,13 +21,15 @@ class TestToolsCallable(unittest.TestCase):
         self.log_file = os.path.join(tempfile.gettempdir(), 'tmp.log')
 
     def test_bwa(self):
-        out = run_child('bwa', 'index > %s 2>&1' % self.log_file)
-        l = sum(1 for l in open(self.log_file))
+        run_child('bwa', 'index > %s 2>&1' % self.log_file)
+        with open(self.log_file) as f:
+            l = sum(1 for _ in f)
         self.assertGreater(l, 6)
 
     def test_blast(self):
-        out = run_child('blastn', '-H > %s 2>&1' % self.log_file)
-        l = sum(1 for l in open(self.log_file))
+        run_child('blastn', '-H > %s 2>&1' % self.log_file)
+        with open(self.log_file) as f:
+            l = sum(1 for _ in f)
         self.assertGreater(l, 6)
 
     def tearDown(self):
