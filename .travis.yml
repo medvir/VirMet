@@ -11,9 +11,16 @@ before_install:
 
 install:
     - ./install-dependencies.sh
-    - pip install -r requirements.txt
+    # Install conda
+    - sudo pip install conda
+    # install deps
+    - sudo conda init
+    - sudo conda update conda --yes
+    - deps='pip numpy pandas'
+    - conda create -p $HOME/py --yes $deps "python=$TRAVIS_PYTHON_VERSION"
 
 after_install:
+    - export PATH=$HOME/py/bin:$PATH
     - export PATH=$PATH:/tmp/edirect
     - sudo ln -sv PATH=$PATH:tmp/prinseq-lite-0.20.4/prinseq-lite.pl /usr/local/bin/prinseq-lite.pl
     - export PATH=/usr/local/bin:$PATH

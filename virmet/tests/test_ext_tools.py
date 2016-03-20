@@ -19,12 +19,11 @@ class Testbwa(unittest.TestCase):
         self.remote_2 = 'ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_24/_README.TXT'
 
     def test_help(self):
-        out = run_child('bwa', 'index &> /tmp/tmp.log')
-        l = sum(1 for l in open('/tmp/tmp.log'))
+        out_file = os.path.join(tempfile.gettempdir(), 'tmp.log')
+        out = run_child('bwa', 'index > %s 2>&1' % out_file)
+        l = sum(1 for l in open(out_file))
         self.assertGreater(l, 6)
-        out = run_child('bwa', 'mem &> /tmp/tmp.log')
-        l = sum(1 for l in open('/tmp/tmp.log'))
-        self.assertGreater(l, 20)
+        os.remove(out_file)
 
-    def tearDown(self):
-        os.remove('/tmp/tmp.log')
+#    def tearDown(self):
+#        os.remove('/tmp/tmp.log')
