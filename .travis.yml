@@ -7,7 +7,7 @@ python:
 before_install:
     - sudo apt-get update -qq
     - sudo apt-get install -qq -y build-essential ncurses-dev git cmake unzip
-      bwa tabix ncbi-blast+ libwww-perl
+      libblas-dev liblapack-dev gfortran bwa tabix ncbi-blast+ libwww-perl
 
 install:
     - ./install-dependencies.sh
