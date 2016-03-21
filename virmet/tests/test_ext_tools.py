@@ -27,7 +27,7 @@ class TestToolsCallable(unittest.TestCase):
         self.assertGreater(l, 6)
 
     def test_blast(self):
-        run_child('blastn', '-H > %s 2>&1' % self.log_file)
+        run_child('blastn', '-help > %s 2>&1' % self.log_file)
         with open(self.log_file) as f:
             l = sum(1 for _ in f)
         self.assertGreater(l, 6)
