@@ -1,0 +1,91 @@
+#!/usr/bin/env python3.4
+
+import os
+import sys
+import argparse
+
+# manipulate path to import functions
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+os.sys.path.insert(1, parent_dir)
+mod = __import__('virmet')
+sys.modules["virmet"] = mod
+
+# each subcommand takes one of these functions as default
+def fetch_db(args):
+    from virmet import fetch
+    fetch.main(args)
+
+def wolfpack(args):
+    from virmet import wolfpack
+    wolfpack.main(args)
+
+def update_db(args):
+    from virmet import update
+    update.main(args)
+
+def index_db(args):
+    from virmet import index
+    index.main(args)
+
+
+if __name__ == "__main__" and __package__ is None:
+
+    # parse command line
+    # create the top-level parser
+    parser = argparse.ArgumentParser(usage='%(prog)s <command> [options]',
+                                     epilog="Run `virmet subcommand -h` for more help")
+    subparsers = parser.add_subparsers(help='available sub-commands')
+
+    # create the parser for command "fetch"
+    parser_fetch = subparsers.add_parser('fetch', help='download genomes')
+    parser_fetch.add_argument('--viral', choices='np',
+                              help='viral [nucleic acids/proteins]')
+    parser_fetch.add_argument('--human', help='human', action='store_true')
+    parser_fetch.add_argument('--bact', help='bacterial (RefSeq)', action='store_true')
+    parser_fetch.add_argument('--fungal', help='fungal (RefSeq)', action='store_true')
+    parser_fetch.add_argument('--bovine', help='bovine (Bos taurus)', action='store_true')
+    parser_fetch.set_defaults(func=fetch_db)
+
+    # create the parser for command "update"
+    parser_update = subparsers.add_parser('update', help='update viral/bacterial database')
+    parser_update.add_argument('--viral', choices='np', help='update viral [n]ucleic/[p]rotein')
+    parser_update.add_argument('--bact', help='update bacterial database', action='store_true')
+    parser_update.add_argument('--picked', help='file with additional sequences, one GI per line', default=None)
+    parser_update.set_defaults(func=update_db)
+
+    # create the parser for command "index"
+    parser_index = subparsers.add_parser('index', help='index genomes')
+    parser_index.add_argument('--viral', choices='np',
+                              help='make blast index of viral database')
+    parser_index.add_argument('--human', action='store_true',
+                              help='make bwa index of human database')
+    parser_index.add_argument('--bact', action='store_true',
+                              help='make bwa index of bacterial database')
+    parser_index.add_argument('--fungal', action='store_true',
+                              help='make bwa index of fungal database')
+    parser_index.add_argument('--bovine', action='store_true',
+                              help='make bwa index of bovine database')
+    parser_index.set_defaults(func=index_db)
+
+    # create the parser for command "wolfpack"
+    parser_wolf = subparsers.add_parser('wolfpack', help='analyze a Miseq run')
+    parser_wolf.add_argument('--run', type=str, help='Miseq run directory')
+    parser_wolf.add_argument('--file', type=str, help='single fastq file')
+    parser_wolf.set_defaults(func=wolfpack)
+
+    # exit so that log file is not written
+    if len(sys.argv) == 1 or sys.argv[1] == '-h' or sys.argv[1] == '--help':
+        parser.print_help()
+        sys.exit()
+
+    # logging configuration
+    import logging
+    import logging.handlers
+    logging.basicConfig(filename='virmet.log', level=logging.DEBUG,
+                        format='%(levelname)s %(asctime)s %(filename)s: %(funcName)s() %(lineno)d: \t%(message)s', datefmt='%Y/%m/%d %H:%M:%S')
+
+    logging.info(' '.join(sys.argv))
+
+    # parse the args
+    args = parser.parse_args()
+    args.func(args)

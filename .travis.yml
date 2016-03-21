@@ -1,18 +1,39 @@
+sudo: required
+dist: trusty
 language: python
 python:
     - "3.4"
+
 before_install:
     - sudo apt-get update -qq
-    - sudo apt-get install -qq -y build-essential ncurses-dev git cmake ncbi-blast+
+    - sudo apt-get install -qq -y build-essential ncurses-dev cmake unzip
+      bwa tabix ncbi-blast+ libwww-perl
 
 install:
-    - ./install-dependencies.sh
-    - pip install nose2
+    #- ./install-dependencies.sh
+
+    # Install conda
+    # We do this conditionally because it saves us some downloading if the
+    # version is the same.
+    - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+        wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+      else
+        wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+      fi
+    - bash miniconda.sh -b -p $HOME/miniconda
+    - export PATH="$HOME/miniconda/bin:$PATH"
+    - hash -r
+    - conda config --set always_yes yes --set changeps1 no
+    # Useful for debugging any issues with conda
+    - conda info -a
+    # install deps and activate
+    - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy pandas biopython
+    - source activate test-environment
 
 after_install:
-    - export PATH=$PATH:$PWD/edirect/
-    - ln -sv PATH=$PATH:$PWD/prinseq-lite-0.20.4/prinseq-lite.pl /usr/local/bin/prinseq-lite.pl
-    - export PATH=$PATH:$PWD/STAR-STAR_2.4.2a/source
+    - export PATH=$PATH:/tmp/edirect
+    - sudo ln -sv PATH=$PATH:tmp/prinseq-lite-0.20.4/prinseq-lite.pl /usr/local/bin/prinseq-lite.pl
+    - export PATH=/usr/local/bin:$PATH
 
 script:
-    - nose2
+    - python -m unittest
