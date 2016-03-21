@@ -224,10 +224,12 @@ def viral_blast(file_in, n_proc):
     matched_reads = good_hits.shape[0]
     logging.info('%d hits passing coverage and identity filter' % matched_reads)
     oh.write('viral_good_reads\t%s\n' % matched_reads)
-    org_count = good_hits.groupby('sscinames').size()
-    org_count.order(ascending=False).to_csv('orgs_list.csv', header=True)
+    org_count = good_hits.groupby('sscinames').size().order(ascending=False).to_frame()
+    org_count.reset_index(inplace=True)
+    org_count.rename(columns={'sscinames': 'organism'}, inplace=True)
+    org_count.to_csv('orgs_list.csv', header=True, sep='\t', index=False)
     unknown_reads = tot_seqs - matched_reads
-    oh.write('unknown_reads\t%s\n' % unknown_reads)
+    oh.write('unknown_reads\t%d\n' % unknown_reads)
     oh.close()
 
 
@@ -293,7 +295,8 @@ def main(args):
     if args.run:
         miseq_dir = args.run.rstrip('/')
         run_name = os.path.split(miseq_dir)[1]
-        if run_name.startswith('1'):
+        if run_name.startswith('1') and len(run_name.split('-')[-1]) == 5 and
+            run_name.split('_')[1].startswith('M'):
             try:
                 run_date, machine_name = run_name.split('_')[:2]
                 logging.info('running on run %s from machine %s' % (run_name, machine_name))

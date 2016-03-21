@@ -10,7 +10,7 @@ before_install:
       bwa tabix ncbi-blast+ libwww-perl
 
 install:
-    #- ./install-dependencies.sh
+    - ./install-dependencies.sh
 
     # Install conda
     # We do this conditionally because it saves us some downloading if the
