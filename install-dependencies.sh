@@ -5,9 +5,9 @@ cd /tmp
 
 perl -MNet::FTP -e \
    '$ftp = new Net::FTP("ftp.ncbi.nlm.nih.gov", Passive => 1); $ftp->login;
-    $ftp->binary; $ftp->get("/entrez/entrezdirect/edirect.zip");'
- unzip -u -q edirect.zip
- rm edirect.zip
+    $ftp->binary; $ftp->get("/entrez/entrezdirect/edirect.tar.gz");'
+ tar xfz edirect.tar.gz
+ rm edirect.tar.gz
  ./edirect/setup.sh
 
 # prinseq
