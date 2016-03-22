@@ -27,5 +27,6 @@ sudo make prefix=/usr/local install
 # NCBI blast+ 2.3.0
 cd /tmp
 wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/ncbi-blast-2.3.0+-x64-linux.tar.gz
-tar xvzfp ncbi-blast-2.3.0+-x64-linux.tar.gz
-sudo install -p ncbi-blast-2.3.0+/* /usr/local/bin
+tar xzfp ncbi-blast-2.3.0+-x64-linux.tar.gz
+
+sudo install -p ./ncbi-blast-2.3.0+/bin/* /usr/local/bin
