@@ -6,8 +6,8 @@ python:
 
 before_install:
     - sudo apt-get update -qq
-    - sudo apt-get install -qq -y build-essential
-      bwa tabix ncbi-blast+ libwww-perl
+    - sudo apt-get install -qq -y build-essential ftp golang unzip
+      bwa tabix libwww-perl
 
 install:
     - ./install-dependencies.sh
@@ -31,8 +31,10 @@ install:
     - source activate test-environment
 
 after_install:
+    - sudo ln -sv /bin/uname /usr/bin/uname
     - export PATH=$PATH:/tmp/edirect
     - sudo ln -sv PATH=$PATH:tmp/prinseq-lite-0.20.4/prinseq-lite.pl /usr/local/bin/prinseq-lite.pl
+    - export PATH=”$PATH:/tmp/ncbi-blast-2.3.0+/bin”
     - export PATH=/usr/local/bin:$PATH
 
 script:

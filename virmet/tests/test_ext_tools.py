@@ -27,7 +27,7 @@ class TestToolsCallable(unittest.TestCase):
         os.remove(self.genome_file)
 
     def test_bwa_index(self):
-        run_child('efetch', '-db nuccore -id K03455 -format fasta > %s' % self.genome_file)
+        run_child('efetch', '-db nuccore -id K03455 -format fasta > %s' % self.genome_file, exe='/bin/bash')
         run_child('bwa', 'index %s &> /dev/null' % self.genome_file)
         self.assertTrue(os.path.join(tempfile.gettempdir(), 'HIV.bwt'))
         os.remove(self.genome_file)
