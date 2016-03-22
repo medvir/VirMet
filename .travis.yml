@@ -32,9 +32,7 @@ install:
 
 after_install:
     - sudo ln -sv /bin/uname /usr/bin/uname
-    - export PATH=$PATH:/tmp/edirect
-    - sudo ln -sv PATH=$PATH:tmp/prinseq-lite-0.20.4/prinseq-lite.pl /usr/local/bin/prinseq-lite.pl
-    - export PATH=”$PATH:/tmp/ncbi-blast-2.3.0+/bin”
+    - export PATH=$PATH:$HOME/edirect
     - export PATH=/usr/local/bin:$PATH
 
 script:
