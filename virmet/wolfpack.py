@@ -38,13 +38,13 @@ def hunter(fq_file):
     except NotImplementedError:
         n_proc = 2
 
-    logging.info('hunter will run on %s processors' % n_proc)
+    logging.debug('hunter will run on %s processors' % n_proc)
     if '_' in fq_file:
         s_dir = '_'.join(os.path.split(fq_file)[1].split('_')[:2])
         try:
             os.mkdir(s_dir)
         except FileExistsError:
-            logging.info('entering %s already existing' % s_dir)
+            logging.debug('entering %s already existing' % s_dir)
         os.chdir(s_dir)
         s_dir = os.getcwd()
     else:
@@ -60,7 +60,7 @@ def hunter(fq_file):
     oh.write('raw_reads\t%d\n' % n_reads)
 
     # trim and discard short reads, count
-    logging.info('trimming with seqtk')
+    logging.debug('trimming with seqtk')
     cml = 'trimfq %s | seqtk seq -L 75 - > intermediate.fastq' % fq_file
     out1 = run_child('seqtk', cml)
     out1 = run_child('wc', '-l intermediate.fastq | cut -f 1 -d \" \"')
@@ -81,14 +81,14 @@ def hunter(fq_file):
         os.rename(spf, 'splitted%0.2d.fastq' % i)  # W.O. max 100 files/cpus
 
     # filter with prinseq, parallelize with xargs
-    logging.info('filtering with prinseq')
+    logging.debug('filtering with prinseq')
     cml = '-w 0 %d | xargs -P %d -I {} %s \
             -fastq splitted{}.fastq -lc_method entropy -lc_threshold 70 \
             -log prinseq{}.log -min_qual_mean 20 -ns_max_p 25 \
             -out_good ./good{} -out_bad ./bad{} > ./prinseq.err 2>&1' % (n_splitted - 1, n_splitted, prinseq_exe)
     run_child('seq', cml)
 
-    logging.info('cleaning up')
+    logging.debug('cleaning up')
     if len(glob.glob('good??.fastq')):
         run_child('cat', 'good??.fastq > good.fastq')
         run_child('rm', 'good??.fastq')
@@ -129,7 +129,7 @@ def victor(input_reads, contaminant):
     cml = 'mem -t %d -R \'@RG\tID:foo\tSM:bar\tLB:library1\' -T 75 %s %s 2> \
     %s | samtools view -h -F 4 - > %s' % (n_proc, contaminant, input_reads, err_name, sam_name)
     run_child('bwa', cml)
-    logging.info('running bwa %s %s on %d cores' % (cont_name, rf_head, n_proc))
+    logging.debug('running bwa %s %s on %d cores' % (cont_name, rf_head, n_proc))
 
     # reading sam file to remove reads with hits
     # test if an object is in set is way faster than in list
@@ -142,9 +142,9 @@ def victor(input_reads, contaminant):
     clean_name = os.path.splitext(sam_name)[0] + '.fastq'
 
     output_handle = open(clean_name, 'w')
-    logging.info('Cleaning reads in %s with alignments in %s' %
+    logging.debug('Cleaning reads in %s with alignments in %s' %
                  (input_reads, sam_name))
-    logging.info('Writing to %s' % clean_name)
+    logging.debug('Writing to %s' % clean_name)
     if input_reads.endswith('.gz'):
         cont_handle = gzip.open(input_reads)
     else:
@@ -156,7 +156,7 @@ def victor(input_reads, contaminant):
             c += 1
             output_handle.write("@%s\n%s\n+\n%s\n" % (title, seq, qual))
             if c % 100000 == 0:
-                logging.info('written %d clean reads' % c)
+                logging.debug('written %d clean reads' % c)
     logging.info('written %d clean reads' % c)
     output_handle.close()
 
@@ -191,10 +191,10 @@ def viral_blast(file_in, n_proc):
            -out tmp_{}.tsv \
            -outfmt \'6 qseqid sseqid sscinames stitle pident qcovs score length mismatch gapopen qstart qend sstart send staxids\'' \
         % (n_proc - 1, xargs_thread, os.path.join('/data/virmet_databases', 'viral_nuccore/viral_db'))
-    logging.info('running blast now')
+    logging.debug('running blast now')
     run_child('seq', cml)
 
-    logging.info('parsing best HSP for each query sequence')
+    logging.debug('parsing best HSP for each query sequence')
     qseqid = ''
 
     bh = open('unique.tsv', 'w')
@@ -210,10 +210,10 @@ def viral_blast(file_in, n_proc):
         os.remove('splitted_clean_%d.fasta' % i)
     bh.close()
 
-    logging.info('filtering and grouping by scientific name')
+    logging.debug('filtering and grouping by scientific name')
     hits = pd.read_csv('unique.tsv', index_col='qseqid',  # delim_whitespace=True)
                        delimiter="\t")
-    logging.info('found %d hits' % hits.shape[0])
+    logging.debug('found %d hits' % hits.shape[0])
 
     oh.write('blast_hits\t%s\n' % hits.shape[0])
     # select according to identity and coverage, count occurrences
@@ -224,7 +224,7 @@ def viral_blast(file_in, n_proc):
                              index=ds.index)
     org_count.to_csv('orgs_list.tsv', header=True, sep='\t', index=False)
     matched_reads = good_hits.shape[0]
-    logging.info('%d hits passing coverage and identity filter' % matched_reads)
+    logging.debug('%d hits passing coverage and identity filter' % matched_reads)
     oh.write('viral_good_reads\t%s\n' % matched_reads)
     unknown_reads = tot_seqs - matched_reads
     oh.write('unknown_reads\t%d\n' % unknown_reads)
@@ -273,15 +273,15 @@ def cleaning_up():
         cont = stem.split('_')[-1]
         if cont == 'ref':  # hack because _ in bovine file name
             cont = 'bt_ref'
-        cml = 'sort -O bam -l 0 -T /tmp %s | \
-        samtools view -T %s -C -o %s.cram -' % (samfile, ref_map[cont], stem)
+        cml = 'sort -O bam -l 0 -T /tmp -@ 4 %s | \
+        samtools view -T %s -C -o %s.cram -@ 4 -' % (samfile, ref_map[cont], stem)
         cmls.append(('samtools', cml))
 
     # run in parallel
     pool = mp.Pool()
     results = pool.map(single_process, cmls)
     for r in results:
-        logging.info(r)
+        logging.debug(r)
 
     for samfile in glob.glob('*.sam'):
         os.remove(samfile)
@@ -293,7 +293,7 @@ def main(args):
     if args.run:
         miseq_dir = args.run.rstrip('/')
         run_name = os.path.split(miseq_dir)[1]
-        if run_name.startswith('1') and len(run_name.split('-')[-1]) == 5 and
+        if run_name.startswith('1') and len(run_name.split('-')[-1]) == 5 and \
             run_name.split('_')[1].startswith('M'):
             try:
                 run_date, machine_name = run_name.split('_')[:2]
@@ -314,6 +314,7 @@ def main(args):
         run_name = args.file.split('.')[0]
 
     out_dir = 'virmet_output_%s' % run_name
+
     try:
         os.mkdir(out_dir)
     except OSError:
@@ -330,10 +331,11 @@ def main(args):
     # run mapping against contaminants to remove
     cont_reads = 'good.fastq'  # first run on good.fastq
     for cont in contaminant_db:
+        logging.info('decontamination against %s' % cont)
         for sample_dir in s_dirs:
+            logging.info('--- now for sample %s' % sample_dir)
             os.chdir(sample_dir)
             decont_reads = victor(input_reads=cont_reads, contaminant=cont)
-
             os.chdir(os.pardir)
         cont_reads = decont_reads  # decontaminated reads are input for next round (equal across samples)
 
@@ -347,6 +349,7 @@ def main(args):
 
     for sample_dir in s_dirs:
         os.chdir(sample_dir)
+        logging.info('now sample %s' % sample_dir)
         viral_blast(file_to_blast, n_proc)
         logging.info('sample %s blasted' % sample_dir)
         os.chdir(os.pardir)
@@ -354,5 +357,9 @@ def main(args):
     logging.info('summarising and cleaning up')
     for sample_dir in s_dirs:
         os.chdir(sample_dir)
+        logging.info('now in %s' % sample_dir)
         cleaning_up()
         os.chdir(os.pardir)
+
+    os.chdir(os.pardir)
+    return out_dir

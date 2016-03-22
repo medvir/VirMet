@@ -37,7 +37,7 @@ class TestToolsCallable(unittest.TestCase):
     def test_blast(self):
         log_file = os.path.join(tempfile.gettempdir(), 'tmp.log')
         run_child('blastn', '-help > %s 2>&1' % log_file)
-        with open(self.log_file) as f:
+        with open(log_file) as f:
             l = sum(1 for _ in f)
         self.assertGreater(l, 6)
         os.remove(log_file)

@@ -16,8 +16,14 @@ def fetch_db(args):
     fetch.main(args)
 
 def wolfpack(args):
+    from shutil import move
     from virmet import wolfpack
-    wolfpack.main(args)
+    od = wolfpack.main(args)
+    try:
+        om = move('virmet.log', od)
+        sys.exit('logging file is in %s' % om)
+    except FileNotFoundError:
+        sys.exit('now in %s, file not found' % os.getcwd())
 
 def update_db(args):
     from virmet import update

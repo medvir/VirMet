@@ -24,9 +24,10 @@ def run_child(exe_name, arg_string, exe='/bin/sh'):
     return output
 
 
-def single_process(exe, cml):
+def single_process(ec_pair):
     '''single process via run_child, used to parallelize
     '''
+    exe, cml = ec_pair
     out = run_child(exe, cml)
     return out
 
