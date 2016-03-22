@@ -16,6 +16,7 @@ eaddress edirect.pl efetch einfo enotify epost esearch esummary ftp-ls nquire \
 reorder-columns setup-deps.pl sort-uniq-count word-at-a-time xtract.pl /usr/local/bin
 
 # prinseq
+cd /tmp
 wget http://downloads.sourceforge.net/project/prinseq/standalone/prinseq-lite-0.20.4.tar.gz \
 -O /tmp/prinseq-lite-0.20.4.tar.gz
 tar -xvf /tmp/prinseq-lite-0.20.4.tar.gz
