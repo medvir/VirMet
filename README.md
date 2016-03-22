@@ -1,6 +1,8 @@
 VirMet
 ------
 
+[![Build Status](https://travis-ci.org/ozagordi/VirMet.svg?branch=master)](https://travis-ci.org/ozagordi/VirMet)
+
 A set of tools for viral metagenomics.
 
 virmet is now called with a command subcommand
