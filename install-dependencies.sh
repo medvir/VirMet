@@ -9,6 +9,7 @@ unzip -u -q edirect.zip
 rm edirect.zip
 export PATH=$PATH:/tmp/edirect
 ./edirect/setup.sh
+cd edirect
 sudo install -p econtact edirutil efilter elink entrez-phrase-search eproxy \
 espell ftp-cp join-into-groups-of sort-uniq-count-rank xtract xtract.Linux \
 eaddress edirect.pl efetch einfo enotify epost esearch esummary ftp-ls nquire \

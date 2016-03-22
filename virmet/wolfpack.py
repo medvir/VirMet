@@ -216,18 +216,16 @@ def viral_blast(file_in, n_proc):
     logging.info('found %d hits' % hits.shape[0])
 
     oh.write('blast_hits\t%s\n' % hits.shape[0])
-    # select according to identity and coverage
-    good_hits = hits[(hits.pident > blast_ident_threshold) & (hits.qcovs > blast_cov_threshold)]
-    # define a column with genbank id only
-    # good_hits['sid'] = [int(s.split('_')[1]) for s in good_hits.sseqid]
-    # good_hits = good_hits.join(taxonomy, on='sid')
+    # select according to identity and coverage, count occurrences
+    good_hits = hits[(hits.pident > blast_ident_threshold) & \
+        (hits.qcovs > blast_cov_threshold)]
+    ds = good_hits.groupby('sscinames').size().order(ascending=False)
+    org_count = pd.DataFrame({'organism': ds.index.tolist(), 'reads': ds.values},
+                             index=ds.index)
+    org_count.to_csv('orgs_list.tsv', header=True, sep='\t', index=False)
     matched_reads = good_hits.shape[0]
     logging.info('%d hits passing coverage and identity filter' % matched_reads)
     oh.write('viral_good_reads\t%s\n' % matched_reads)
-    org_count = good_hits.groupby('sscinames').size().order(ascending=False).to_frame()
-    org_count.reset_index(inplace=True)
-    org_count.rename(columns={'sscinames': 'organism'}, inplace=True)
-    org_count.to_csv('orgs_list.csv', header=True, sep='\t', index=False)
     unknown_reads = tot_seqs - matched_reads
     oh.write('unknown_reads\t%d\n' % unknown_reads)
     oh.close()
