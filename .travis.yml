@@ -32,7 +32,6 @@ install:
 
 after_install:
     - sudo ln -sv /bin/uname /usr/bin/uname
-    - export PATH=$PATH:$HOME/edirect
     - export PATH=/usr/local/bin:$PATH
 
 script:

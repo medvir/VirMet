@@ -1,14 +1,18 @@
 #!/bin/bash
 
 #  NCBI edirect tools
-cd ~
+cd /tmp
 perl -MNet::FTP -e \
   '$ftp = new Net::FTP("ftp.ncbi.nlm.nih.gov", Passive => 1); $ftp->login;
    $ftp->binary; $ftp->get("/entrez/entrezdirect/edirect.zip");'
 unzip -u -q edirect.zip
 rm edirect.zip
-export PATH=$PATH:$HOME/edirect
+export PATH=$PATH:/tmp/edirect
 ./edirect/setup.sh
+sudo install -p econtact edirutil efilter elink entrez-phrase-search eproxy \
+espell ftp-cp join-into-groups-of sort-uniq-count-rank xtract xtract.Linux \
+eaddress edirect.pl efetch einfo enotify epost esearch esummary ftp-ls nquire \
+reorder-columns setup-deps.pl sort-uniq-count word-at-a-time xtract.pl /usr/local/bin
 
 # prinseq
 wget http://downloads.sourceforge.net/project/prinseq/standalone/prinseq-lite-0.20.4.tar.gz \
@@ -28,5 +32,4 @@ sudo make prefix=/usr/local install
 cd /tmp
 wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/ncbi-blast-2.3.0+-x64-linux.tar.gz
 tar xzfp ncbi-blast-2.3.0+-x64-linux.tar.gz
-
 sudo install -p ./ncbi-blast-2.3.0+/bin/* /usr/local/bin
