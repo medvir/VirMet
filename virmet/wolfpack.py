@@ -31,6 +31,7 @@ def hunter(fq_file):
     '''runs quality filter on a fastq file with seqtk and prinseq,
     simple parallelisation with xargs, returns output directory
     '''
+    import re
     from virmet.common import prinseq_exe
 
     try:
@@ -50,7 +51,8 @@ def hunter(fq_file):
     else:
         s_dir = os.getcwd()
 
-    oh = open('stats.tsv', 'a')
+    # first occurrence of stats.tsv
+    oh = open('stats.tsv', 'w+')
     # count raw reads
     if fq_file.endswith('gz'):
         out1 = run_child('gunzip', '-c %s | wc -l' % fq_file)
@@ -64,8 +66,9 @@ def hunter(fq_file):
     cml = 'trimfq %s | seqtk seq -L 75 - > intermediate.fastq' % fq_file
     out1 = run_child('seqtk', cml)
     out1 = run_child('wc', '-l intermediate.fastq | cut -f 1 -d \" \"')
-    n_reads = int(int(out1) / 4)
-    oh.write('trimmed_long\t%d\n' % n_reads)
+    long_reads = int(int(out1) / 4)
+    short = n_reads - long_reads
+    oh.write('trimmed_too_short\t%d\n' % short)
 
     # We want to split in n_proc processors, so each file has at most
     # (n_reads / n_proc) + 1 reads and 4 times as many lines
@@ -102,9 +105,17 @@ def hunter(fq_file):
         run_child('rm', 'prinseq??.log')
     run_child('rm', 'splitted*fastq')
 
+    # parsing number of reads deleted because of low entropy
+    low_ent = 0
+    for l in open('prinseq.log'):
+        match = re.search('lc_method\:\s(\d*)$', l)
+        if match:
+            low_ent += int(match.group(1))
+    oh.write('low_entropy\t%d\n' % low_ent)
+
     out1 = run_child('wc', '-l good.fastq | cut -f 1 -d \" \"')
     n_reads = int(int(out1) / 4)
-    oh.write('high_quality\t%d\n' % n_reads)
+    oh.write('passing_filter\t%d\n' % n_reads)
 
     os.chdir(os.pardir)
     return s_dir
@@ -134,8 +145,11 @@ def victor(input_reads, contaminant):
     # reading sam file to remove reads with hits
     # test if an object is in set is way faster than in list
     mapped_reads = set(run_child('grep', '-v \"^@\" %s | cut -f 1' % sam_name).strip().split('\n'))
-    # mapped_reads = set([l.split()[0] for l in open(sam_name)
-    #                     if not l.startswith('@')])
+    try:  # if no matches, empty string is present
+        mapped_reads.remove('')
+    except KeyError:
+        pass
+
     oh = open('stats.tsv', 'a')
     oh.write('matching_%s\t%d\n' % (cont_name, len(mapped_reads)))
     oh.close()
@@ -172,7 +186,7 @@ def viral_blast(file_in, n_proc):
     fasta_file = 'hq_decont_reads.fasta'
     run_child('seqtk', 'seq -A hq_decont_reads.fastq > %s' % fasta_file)
     tot_seqs = int(run_child('grep', '-c \"^>\" %s' % fasta_file).strip())
-    oh.write('blasted_reads\t%d\n' % tot_seqs)
+    oh.write('reads_to_blast\t%d\n' % tot_seqs)
     max_n = (tot_seqs / n_proc) + 1
 
     # We want to split in n_proc processors, so each file has at most
@@ -215,7 +229,6 @@ def viral_blast(file_in, n_proc):
                        delimiter="\t")
     logging.debug('found %d hits' % hits.shape[0])
 
-    oh.write('blast_hits\t%s\n' % hits.shape[0])
     # select according to identity and coverage, count occurrences
     good_hits = hits[(hits.pident > blast_ident_threshold) & \
         (hits.qcovs > blast_cov_threshold)]
@@ -225,9 +238,9 @@ def viral_blast(file_in, n_proc):
     org_count.to_csv('orgs_list.tsv', header=True, sep='\t', index=False)
     matched_reads = good_hits.shape[0]
     logging.debug('%d hits passing coverage and identity filter' % matched_reads)
-    oh.write('viral_good_reads\t%s\n' % matched_reads)
+    oh.write('viral_reads\t%s\n' % matched_reads)
     unknown_reads = tot_seqs - matched_reads
-    oh.write('unknown_reads\t%d\n' % unknown_reads)
+    oh.write('undetermined_reads\t%d\n' % unknown_reads)
     oh.close()
 
 

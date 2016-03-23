@@ -2,6 +2,7 @@ VirMet
 ------
 
 [![Build Status](https://travis-ci.org/ozagordi/VirMet.svg?branch=master)](https://travis-ci.org/ozagordi/VirMet)
+(caution: coverage of the test is very low)
 
 A set of tools for viral metagenomics.
 
@@ -19,44 +20,18 @@ A short help is obtained with `virmet subcommand -h`.
 ### Installation
 VirMet relies on a number of third-party tools used to access databases, trim,
 convert, filter and map reads. One can refer to the files [`.travis.yml`](./.travis.yml)
-and [`install-dependencies.sh`](./install-dependencies.sh) for details. In
-essence, on a Ubuntu 14.04 one can run the following commands for a system wide
-configuration.
+and [`install-dependencies.sh`](./install-dependencies.sh) for details or
+further down in this README.
+The dependencies are:
 
-    # system wide configuration available as Ubuntu packages
-    sudo apt-get update
-    sudo apt-get install build-essential ncurses-dev cmake \
-        bwa tabix ncbi-blast+ libwww-perl
-
-    #  NCBI edirect tools
-    cd /usr/local/
-    perl -MNet::FTP -e \
-       '$ftp = new Net::FTP("ftp.ncbi.nlm.nih.gov", Passive => 1); $ftp->login;
-        $ftp->binary; $ftp->get("/entrez/entrezdirect/edirect.tar.gz");'
-     tar xfz edirect.tar.gz
-     rm edirect.tar.gz
-     ./edirect/setup.sh
-
-    # prinseq
-    wget http://downloads.sourceforge.net/project/prinseq/standalone/prinseq-lite-0.20.4.tar.gz -O /usr/local/prinseq-lite-0.20.4.tar.gz
-    tar -xvf /usr/local/prinseq-lite-0.20.4.tar.gz
-
-    # samtools 1.3
-    wget https://github.com/samtools/samtools/releases/download/1.3/samtools-1.3.tar.bz2 -O /tmp/samtools-1.3.tar.bz2
-    tar xvfj /tmp/samtools-1.3.tar.bz2
-    cd /tmp/samtools-1.3
-    make
-    sudo make prefix=/usr/local install
-
-    export PATH=$PATH:/usr/local/edirect
-    sudo ln -sv PATH=$PATH:/usr/local/prinseq-lite-0.20.4/prinseq-lite.pl /usr/local/bin/prinseq-lite.pl
-    export PATH=/usr/local/bin:$PATH
-
-Then, one needs python 3 (VirMet was mainly developed and tested on 3.4, but
-any 3.x should work), together with [pandas](http://pandas.pydata.org) and
-[Biopython](http://biopython.org/wiki/Main_Page). Go to the respective
-installation pages and choose your favourite method. For continuous
-integration on Travis we used conda (see [`.travis.yml`](./.travis.yml)).
+- bwa
+- samtools 1.3
+- tabix
+- seqtk
+- prinseq-lite
+- edirect command line tools
+- blast+ 2.3.0
+- python (3.x, it's 2016...) with pandas and Biopython
 
 
 ### Preparation: fetching databases
@@ -112,24 +87,83 @@ present, the most important ones being `orgs_list.csv` and `stats.tsv`. The
 first lists the viral organisms found with a count of reads that could be
 matched to them.
 
-    [user@host test_virmet]$ cat virmet_output_exp01/AR-1_S1/orgs_list.csv
-    sscinames,0
-    Human immunodeficiency virus 1,118
-    Lactobacillus phage LF1,78
-    Torque teno virus,43
-    Human adenovirus 7,24
+    [user@host test_virmet]$ cat virmet_output_test_dir_150123/3-1-65_S5/orgs_list.tsv
+    organism	reads
+    Human adenovirus 7	126
+    Human poliovirus 1 strain Sabin	45
+    Human poliovirus 1 Mahoney	29
+    Human adenovirus 3+11p	19
+    Human adenovirus 16	1
 
 The second file is a summary of all reads analyzed for this sample and how many
 were passing a specific step of the pipeline or matching a specific database.
 
     [user@host test_virmet]$ cat virmet_output_exp01/AR-1_S1/stats.tsv
-    raw_reads	2721226
-    trimmed_long	2425400
-    high_quality	2161625
-    matching_humanGRCh38	493252
-    matching_bact1	430976
-    matching_bact2	443481
-    matching_bact3	44645
-    matching_fungi1	1424
-    matching_bt_ref	4536
-    blasted_reads	743311
+    raw_reads	6250
+    trimmed_long	5788
+    high_quality	3883
+    matching_humanGRCh38	3463
+    matching_bact1	1
+    matching_bact2	1
+    matching_bact3	1
+    matching_fungi1	1
+    matching_bt_ref	1
+    blasted_reads	420
+    blast_hits	259
+    viral_good_reads	257
+    unknown_reads	163
+
+### Details on the installation
+In essence, on a Ubuntu 14.04 one can run the following commands for a system wide
+configuration.
+
+    # system wide configuration available as Ubuntu packages
+    sudo apt-get update -qq
+    sudo apt-get install -qq -y build-essential ftp golang unzip \
+    bwa tabix seqtk libwww-perl
+
+    #  NCBI edirect tools
+    cd /tmp
+    perl -MNet::FTP -e \
+      '$ftp = new Net::FTP("ftp.ncbi.nlm.nih.gov", Passive => 1); $ftp->login;
+       $ftp->binary; $ftp->get("/entrez/entrezdirect/edirect.zip");'
+    unzip -u -q edirect.zip
+    rm edirect.zip
+    export PATH=$PATH:/tmp/edirect
+    ./edirect/setup.sh
+    cd edirect
+    sudo install -p econtact edirutil efilter elink entrez-phrase-search eproxy \
+    espell ftp-cp join-into-groups-of sort-uniq-count-rank xtract xtract.Linux \
+    eaddress edirect.pl efetch einfo enotify epost esearch esummary ftp-ls nquire \
+    reorder-columns setup-deps.pl sort-uniq-count word-at-a-time xtract.pl /usr/local/bin
+
+    # prinseq
+    cd /tmp
+    wget http://downloads.sourceforge.net/project/prinseq/standalone/prinseq-lite-0.20.4.tar.gz \
+    -O /tmp/prinseq-lite-0.20.4.tar.gz
+    tar -xvf /tmp/prinseq-lite-0.20.4.tar.gz
+    sudo install -p tmp/prinseq-lite-0.20.4/prinseq-lite.pl /usr/local/bin
+
+    # samtools 1.3
+    wget https://github.com/samtools/samtools/releases/download/1.3/samtools-1.3.tar.bz2 \
+    -O /tmp/samtools-1.3.tar.bz2
+    tar xvfj /tmp/samtools-1.3.tar.bz2
+    cd /tmp/samtools-1.3
+    make
+    sudo make prefix=/usr/local install
+
+    # NCBI blast+ 2.3.0
+    cd /tmp
+    wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/ncbi-blast-2.3.0+-x64-linux.tar.gz
+    tar xzfp ncbi-blast-2.3.0+-x64-linux.tar.gz
+    sudo install -p ./ncbi-blast-2.3.0+/bin/* /usr/local/bin
+
+    #
+    sudo ln -sv /bin/uname /usr/bin/uname
+    export PATH=/usr/local/bin:$PATH
+
+Then, one needs python 3 (VirMet was mainly developed and tested on 3.4, but
+any 3.x should work), together with [pandas](http://pandas.pydata.org) and
+[Biopython](http://biopython.org/wiki/Main_Page). Go to the respective
+installation pages and choose your favourite method. For continuous
+integration on Travis we used conda (see [`.travis.yml`](./.travis.yml)).
