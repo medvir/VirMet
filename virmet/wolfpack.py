@@ -32,6 +32,7 @@ def hunter(fq_file):
     simple parallelisation with xargs, returns output directory
     '''
     import re
+    import warnings
     from virmet.common import prinseq_exe
 
     try:
@@ -87,7 +88,7 @@ def hunter(fq_file):
     logging.debug('filtering with prinseq')
     cml = '-w 0 %d | xargs -P %d -I {} %s \
             -fastq splitted{}.fastq -lc_method entropy -lc_threshold 70 \
-            -log prinseq{}.log -min_qual_mean 20 -ns_max_p 25 \
+            -log prinseq{}.log -min_qual_mean 20 \
             -out_good ./good{} -out_bad ./bad{} > ./prinseq.err 2>&1' % (n_splitted - 1, n_splitted, prinseq_exe)
     run_child('seq', cml)
 
@@ -107,14 +108,23 @@ def hunter(fq_file):
 
     # parsing number of reads deleted because of low entropy
     low_ent = 0
+    min_qual = 0
     for l in open('prinseq.log'):
-        match = re.search('lc_method\:\s(\d*)$', l)
-        if match:
-            low_ent += int(match.group(1))
+        match_lc = re.search('lc_method\:\s(\d*)$', l)
+        match_mq = re.search('min_qual_mean\:\s(\d*)$', l)
+        if match_lc:
+            low_ent += int(match_lc.group(1))
+        elif match_mq:
+            min_qual += int(match_mq.group(1))
     oh.write('low_entropy\t%d\n' % low_ent)
+    oh.write('low_quality\t%d\n' % min_qual)
 
     out1 = run_child('wc', '-l good.fastq | cut -f 1 -d \" \"')
     n_reads = int(int(out1) / 4)
+    lost_reads = n_reads + low_ent + min_qual - long_reads
+    if lost_reads > 0:
+        logging.error('%d reads were lost' % lost_reads)
+        warnings.warn('%d reads were lost' % lost_reads, RuntimeWarning)
     oh.write('passing_filter\t%d\n' % n_reads)
 
     os.chdir(os.pardir)
