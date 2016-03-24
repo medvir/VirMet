@@ -49,6 +49,11 @@ populate this, use the subcommand `fetch`, for example as follows
 This might take long. If it's taking too long, you might want to include the
 above commands in a `down.sh` file and run them overnight.
 
+Only the option `--viral` takes an argument: `n` for nucleotide and `p` for
+protein viral database. Currently only nucleotide sequences are used, while the
+protein ones are foreseen as useful in discovery of novel viral sequences
+(in a future version).
+
 
 ### Preparation: indexing databases
 
@@ -99,19 +104,47 @@ The second file is a summary of all reads analyzed for this sample and how many
 were passing a specific step of the pipeline or matching a specific database.
 
     [user@host test_virmet]$ cat virmet_output_exp01/AR-1_S1/stats.tsv
-    raw_reads	6250
-    trimmed_long	5788
-    high_quality	3883
-    matching_humanGRCh38	3463
-    matching_bact1	1
-    matching_bact2	1
-    matching_bact3	1
-    matching_fungi1	1
-    matching_bt_ref	1
-    blasted_reads	420
-    blast_hits	259
-    viral_good_reads	257
-    unknown_reads	163
+    raw_reads       6250
+    trimmed_too_short       462
+    low_entropy     1905
+    low_quality     0
+    passing_filter  3883
+    matching_humanGRCh38    3463
+    matching_bact1  0
+    matching_bact2  0
+    matching_bact3  0
+    matching_fungi1 0
+    matching_bt_ref 0
+    reads_to_blast  420
+    viral_reads     257
+    undetermined_reads      163
+
+
+### Updating the database
+
+More and more sequences are uploaded to NCBI database every month. The figure
+shows the number of viral sequences with _complete genome_ in the title
+that are submitted every month to NCBI.
+
+![Code used to create the figure is [here](https://gist.github.com/ozagordi/c1e1c4158ab4e94e4683)](./viral_genomes.png "NCBI complete viral genomes per month")
+
+VirMet provides a simple way to update the viral database with the subcommand
+`update` as in the example
+
+    virmet update --viral n
+
+Similarly, new bacterial sequences can be added as well as fungal. Bacterial
+and bovine database, since they consist of a single organism, don't need to be
+updated so often.
+
+Don't forget to index the database again once it has been updated.
+
+#### Adding sequences manually
+
+By adding the switch `--picked file_with_ids` users can add sequences by
+writing their ids in a file, one per line.
+
+----
 
 ### Details on the installation
 In essence, on a Ubuntu 14.04 one can run the following commands for a system wide

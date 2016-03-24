@@ -56,6 +56,7 @@ if __name__ == "__main__" and __package__ is None:
     parser_update = subparsers.add_parser('update', help='update viral/bacterial database')
     parser_update.add_argument('--viral', choices='np', help='update viral [n]ucleic/[p]rotein')
     parser_update.add_argument('--bact', help='update bacterial database', action='store_true')
+    parser_update.add_argument('--fungal', help='update fungal database', action='store_true')
     parser_update.add_argument('--picked', help='file with additional sequences, one GI per line', default=None)
     parser_update.set_defaults(func=update_db)
 
