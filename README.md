@@ -124,7 +124,7 @@ were passing a specific step of the pipeline or matching a specific database.
 
 More and more sequences are uploaded to NCBI database every month. The figure
 shows the number of viral sequences with _complete genome_ in the title
-that are submitted every month to NCBI.
+that are submitted every month to NCBI ([code](https://gist.github.com/ozagordi/c1e1c4158ab4e94e4683)).
 
 ![Code used to create the figure is [here](https://gist.github.com/ozagordi/c1e1c4158ab4e94e4683)](./viral_genomes.png "NCBI complete viral genomes per month")
 
