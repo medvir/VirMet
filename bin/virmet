@@ -11,9 +11,9 @@ mod = __import__('virmet')
 sys.modules["virmet"] = mod
 
 # each subcommand takes one of these functions as default
-def fetch_db(args):
-    from virmet import fetch
-    fetch.main(args)
+def covplot(args):
+    from virmet import covplot
+    covplot.main(args)
 
 def wolfpack(args):
     from shutil import move
@@ -25,13 +25,17 @@ def wolfpack(args):
     except FileNotFoundError:
         sys.exit('now in %s, file not found' % os.getcwd())
 
+def index_db(args):
+    from virmet import index
+    index.main(args)
+
 def update_db(args):
     from virmet import update
     update.main(args)
 
-def index_db(args):
-    from virmet import index
-    index.main(args)
+def fetch_db(args):
+    from virmet import fetch
+    fetch.main(args)
 
 
 if __name__ == "__main__" and __package__ is None:
@@ -79,6 +83,12 @@ if __name__ == "__main__" and __package__ is None:
     parser_wolf.add_argument('--run', type=str, help='Miseq run directory')
     parser_wolf.add_argument('--file', type=str, help='single fastq file')
     parser_wolf.set_defaults(func=wolfpack)
+
+    # create the parser for command "covplot"
+    parser_cov = subparsers.add_parser('covplot', help='plot coverage for a specific organism')
+    parser_cov.add_argument('--outdir', type=str, help='path to sample results directory')
+    parser_cov.add_argument('--organism', type=str, help='name of the organism as reported in orgs_list.tsv file')
+    parser_cov.set_defaults(func=covplot)
 
     # exit so that log file is not written
     if len(sys.argv) == 1 or sys.argv[1] == '-h' or sys.argv[1] == '--help':

@@ -2,7 +2,8 @@ VirMet
 ------
 
 [![Build Status](https://travis-ci.org/ozagordi/VirMet.svg?branch=master)](https://travis-ci.org/ozagordi/VirMet)
-(caution: coverage of the test is very low)
+
+[![codecov.io](https://codecov.io/github/ozagordi/VirMet/coverage.svg?branch=master)](https://codecov.io/github/ozagordi/VirMet?branch=master)
 
 A set of tools for viral metagenomics.
 
