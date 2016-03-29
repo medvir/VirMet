@@ -5,12 +5,12 @@ python:
     - "3.4"
 
 before_install:
-#    - sudo apt-get update -qq
-#    - sudo apt-get install -qq -y build-essential ftp golang unzip
-#      bwa tabix seqtk libwww-perl
+    - sudo apt-get update -qq
+    - sudo apt-get install -qq -y build-essential ftp golang unzip
+      bwa tabix seqtk libwww-perl
 
 install:
-#    - ./install-dependencies.sh
+    - ./install-dependencies.sh
     # Install conda
     # We do this conditionally because it saves us some downloading if the
     # version is the same.
@@ -39,4 +39,4 @@ script:
     - coverage run -m unittest
 
 after_success:
-    codecov
+    - codecov
