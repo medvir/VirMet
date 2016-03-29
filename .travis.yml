@@ -11,8 +11,6 @@ before_install:
 
 install:
 #    - ./install-dependencies.sh
-    # codecov for coverage analysis on codecov.io
-    - pip install codecov
     # Install conda
     # We do this conditionally because it saves us some downloading if the
     # version is the same.
@@ -30,13 +28,15 @@ install:
     # install deps from environment.yml and activate
     - conda env create -q python=$TRAVIS_PYTHON_VERSION
     - source activate test-virmet
+    - python -m coverage --version
+    - pip$TRAVIS_PYTHON_VERSION install codecov
 
 after_install:
     - sudo ln -sv /bin/uname /usr/bin/uname
     - export PATH=/usr/local/bin:$PATH
 
 script:
-    - python -m unittest
+    - coverage run -m unittest
 
 after_success:
     codecov
