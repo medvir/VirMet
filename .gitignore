@@ -6,3 +6,5 @@ viral_dates.txt
 .dropbox.attr
 */.dropbox.attr
 *pyc
+.coverage
+coverage.xml

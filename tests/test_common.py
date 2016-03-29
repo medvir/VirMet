@@ -62,3 +62,8 @@ class TestFTPDown(unittest.TestCase):
         ids = get_gids(self.fasta.name)
         self.assertTrue('1234' in ids)
         self.assertTrue('ABCD' in ids)
+
+
+if __name__ == '__main__':
+    print('xyz')
+    unittest.main()

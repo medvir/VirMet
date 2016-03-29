@@ -1,0 +1,14 @@
+[run]
+
+branch = True
+
+omit =
+    *pandas*
+    *numpy*
+    /usr/local/lib*
+
+include =
+    virmet/*
+
+source =
+    virmet

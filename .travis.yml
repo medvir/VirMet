@@ -11,7 +11,8 @@ before_install:
 
 install:
     - ./install-dependencies.sh
-
+    # codecov for coverage analysis on codecov.io
+    - pip install codecov
     # Install conda
     # We do this conditionally because it saves us some downloading if the
     # version is the same.
@@ -26,13 +27,16 @@ install:
     - conda config --set always_yes yes --set changeps1 no
     # Useful for debugging any issues with conda
     - conda info -a
-    # install deps and activate
-    - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy pandas biopython
-    - source activate test-environment
+    # install deps from environment.yml and activate
+    - conda env create -q python=$TRAVIS_PYTHON_VERSION
+    - source activate test-virmet
 
 after_install:
     - sudo ln -sv /bin/uname /usr/bin/uname
     - export PATH=/usr/local/bin:$PATH
 
 script:
-    - python -m unittest
+    - coverage-3.4 run -m unittest
+
+after_success:
+    codecov

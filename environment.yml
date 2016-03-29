@@ -1,0 +1,5 @@
+name: test-virmet
+dependencies:
+- numpy
+- pandas
+- biopython
