@@ -43,4 +43,4 @@ def main(args):
     run_child('samtools', 'index single_sorted.bam')
     run_child('samtools', 'depth -q 0 -Q 0 single_sorted.bam > depth.txt')
     image_name = organism.replace(' ', '_') + '_coverage.pdf'
-    run_child('Rscript', '%s depth.txt %s' % (covpl_exe, image_name))
+    run_child('Rscript', '%s depth.txt %s %s' % (covpl_exe, acc, image_name))
