@@ -214,7 +214,7 @@ def viral_blast(file_in, n_proc):
            -query splitted_clean_{}.fasta -db %s \
            -out tmp_{}.tsv \
            -outfmt \'6 qseqid sseqid sscinames stitle pident qcovs score length mismatch gapopen qstart qend sstart send staxids\'' \
-        % (n_proc - 1, xargs_thread, os.path.join('/data/virmet_databases', 'viral_nuccore/viral_db'))
+        % (n_proc - 1, xargs_thread, os.path.join(DB_DIR, 'viral_nuccore/viral_db'))
     logging.debug('running blast now')
     run_child('seq', cml)
 
