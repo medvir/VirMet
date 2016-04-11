@@ -9,38 +9,62 @@ import logging
 import subprocess
 import urllib.request
 import pandas as pd
-from virmet.common import run_child, viral_query, bacterial_query, get_gids, \
+from virmet.common import run_child, viral_query, bact_fung_query, get_gids, \
 download_genomes, DB_DIR
 
 
-def bactupdate(picked=None):
-    bact_dir = os.path.join(DB_DIR, 'bacteria')
-    os.chdir(bact_dir)
-    os.rename('bacteria_refseq_info.tsv', 'old_bacteria_refseq_info.tsv')
-    old_urls = bacterial_query(download=False,
-                               info_file='old_bacteria_refseq_info.tsv')
-    logging.info('%d bacterial assemblies present in refseq' % (len(old_urls)))
-    new_urls = bacterial_query(download=True,
-                               info_file='bacteria_refseq_info.tsv')
-    logging.info('%d bacterial assemblies now in refseq' % (len(new_urls)))
+def bact_fung_update(query_type=None, picked=None):
+
+    cont_dir = os.path.join(DB_DIR, query_type)
+    os.chdir(cont_dir)
+    logging.info('updating %s, now in %s' % (query_type, cont_dir))
+    # read old info
+    os.rename('%s_refseq_info.tsv' % query_type,
+              'old_%s_refseq_info.tsv' % query_type)
+    old_urls = bact_fung_query(query_type=query_type, download=False,
+                               info_file='old_%s_refseq_info.tsv' % query_type)
+
+    logging.info('%d assemblies were present in refseq' % (len(old_urls)))
+    # download new info
+    new_urls = bact_fung_query(query_type=query_type, download=True)
+    logging.info('%d assemblies are now in refseq' % (len(new_urls)))
     to_add = set(new_urls) - set(old_urls)
+    to_add = list(to_add)
+
     for t in to_add:
-        logging.info('genome from %s will be added' % t)
-    download_bact_urls(to_add)
+        logging.debug('genome from %s will be added' % t)
+    if query_type == 'bacteria':
+        download_genomes(to_add, prefix='tmp', n_files=3)
+        for i in [1, 2, 3]:
+            run_child('bgzip', '-c fasta/tmp%d.fasta >> fasta/bact%d.fasta.gz' % (i, i))
+            os.remove('fasta/bact%d.fasta.gz' % i)
+    elif query_type == 'fungi':
+        download_genomes(to_add, prefix='tmp', n_files=1)
+        run_child('bgzip', '-c fasta/tmp1.fasta >> fasta/fungi1.fasta.gz')
+        os.remove('fasta/fungi1.fasta.gz')
+
     if picked is None:
         return
 
     present_ids = itertools.chain.from_iterable([get_ids(f) \
-        for f in glob.glob('fasta/bact*gz')])
+        for f in glob.glob('fasta/*.fasta.gz')])
     picked_ids = [l.strip() for l in open(picked)]
     to_add = set(present_ids) - set(picked_ids)
 
     for i, gid in enumerate(to_add):
-        fileout = 'fasta/bact%d.fasta.gz' % ((i % 3) + 1)
-        run_child('efetch',
-                  '-db nuccore -id %s -format fasta | gzip - >> %s' % (gid, fileout))
+        if query_type == 'bacteria':
+            fileout = 'fasta/bact%d.fasta.gz' % ((i % 3) + 1)
+        elif query_type == 'fungi':
+            fileout = 'fasta/fungi%d.fasta.gz' % ((i % 1) + 1)
+        run_child('bgzip', '-c <(efetch -db nuccore -id %s -format fasta) >> %s' % (gid, fileout),
+                  exe='/bin/bash')
     logging.info('added %d sequences from file %s' % (i, picked))
-
+    if query_type == 'bacteria':
+        for i in [1, 2, 3]:
+            run_child('bgzip', '-r fasta/bact%d.fasta.gz')
+    elif query_type == 'fungi':
+        run_child('bgzip', '-r fasta/fungi1.fasta.gz')
+    logging.debug('reindexed')
 
 def virupdate(viral_type, picked=None):
     if viral_type == 'n':
@@ -110,9 +134,12 @@ def virupdate(viral_type, picked=None):
 
 def main(args):
     logging.info('now in update_db')
-    if args.viral and args.bact:
-        logging.error('update either viral or bacterial in a single call')
-        sys.exit('update either viral or bacterial in a single call')
-    virupdate(args.viral, args.picked)
-    if args.bact:
-        bactupdate(args.picked)
+    if args.viral + args.bact + args.fungal > 1:
+        logging.error('update either viral or bacterial or fungal in a single call')
+        sys.exit('update either viral or bacterial or fungal in a single call')
+    if args.viral:
+        virupdate(args.viral, args.picked)
+    elif args.bact:
+        bact_fung_update(query_type='bacteria', picked=args.picked)
+    elif args.fungal:
+        bact_fung_update(query_type='fungi', picked=args.picked)

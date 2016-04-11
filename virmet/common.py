@@ -102,19 +102,33 @@ def viral_query(viral_db):
     logging.info('downloaded viral seqs info in %s' % target_dir)
 
 
-def bacterial_query(download=True, info_file='bacteria_refseq_info.tsv'):
-    ''' download bacterial genomes in refseq as explained in FAQ 12 here
-    http://www.ncbi.nlm.nih.gov/genome/doc/ftpfaq/#asmsumfiles
+def bact_fung_query(query_type=None, download=True, info_file=None):
+    ''' download/read bacterial and fungal genomes in refseq as explained in
+    FAQ 12 here http://www.ncbi.nlm.nih.gov/genome/doc/ftpfaq/#asmsumfiles
+    If info_file is not given, it will be inferred from query_type;
+    if download is true, it will be used to save the downloaded info;
+    if download is false, an already present file will be read.
     '''
+    if query_type not in ['bacteria', 'fungi']:
+        sys.exit()
+    if not info_file:
+        info_file = '%s_refseq_info.tsv' % query_type
     if download:
-        url = 'ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/assembly_summary.txt'
+        url = 'ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/%s/assembly_summary.txt' % query_type
         bh = open(info_file, 'w')
         with urllib.request.urlopen(url) as f:
             print(f.read().decode('utf-8'), file=bh)
         bh.close()
-    bactinfo = pd.read_csv(info_file, sep='\t', header=0)
-    bactinfo.rename(columns={'# assembly_accession': 'assembly_accession'}, inplace=True)
-    gb = bactinfo[(bactinfo.assembly_level == 'Complete Genome') & (bactinfo.version_status == 'latest')]
+    querinfo = pd.read_csv(info_file, sep='\t', header=0)
+    querinfo.rename(columns={'# assembly_accession': 'assembly_accession'}, inplace=True)
+    if query_type == 'bacteria':
+        gb = querinfo[(querinfo.assembly_level == 'Complete Genome') &
+                      (querinfo.version_status == 'latest')]
+    elif query_type == 'fungi':
+        gb = querinfo[(querinfo.refseq_category != 'na') &
+                      (querinfo.version_status == 'latest') &
+                      (querinfo.genome_rep == 'Full') &
+                      (querinfo.release_type == 'Major')]
     gb.set_index('assembly_accession')
     x = gb['ftp_path'].apply(lambda col: col + '/' + col.split('/')[5] + '_genomic.fna.gz')
     gb.loc[:, 'ftp_genome_path'] = pd.Series(x, index=gb.index)
@@ -123,27 +137,48 @@ def bacterial_query(download=True, info_file='bacteria_refseq_info.tsv'):
     return all_urls
 
 
-def fungal_query(download=True, info_file='fungi_refseq_info.tsv'):
-    ''' download fungal genomes in refseq in a similar way to bacterial
-    '''
-    if download:
-        url = 'ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/fungi/assembly_summary.txt'
-        bh = open(info_file, 'w')
-        with urllib.request.urlopen(url) as f:
-            print(f.read().decode('utf-8'), file=bh)
-        bh.close()
-    funginfo = pd.read_csv(info_file, sep='\t', header=0)
-    funginfo.rename(columns={'# assembly_accession': 'assembly_accession'}, inplace=True)
-    gb = funginfo[(funginfo.refseq_category != 'na') &
-                  (funginfo.version_status == 'latest') &
-                  (funginfo.genome_rep == 'Full') &
-                  (funginfo.release_type == 'Major')]
-    gb.set_index('assembly_accession')
-    x = gb['ftp_path'].apply(lambda col: col + '/' + col.split('/')[5] + '_genomic.fna.gz')
-    gb.loc[:, 'ftp_genome_path'] = pd.Series(x, index=gb.index)
-    all_urls = list(gb['ftp_genome_path'])
-    assert len(all_urls) == len(gb)
-    return all_urls
+# def bacterial_query(download=True, info_file='bacteria_refseq_info.tsv'):
+#     ''' download bacterial genomes in refseq as explained in FAQ 12 here
+#     http://www.ncbi.nlm.nih.gov/genome/doc/ftpfaq/#asmsumfiles
+#     '''
+#     if download:
+#         url = 'ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/assembly_summary.txt'
+#         bh = open(info_file, 'w')
+#         with urllib.request.urlopen(url) as f:
+#             print(f.read().decode('utf-8'), file=bh)
+#         bh.close()
+#     bactinfo = pd.read_csv(info_file, sep='\t', header=0)
+#     bactinfo.rename(columns={'# assembly_accession': 'assembly_accession'}, inplace=True)
+#     gb = bactinfo[(bactinfo.assembly_level == 'Complete Genome') & (bactinfo.version_status == 'latest')]
+#     gb.set_index('assembly_accession')
+#     x = gb['ftp_path'].apply(lambda col: col + '/' + col.split('/')[5] + '_genomic.fna.gz')
+#     gb.loc[:, 'ftp_genome_path'] = pd.Series(x, index=gb.index)
+#     all_urls = list(gb['ftp_genome_path'])
+#     assert len(all_urls) == len(gb)
+#     return all_urls
+#
+#
+# def fungal_query(download=True, info_file='fungi_refseq_info.tsv'):
+#     ''' download fungal genomes in refseq in a similar way to bacterial
+#     '''
+#     if download:
+#         url = 'ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/fungi/assembly_summary.txt'
+#         bh = open(info_file, 'w')
+#         with urllib.request.urlopen(url) as f:
+#             print(f.read().decode('utf-8'), file=bh)
+#         bh.close()
+#     funginfo = pd.read_csv(info_file, sep='\t', header=0)
+#     funginfo.rename(columns={'# assembly_accession': 'assembly_accession'}, inplace=True)
+#     gb = funginfo[(funginfo.refseq_category != 'na') &
+#                   (funginfo.version_status == 'latest') &
+#                   (funginfo.genome_rep == 'Full') &
+#                   (funginfo.release_type == 'Major')]
+#     gb.set_index('assembly_accession')
+#     x = gb['ftp_path'].apply(lambda col: col + '/' + col.split('/')[5] + '_genomic.fna.gz')
+#     gb.loc[:, 'ftp_genome_path'] = pd.Series(x, index=gb.index)
+#     all_urls = list(gb['ftp_genome_path'])
+#     assert len(all_urls) == len(gb)
+#     return all_urls
 
 
 def download_genomes(all_urls, prefix, n_files=1):
@@ -176,11 +211,8 @@ def download_genomes(all_urls, prefix, n_files=1):
 
 def multiple_download(dl_pair):
     fasta_out, urls = dl_pair
-    for j, url in enumerate(urls):
+    for url in urls:
         ftp_down(url, fasta_out)
-        if (j + 1) % 500 == 0:
-            logging.debug('file %s, %d genomes downloaded' % (fasta_out, j + 1))
-    logging.debug('file %s, %d genomes downloaded' % (fasta_out, j + 1))
     return
 
 

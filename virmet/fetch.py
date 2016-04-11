@@ -6,8 +6,8 @@ import logging
 import subprocess
 import pandas as pd
 
-from virmet.common import viral_query, bacterial_query, fungal_query, \
-ftp_down, run_child, download_genomes, get_gids, DB_DIR
+from virmet.common import viral_query, bact_fung_query, ftp_down, run_child, \
+download_genomes, get_gids, DB_DIR
 
 
 def main(args):
@@ -64,6 +64,7 @@ def main(args):
 
         # first download summary file with all ftp paths and return urls
         all_urls = bacterial_query()
+        all_urls = bact_fung_query(query_type='bacteria')
         logging.info('%d bacterial genomes were found' % len(all_urls))
         # then download genomic_fna.gz files
         download_genomes(all_urls, prefix='bact', n_files=3)
@@ -92,7 +93,6 @@ def main(args):
         ftp_down(fasta_url, 'GRCh38.fasta')
         run_child('bgzip', 'GRCh38.fasta')
 
-
     elif args.fungal:
         target_dir = os.path.join(DB_DIR, 'fungi')
         try:
@@ -102,7 +102,7 @@ def main(args):
         os.chdir(target_dir)
 
         # first download summary file with all ftp paths and return urls
-        all_urls = fungal_query()
+        all_urls = bact_fung_query(query_type='fungi')
         logging.info('%d fungal genomes were found' % len(all_urls))
         # then download genomic_fna.gz files
         download_genomes(all_urls, prefix='fungi', n_files=1)

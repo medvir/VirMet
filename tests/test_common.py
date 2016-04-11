@@ -10,7 +10,8 @@ os.sys.path.insert(1, virmet_dir)
 mod = __import__('virmet')
 sys.modules["virmet"] = mod
 
-from virmet.common import run_child, ftp_down, get_gids
+from virmet.common import run_child, ftp_down, get_gids, bact_fung_query, \
+multiple_download
 
 def parse_file_line(line):
     ftl = line.strip().split(':')[1][1:]
@@ -62,6 +63,34 @@ class TestFTPDown(unittest.TestCase):
         ids = get_gids(self.fasta.name)
         self.assertTrue('1234' in ids)
         self.assertTrue('ABCD' in ids)
+
+    def test_bact_fung_query(self):
+        all_urls = bact_fung_query(query_type='bacteria', download=True)
+        bac_lines = len(all_urls)
+        self.assertGreater(bac_lines, 100)
+        self.assertTrue(os.path.exists('bacteria_refseq_info.tsv'))
+        os.rename('bacteria_refseq_info.tsv', 'xyz.tsv')
+        urls_again = bact_fung_query(query_type='bacteria', download=False,
+                                     info_file='xyz.tsv')
+        bac_lines_again = len(urls_again)
+        self.assertEqual(bac_lines, bac_lines_again)
+        os.remove('xyz.tsv')
+
+    def test_multi_download(self):
+        tmpf = 'tmp_multi_down.txt'
+        # download same file twice
+        dl_pair = tmpf, [self.remote_2, self.remote_2]
+        multiple_download(dl_pair)
+        self.assertTrue(os.path.exists(tmpf))
+        with open(tmpf) as f:
+            lines = list(f)
+        os.remove(tmpf)
+        m = len(lines)
+        # even number of lines
+        self.assertEqual(m % 2, 0)
+        halfm = int(m / 2)
+        self.assertEqual(lines[0], lines[halfm])
+        self.assertEqual(lines[1], lines[1 + halfm])
 
 
 if __name__ == '__main__':
