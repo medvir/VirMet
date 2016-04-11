@@ -16,7 +16,7 @@ fi
 
 # prinseq
 cd $HOME
-if [ ! -d "$HOME/prinseq/"]; then
+if [ ! -d "$HOME/prinseq/" ]; then
     mkdir prinseq;
     wget http://downloads.sourceforge.net/project/prinseq/standalone/prinseq-lite-0.20.4.tar.gz \
     -O /tmp/prinseq-lite-0.20.4.tar.gz;
@@ -27,7 +27,7 @@ else
 fi
 
 # samtools 1.3
-if [ ! -d "$HOME/samtools-1.3/"]; then
+if [ ! -d "$HOME/samtools-1.3/" ]; then
     mkdir $HOME/samtools-1.3;
     wget https://github.com/samtools/samtools/releases/download/1.3/samtools-1.3.tar.bz2 \
     -O /tmp/samtools-1.3.tar.bz2;
@@ -38,7 +38,7 @@ else
 fi
 
 # NCBI blast+ 2.3.0
-if [ ! -d "$HOME/ncbi-blast-2.3.0+/"]; then
+if [ ! -d "$HOME/ncbi-blast-2.3.0+/" ]; then
     cd $HOME;
     wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/ncbi-blast-2.3.0+-x64-linux.tar.gz;
     tar xzfp ncbi-blast-2.3.0+-x64-linux.tar.gz;

@@ -22,7 +22,7 @@ class TestToolsCallable(unittest.TestCase):
         self.genome_file = os.path.join(tempfile.gettempdir(), 'HIV.fasta')
 
     def test_edirect(self):
-        run_child('efetch', '-db nuccore -id K03455 -format fasta > %s' % self.genome_file)
+        run_child('efetch', '-db nuccore -id K03455 -format fasta > %s' % self.genome_file, exe='/bin/bash')
         self.assertTrue(os.path.isfile(self.genome_file))
         os.remove(self.genome_file)
 
