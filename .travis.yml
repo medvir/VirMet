@@ -49,8 +49,6 @@ before_install:
     - source activate test-virmet
     - python -m coverage --version
     - pip$TRAVIS_PYTHON_VERSION install codecov
-    - ln -sv /bin/uname /usr/bin/uname
-    - export PATH=/usr/local/bin:$PATH
 
 script:
     - coverage run -m unittest
