@@ -52,6 +52,8 @@ before_install:
     - export PATH=$PATH:$HOME/ncbi-blast-2.3.0+/bin
 
 script:
+    - ls edirect
+    - ls ncbi-blast-2.3.0+/bin
     - coverage run -m unittest
 
 after_success:
