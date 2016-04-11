@@ -1,5 +1,4 @@
 #!/bin/bash
-
 set -e
 
 #  NCBI edirect tools
@@ -12,29 +11,37 @@ if [ ! -d "$HOME/edirect/" ]; then
     rm edirect.zip;
     ./edirect/setup.sh;
 else
-    echo 'Using cached directory';
+    echo 'Using cache for edirect';
 fi
-# cd edirect
-# install -p econtact edirutil efilter elink entrez-phrase-search eproxy \
-# espell ftp-cp join-into-groups-of sort-uniq-count-rank xtract xtract.Linux \
-# eaddress edirect.pl efetch einfo enotify epost esearch esummary ftp-ls nquire \
-# reorder-columns setup-deps.pl sort-uniq-count word-at-a-time xtract.pl /usr/local/bin
 
 # prinseq
-cd /tmp
-wget http://downloads.sourceforge.net/project/prinseq/standalone/prinseq-lite-0.20.4.tar.gz \
--O /tmp/prinseq-lite-0.20.4.tar.gz
-tar -xvf /tmp/prinseq-lite-0.20.4.tar.gz
-#install -p /tmp/prinseq-lite-0.20.4/prinseq-lite.pl /usr/local/bin
+cd $HOME
+if [ ! -d "$HOME/prinseq/"]; then
+    mkdir prinseq;
+    wget http://downloads.sourceforge.net/project/prinseq/standalone/prinseq-lite-0.20.4.tar.gz \
+    -O /tmp/prinseq-lite-0.20.4.tar.gz;
+    tar -xvf /tmp/prinseq-lite-0.20.4.tar.gz;
+    cp /tmp/prinseq-lite-0.20.4/prinseq-lite.pl $HOME/prinseq;
+else
+    echo "Using cache for prinseq"
+fi
 
 # samtools 1.3
-wget https://github.com/samtools/samtools/releases/download/1.3/samtools-1.3.tar.bz2 \
--O /tmp/samtools-1.3.tar.bz2
-tar xvfj /tmp/samtools-1.3.tar.bz2
-cd /tmp/samtools-1.3 && make && make prefix=$HOME/samtools-1.3 install
+if [ ! -d "$HOME/samtools-1.3/"]; then
+    mkdir $HOME/samtools-1.3;
+    wget https://github.com/samtools/samtools/releases/download/1.3/samtools-1.3.tar.bz2 \
+    -O /tmp/samtools-1.3.tar.bz2;
+    tar xvfj /tmp/samtools-1.3.tar.bz2;
+    cd /tmp/samtools-1.3 && make && make prefix=$HOME/samtools-1.3 install;
+else
+    echo "Using cache for samtools"
+fi
 
 # NCBI blast+ 2.3.0
-cd /tmp
-wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/ncbi-blast-2.3.0+-x64-linux.tar.gz
-tar xzfp ncbi-blast-2.3.0+-x64-linux.tar.gz
-install -p ./ncbi-blast-2.3.0+/bin/* /usr/local/bin
+if [ ! -d "$HOME/ncbi-blast-2.3.0+/"]; then
+    cd $HOME;
+    wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/ncbi-blast-2.3.0+-x64-linux.tar.gz;
+    tar xzfp ncbi-blast-2.3.0+-x64-linux.tar.gz;
+else
+    echo "Using cache for NCBI blast+"
+fi
