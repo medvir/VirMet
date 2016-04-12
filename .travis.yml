@@ -22,7 +22,7 @@ cache:
   - $HOME/edirect
   - $HOME/prinseq
   - $HOME/ncbi-blast-2.3.0+
-  - $HOME/miniconda
+#  - $HOME/miniconda
 
 before_install:
     - ./install-dependencies.sh
@@ -54,6 +54,7 @@ before_install:
     - export PATH=$PATH:$HOME/ncbi-blast-2.3.0+/bin
 
 script:
+    - ls -R $HOME/miniconda
     - coverage run -m unittest
 
 after_success:
