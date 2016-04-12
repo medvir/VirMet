@@ -46,7 +46,7 @@ before_install:
     # install deps from environment.yml and activate
     - conda env create -q python=$TRAVIS_PYTHON_VERSION
     - source activate test-virmet
-    - python$TRAVIS_PYTHON_VERSION -m coverage --version
+    - python -m coverage --version
     - pip$TRAVIS_PYTHON_VERSION install codecov
 
     - export PATH=$PATH:$HOME/edirect
