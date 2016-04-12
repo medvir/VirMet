@@ -22,7 +22,7 @@ cache:
   - $HOME/edirect
   - $HOME/prinseq
   - $HOME/ncbi-blast-2.3.0+
-  - $HOME/miniconda
+#  - $HOME/miniconda
 
 before_install:
     - ./install-dependencies.sh
@@ -30,12 +30,12 @@ before_install:
     # Install conda only if necessary
     # We do this conditionally because it saves us some downloading if the
     # version is the same.
-    - if [ ! -d "$HOME/miniconda/" ]; then
-        wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
-        bash miniconda.sh -b -p $HOME/miniconda;
-      else
-        echo "Using cached conda";
-      fi
+    #- if [ ! -d "$HOME/miniconda/" ]; then
+    - wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+    - bash miniconda.sh -b -p $HOME/miniconda;
+      #else
+        #echo "Using cached conda";
+      #fi
     - export PATH="$HOME/miniconda/bin:$PATH"
     - hash -r
     - conda config --set always_yes yes --set changeps1 no
