@@ -16,12 +16,12 @@ addons:
     - seqtk
     - libwww-perl
 
-cache:
-  directories:
-  - $HOME/samtools-1.3
-  - $HOME/edirect
-  - $HOME/prinseq
-  - $HOME/ncbi-blast-2.3.0+
+# cache:
+#   directories:
+#   - $HOME/samtools-1.3
+#   - $HOME/edirect
+#   - $HOME/prinseq
+#   - $HOME/ncbi-blast-2.3.0+
 
 before_install:
     - ./install-dependencies.sh
@@ -46,14 +46,14 @@ before_install:
     - python -m coverage --version
     - pip$TRAVIS_PYTHON_VERSION install codecov
 
-    - export PATH=$PATH:$HOME/edirect
+    - export PATH=$PATH:$HOME/edirect/
     - export PATH=$PATH:$HOME/prinseq
     - export PATH=$PATH:$HOME/samtools-1.3
     - export PATH=$PATH:$HOME/ncbi-blast-2.3.0+/bin
 
 script:
-    - ls $HOME/edirect
-    - ls $HOME/ncbi-blast-2.3.0+/bin
+    - ls -R $HOME/edirect
+    - ls -R $HOME/ncbi-blast-2.3.0+/bin
     - coverage run -m unittest
 
 after_success:
