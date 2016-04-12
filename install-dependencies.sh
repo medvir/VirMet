@@ -17,7 +17,9 @@ fi
 # prinseq
 cd /tmp
 if [ ! -e "$HOME/prinseq/prinseq-lite.pl" ]; then
-    mkdir prinseq;
+    if [ ! -d "$HOME/prinseq" ]; then
+        mkdir $HOME/prinseq
+    fi
     wget http://downloads.sourceforge.net/project/prinseq/standalone/prinseq-lite-0.20.4.tar.gz \
     -O /tmp/prinseq-lite-0.20.4.tar.gz;
     tar -xvf /tmp/prinseq-lite-0.20.4.tar.gz;
@@ -29,7 +31,6 @@ fi
 # samtools 1.3
 if [ ! -e "$HOME/samtools-1.3/samtools" ]; then
     cd /tmp
-    mkdir $HOME/samtools-1.3;
     wget https://github.com/samtools/samtools/releases/download/1.3/samtools-1.3.tar.bz2 \
     -O /tmp/samtools-1.3.tar.bz2;
     tar xvfj /tmp/samtools-1.3.tar.bz2;
