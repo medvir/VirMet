@@ -30,12 +30,13 @@ before_install:
     # Install conda only if necessary
     # We do this conditionally because it saves us some downloading if the
     # version is the same.
-    - export PATH="$HOME/miniconda/bin:$PATH"
-    - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
-        command -v conda >/dev/null || { wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh; bash miniconda.sh -b -p $HOME/miniconda; }
+    - if [ ! -d "$HOME/miniconda/" ]; then
+        wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+        bash miniconda.sh -b -p $HOME/miniconda;
       else
-        command -v conda >/dev/null || { wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh; bash miniconda.sh -b -p $HOME/miniconda; }
+        echo "Using cached conda";
       fi
+    - export PATH="$HOME/miniconda/bin:$PATH"
     - hash -r
     - conda config --set always_yes yes --set changeps1 no
     - conda update conda
@@ -53,8 +54,6 @@ before_install:
     - export PATH=$PATH:$HOME/ncbi-blast-2.3.0+/bin
 
 script:
-    - ls -R $HOME/edirect
-    - ls -R $HOME/ncbi-blast-2.3.0+/bin
     - coverage run -m unittest
 
 after_success:
