@@ -3,7 +3,7 @@ set -e
 
 #  NCBI edirect tools
 cd $HOME
-if [ ! -d "$HOME/edirect/" ]; then
+if [ ! -e "$HOME/edirect/efetch" ]; then
     perl -MNet::FTP -e \
       '$ftp = new Net::FTP("ftp.ncbi.nlm.nih.gov", Passive => 1); $ftp->login;
        $ftp->binary; $ftp->get("/entrez/entrezdirect/edirect.zip");';
@@ -16,7 +16,7 @@ fi
 
 # prinseq
 cd /tmp
-if [ ! -d "$HOME/prinseq/" ]; then
+if [ ! -e "$HOME/prinseq/prinseq-lite.pl" ]; then
     mkdir prinseq;
     wget http://downloads.sourceforge.net/project/prinseq/standalone/prinseq-lite-0.20.4.tar.gz \
     -O /tmp/prinseq-lite-0.20.4.tar.gz;
@@ -27,7 +27,7 @@ else
 fi
 
 # samtools 1.3
-if [ ! -d "$HOME/samtools-1.3/" ]; then
+if [ ! -e "$HOME/samtools-1.3/samtools" ]; then
     cd /tmp
     mkdir $HOME/samtools-1.3;
     wget https://github.com/samtools/samtools/releases/download/1.3/samtools-1.3.tar.bz2 \
@@ -39,7 +39,7 @@ else
 fi
 
 # NCBI blast+ 2.3.0
-if [ ! -d "$HOME/ncbi-blast-2.3.0+/" ]; then
+if [ ! -d "$HOME/ncbi-blast-2.3.0+/bin" ]; then
     cd $HOME;
     wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/ncbi-blast-2.3.0+-x64-linux.tar.gz;
     tar xzfp ncbi-blast-2.3.0+-x64-linux.tar.gz;
