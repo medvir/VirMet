@@ -1,9 +1,10 @@
 ### Installation
+
 VirMet relies on a number of third-party tools used to access databases, trim,
 convert, filter and map reads. One can refer to the files
 [`.travis.yml`](../.travis.yml)
-and [`install-dependencies.sh`](../install-dependencies.sh) for details or
-further down in this README.
+and [`install-dependencies.sh`](../install-dependencies.sh) for details.
+
 The dependencies are:
 
 - bwa
@@ -17,8 +18,7 @@ The dependencies are:
 - R (for `covplot` only)
 
 
-
-### Details on the installation
+### Commands for Ubuntu
 On a Ubuntu 14.04 the following commands should provide a system wide
 installation, although on Travis we use a slightly different strategy.
 

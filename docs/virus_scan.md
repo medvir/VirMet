@@ -1,4 +1,4 @@
-### Running a virus scan
+### `wolfpack`: running a virus scan
 
 This can be run on a single file or on a directory. It will try to guess from
 the naming scheme if it is a Miseq output directory (_i.e._ with

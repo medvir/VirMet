@@ -1,4 +1,4 @@
-### Updating the database
+### `update`: refreshing the databases
 
 More and more sequences are uploaded to NCBI database every month. The figure
 shows the number of viral sequences with _complete genome_ in the title

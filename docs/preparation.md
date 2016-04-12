@@ -1,4 +1,4 @@
-## Preparation
+## `fetch` and `index`: preparing for a real run
 
 ### Fetching databases
 

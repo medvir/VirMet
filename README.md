@@ -5,9 +5,11 @@ VirMet
 
 [![codecov.io](https://codecov.io/github/ozagordi/VirMet/coverage.svg?branch=master)](https://codecov.io/github/ozagordi/VirMet?branch=master)
 
+Full documentation on [Read the Docs](http://virmet.rtfd.org/en/latest/).
+
 A set of tools for viral metagenomics.
 
-virmet is now called with a command subcommand
+virmet is called with a command subcommand
 syntax: `virmet fetch --viral n`, for example, downloads the bacterial
 database. Other available subcommands so far are
 
@@ -15,6 +17,8 @@ database. Other available subcommands so far are
 - `update`              update viral/bacterial database
 - `index`               index genomes
 - `wolfpack`            analyze a Miseq run
+- `covplot`             plot coverage for a specific organism
+
 
 A short help is obtained with `virmet subcommand -h`.
 
