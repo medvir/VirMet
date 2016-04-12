@@ -15,7 +15,7 @@ cd $HOME
 #fi
 
 # prinseq
-cd $HOME
+cd /tmp
 #if [ ! -d "$HOME/prinseq/" ]; then
     mkdir prinseq;
     wget http://downloads.sourceforge.net/project/prinseq/standalone/prinseq-lite-0.20.4.tar.gz \
