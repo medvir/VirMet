@@ -46,6 +46,7 @@ before_install:
     # install deps from environment.yml and activate
     - conda env create -q python=$TRAVIS_PYTHON_VERSION
     - source activate test-virmet
+    - conda list
     - python -m coverage --version
     - pip$TRAVIS_PYTHON_VERSION install codecov
 
@@ -56,7 +57,7 @@ before_install:
 
 script:
     - ls $HOME/miniconda
-    - coverage3 run -m unittest
+    - coverage run -m unittest
 
 after_success:
     - codecov
