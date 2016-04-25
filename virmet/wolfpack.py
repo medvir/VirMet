@@ -147,7 +147,7 @@ def victor(input_reads, contaminant):
     cont_name = os.path.split(contaminant)[1]
     sam_name = '%s_%s.sam' % (rf_head, cont_name)
     err_name = '%s_%s.err' % (rf_head, cont_name)
-    cml = 'mem -t %d -R \'@RG\tID:foo\tSM:bar\tLB:library1\' -T 75 %s %s 2> \
+    cml = 'mem -t %d -R \'@RG\tID:foo\tSM:bar\tLB:library1\' -T 75 -M %s %s 2> \
     %s | samtools view -h -F 4 - > %s' % (n_proc, contaminant, input_reads, err_name, sam_name)
     run_child('bwa', cml)
     logging.debug('running bwa %s %s on %d cores' % (cont_name, rf_head, n_proc))
@@ -312,6 +312,7 @@ def cleaning_up():
     os.remove('good.fastq')
     os.remove('bad.fastq')
     os.remove('hq_decont_reads.fasta')
+    run_child('rm', 'good_*fastq')
     run_child('gzip', '-f unique.tsv')
 
 

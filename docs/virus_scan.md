@@ -55,3 +55,43 @@ were passing a specific step of the pipeline or matching a specific database.
 
 
 #### Additional files
+At the end of a run a directory for each sample (fastq file analyzed) is
+created containing the following files:
+
+    good_humanGRCh38_bact1_bact2_bact3_fungi1_bt_ref.cram
+    good_humanGRCh38_bact1_bact2_bact3_fungi1_bt_ref.err
+    ...
+    good_humanGRCh38_bact1.cram
+    good_humanGRCh38_bact1.err
+    good_humanGRCh38.cram
+    good_humanGRCh38.err
+
+    orgs_list.tsv
+    prinseq.err
+    prinseq.log
+    stats.tsv
+    undetermined_reads.fastq.gz
+    unique.tsv.gz
+    viral_reads.fastq.gz
+
+Files `orgs_list.tsv` and `stats.tsv` report the main output of the tool as
+reported above, while `unique.tsv.gz` reports blast hits to viral database.
+
+As the names say, `viral_reads.fastq.gz` and `undetermined_reads.fastq.gz`
+contain, respectively, reads identified as of viral origin and reads not
+matching any of the considered genomes.
+
+`prinseq.err` and `prinseq.log` are, respectively, the standard error and log
+file of prinseq, used to filter reads. By inspecting this log file, VirMet
+determines how many reads were discarded because of low entropy or low quality.
+
+In the _decontamination_ step, reads are aligned against human genome first,
+those matching are discarded while those not matching are aligned against
+the first set of bacterial genomes, and so on.
+File `good_humanGRCh38.cram` is the alignment of high quality reads (good) to
+human genome, saved in CRAM format. File `good_humanGRCh38_bact1.cram` contains
+the alignment to bacterial genomes in set bact1 of high quality reads (good) minus
+those that were identified as matching human genome, and so on. File ending in
+`err` contain the standard error of the conversion bam -> cram.
+
+A typical cram workflow, also used in VirMet, can be found [here](http://www.htslib.org/workflow/#mapping_to_cram).
