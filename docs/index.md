@@ -5,7 +5,7 @@ experiments: unspecific massively parallel sequencing with the aim of
 discovering and characterizing the virus fraction of biological samples.
 
 virmet is now called with a command subcommand
-syntax: `virmet fetch --viral n`, for example, downloads the bacterial
+syntax: `virmet fetch --viral n`, for example, downloads the viral nucleotide
 database. Other available subcommands so far are
 
 - `fetch`               download genomes

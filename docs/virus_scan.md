@@ -19,7 +19,7 @@ count of reads is in files `orgs_list.csv` in the output directory
 
 we could run
 
-    virmet wolfpack --dir exp_01
+    virmet wolfpack --run exp_01
 
 and, after some time, find the results in `virmet_output_exp01`. Many files are
 present, the most important ones being `orgs_list.csv` and `stats.tsv`. The

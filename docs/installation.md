@@ -2,8 +2,10 @@
 
 VirMet relies on a number of third-party tools used to access databases, trim,
 convert, filter and map reads. One can refer to the files
-[`.travis.yml`](../.travis.yml)
-and [`install-dependencies.sh`](../install-dependencies.sh) for details.
+[`.travis.yml`](https://github.com/ozagordi/VirMet/blob/master/.travis.yml)
+and
+[`install-dependencies.sh`](https://github.com/ozagordi/VirMet/blob/master/install-dependencies.sh)
+for details.
 
 The dependencies are:
 

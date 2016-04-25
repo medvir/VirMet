@@ -306,8 +306,13 @@ def cleaning_up():
     for r in results:
         logging.debug(r)
 
+    # removing and zipping
     for samfile in glob.glob('*.sam'):
         os.remove(samfile)
+    os.remove('good.fastq')
+    os.remove('bad.fastq')
+    os.remove('hq_decont_reads.fasta')
+    run_child('gzip', '-f unique.tsv')
 
 
 def main(args):
