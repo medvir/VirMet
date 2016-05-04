@@ -28,9 +28,9 @@ class TestFTPDown(unittest.TestCase):
         self.tmpdir = tempfile.gettempdir()
         self.remote_1 = 'ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_24/gencode.v24.primary_assembly.annotation.gtf.gz'
         self.remote_2 = 'ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_24/_README.TXT'
-        self.fasta = open(os.path.join(self.tmpdir, 'tmp.fasta'), 'w')
-        self.fasta.write(">gi|1234|xyz\nAGCTAGC\n>gi|ABCD\nATCG\n")
-        self.fasta.close()
+        # self.fasta = open(os.path.join(self.tmpdir, 'tmp.fasta'), 'w')
+        # self.fasta.write(">gi|1234|xyz\nAGCTAGC\n>gi|ABCD\nATCG\n")
+        # self.fasta.close()
 
     # def test_nodecompress(self):
     #     out_file = os.path.join(tempfile.gettempdir(), 'gtf.txt.gz')
@@ -58,6 +58,15 @@ class TestFTPDown(unittest.TestCase):
     #         n_lines_2 = sum(1 for _ in f)
     #     self.assertEqual(n_lines_2, 2 * n_lines_1)
     #     os.remove(out_file)
+
+class TestMisc(unittest.TestCase):
+
+    def setUp(self):
+        self.tmpdir = tempfile.gettempdir()
+        self.fasta = open(os.path.join(self.tmpdir, 'tmp.fasta'), 'w')
+        self.fasta.write(">gi|1234|xyz\nAGCTAGC\n>gi|ABCD\nATCG\n")
+        self.fasta.close()
+        self.remote_2 = 'ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_24/_README.TXT'
 
     def test_gids(self):
         ids = get_gids(self.fasta.name)

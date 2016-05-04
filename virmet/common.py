@@ -131,7 +131,7 @@ def bact_fung_query(query_type=None, download=True, info_file=None):
                       (querinfo.release_type == 'Major')]
     gb.set_index('assembly_accession')
     x = gb['ftp_path'].apply(lambda col: col + '/' + col.split('/')[5] + '_genomic.fna.gz')
-    gb.loc[:, 'ftp_genome_path'] = pd.Series(x, index=gb.index)
+    gb = gb.assign(ftp_genome_path=x)
     all_urls = list(gb['ftp_genome_path'])
     assert len(all_urls) == len(gb)
     return all_urls
