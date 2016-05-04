@@ -16,7 +16,7 @@ def covplot(args):
     covplot.main(args)
 
 def wolfpack(args):
-    from shutil import move
+    from shutil import move, Error
     from virmet import wolfpack
     od = wolfpack.main(args)
     try:
@@ -24,6 +24,8 @@ def wolfpack(args):
         sys.exit('logging file is in %s' % om)
     except FileNotFoundError:
         sys.exit('now in %s, file not found' % os.getcwd())
+    except Error:
+        sys.exit('logging file not moved after hot run')
 
 def index_db(args):
     from virmet import index

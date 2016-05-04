@@ -52,6 +52,12 @@ def hunter(fq_file):
     else:
         s_dir = os.getcwd()
 
+    # skip if this is a hot run
+    if os.path.exists('prinseq.err') and os.path.exists('prinseq.log'):
+        logging.info('hunter was already run in %s, skipping' % s_dir)
+        os.chdir(os.pardir)
+        return s_dir
+
     # first occurrence of stats.tsv
     oh = open('stats.tsv', 'w+')
     # count raw reads
@@ -142,11 +148,18 @@ def victor(input_reads, contaminant):
     except NotImplementedError:
         n_proc = 2
 
-    # alignment with bwa
     rf_head = input_reads.split('.')[0]
     cont_name = os.path.split(contaminant)[1]
     sam_name = '%s_%s.sam' % (rf_head, cont_name)
     err_name = '%s_%s.err' % (rf_head, cont_name)
+    clean_name = os.path.splitext(sam_name)[0] + '.fastq'
+
+    # skipping if hot run
+    if os.path.exists(err_name):
+        logging.info('decontamination already performed, skipping')
+        return clean_name
+
+    # alignment with bwa
     cml = 'mem -t %d -R \'@RG\tID:foo\tSM:bar\tLB:library1\' -T 75 -M %s %s 2> \
     %s | samtools view -h -F 4 - > %s' % (n_proc, contaminant, input_reads, err_name, sam_name)
     run_child('bwa', cml)
@@ -163,7 +176,6 @@ def victor(input_reads, contaminant):
     oh = open('stats.tsv', 'a')
     oh.write('matching_%s\t%d\n' % (cont_name, len(mapped_reads)))
     oh.close()
-    clean_name = os.path.splitext(sam_name)[0] + '.fastq'
 
     output_handle = open(clean_name, 'w')
     logging.debug('Cleaning reads in %s with alignments in %s' %
@@ -190,6 +202,12 @@ def victor(input_reads, contaminant):
 def viral_blast(file_in, n_proc):
     '''runs blast against viral database, parallelise with xargs
     '''
+
+    # on hot start, blast again all decontaminated reads
+    if os.path.exists('viral_reads.fastq.gz') and os.path.exists('undetermined_reads.fastq.gz'):
+        run_child('zcat', 'viral_reads.fastq.gz undetermined_reads.fastq.gz > %s' % file_in)
+        os.remove('viral_reads.fastq.gz')
+        os.remove('undetermined_reads.fastq.gz')
 
     oh = open('stats.tsv', 'a')
     os.rename(file_in, 'hq_decont_reads.fastq')
@@ -309,10 +327,14 @@ def cleaning_up():
     # removing and zipping
     for samfile in glob.glob('*.sam'):
         os.remove(samfile)
-    os.remove('good.fastq')
-    os.remove('bad.fastq')
-    os.remove('hq_decont_reads.fasta')
-    run_child('rm', 'good_*fastq')
+    for rf in ['good.fastq', 'bad.fastq', 'hq_decont_reads.fasta']:
+        try:
+            os.remove(rf)
+        except FileNotFoundError:
+            pass
+
+    for gf in glob.glob('good_*fastq'):
+        os.remove(gf)
     run_child('gzip', '-f unique.tsv')
 
 
