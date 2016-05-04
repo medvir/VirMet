@@ -14,7 +14,6 @@ addons:
     - unzip
     - bwa
     - tabix
-    - seqtk
     - libwww-perl
 
 cache:
