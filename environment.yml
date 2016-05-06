@@ -1,6 +1,6 @@
 name: test-virmet
 dependencies:
 - numpy
-- pandas
+- pandas>=0.16
 - biopython
 - coverage

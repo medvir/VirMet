@@ -55,9 +55,6 @@ before_install:
     - export PATH=$PATH:$HOME/ncbi-blast-2.3.0+/bin
 
 script:
-    - ls $HOME/miniconda
-    - ls $HOME/edirect
-    - ls $HOME/ncbi-blast-2.3.0+/bin
     - coverage run -m unittest
 
 after_success:
