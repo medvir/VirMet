@@ -15,6 +15,7 @@ addons:
     - bwa
     - tabix
     - libwww-perl
+    - r-base
 
 cache:
   directories:

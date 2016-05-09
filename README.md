@@ -3,7 +3,8 @@ VirMet
 
 [![Build Status](https://travis-ci.org/ozagordi/VirMet.svg?branch=master)](https://travis-ci.org/ozagordi/VirMet)
 
-[![codecov.io](https://codecov.io/github/ozagordi/VirMet/coverage.svg?branch=master)](https://codecov.io/github/ozagordi/VirMet?branch=master)
+[![codecov.io](https://codecov.io/github/ozagordi/VirMet/coverage.svg?branch=master)](https://codecov.io/github/ozagordi/VirMet?branch=master)  
+Watch out: only a few files are counted in coverage statistics.
 
 Full documentation on [Read the Docs](http://virmet.rtfd.org/en/latest/).
 
@@ -24,10 +25,7 @@ A short help is obtained with `virmet subcommand -h`.
 
 ### Installation
 VirMet relies on a number of third-party tools used to access databases, trim,
-convert, filter and map reads. One can refer to the files [`.travis.yml`](./.travis.yml)
-and [`install-dependencies.sh`](./install-dependencies.sh) for details or
-further down in this README.
-The dependencies are:
+convert, filter and map reads. The dependencies are:
 
 - bwa
 - samtools 1.3
@@ -38,11 +36,16 @@ The dependencies are:
 - blast+ 2.3.0
 - python (3.x, it's 2016...) with pandas and Biopython
 
+Once downloaded, it can be installed with the classic `python setup.py install`.
+Alternatively, the user can call directly `bin/virmet` in the package directory,
+for example adding the directory `virmet_package_directory/bin` to the `PATH`
+and calling `virmet` on the command line.
+
 
 ### Preparation: fetching databases
 
 After installation, one needs to populate the database directory. By default
-this will be `\data\virmet_databases` and will occupy about 60 GB. In order to
+this will be `/data/virmet_databases` and will occupy about 60 GB. In order to
 populate this, use the subcommand `fetch`, for example as follows
 
     virmet fetch --viral n  # this downloads viral sequences, nucleotide only

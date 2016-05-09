@@ -1,13 +1,12 @@
-### Installation
+## Installation
+
+The classic `python setup.py install` should work, provided the user has the
+necessary permission.
 
 VirMet relies on a number of third-party tools used to access databases, trim,
-convert, filter and map reads. One can refer to the files
-[`.travis.yml`](https://github.com/ozagordi/VirMet/blob/master/.travis.yml)
-and
-[`install-dependencies.sh`](https://github.com/ozagordi/VirMet/blob/master/install-dependencies.sh)
-for details.
+convert, filter and map reads.
 
-The dependencies are:
+The tools VirMet dependends on are:
 
 - bwa
 - samtools 1.3
@@ -16,18 +15,22 @@ The dependencies are:
 - prinseq-lite
 - edirect command line tools
 - blast+ 2.3.0
+
+Moreover, the following languages are used
+
 - python (3.x, it's 2016...) with pandas and Biopython
 - R (for `covplot` only)
 
 
-### Commands for Ubuntu
+### Commands to install dependencies on Ubuntu
 On a Ubuntu 14.04 the following commands should provide a system wide
-installation, although on Travis we use a slightly different strategy.
+installation of the tools mentioned above plus R, although on Travis a slightly
+different strategy is used.
 
     # system wide configuration available as Ubuntu packages
     sudo apt-get update -qq
     sudo apt-get install -qq -y build-essential ftp golang unzip \
-    bwa tabix seqtk libwww-perl
+    bwa tabix seqtk libwww-perl r-base
 
     #  NCBI edirect tools
     cd /tmp
@@ -75,4 +78,6 @@ any 3.x should work), together with [pandas](http://pandas.pydata.org) and
 [Biopython](http://biopython.org/wiki/Main_Page). Go to the respective
 installation pages and choose your favourite method. For continuous
 integration on Travis we used conda (see [`.travis.yml`](./.travis.yml)).
-Finally, R is needed to run `covplot`.
+Finally, R packages ggplot2 and ggthemes are needed to run `covplot`.
+To install these, type `install.packages(c('ggplot2', 'ggthemes'))` inside the
+R console.

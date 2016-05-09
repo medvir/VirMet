@@ -33,7 +33,8 @@ def hunter(fq_file):
     '''
     import re
     import warnings
-    from virmet.common import prinseq_exe
+    #    from virmet.common import prinseq_exe
+    prinseq_exe = 'prinseq-lite.pl'
 
     try:
         n_proc = min(os.cpu_count(), 16)
@@ -41,7 +42,7 @@ def hunter(fq_file):
         n_proc = 2
 
     logging.debug('hunter will run on %s processors' % n_proc)
-    if '_' in fq_file:
+    if 'L001' in fq_file:
         s_dir = '_'.join(os.path.split(fq_file)[1].split('_')[:2])
         try:
             os.mkdir(s_dir)
@@ -64,16 +65,19 @@ def hunter(fq_file):
     if fq_file.endswith('gz'):
         out1 = run_child('gunzip', '-c %s | wc -l' % fq_file)
     else:
-        out1 = run_child('wc', '-l %s | cut -f 1 -d \" \"' % fq_file)
-    n_reads = int(int(out1) / 4)
+        out1 = run_child('wc', '-l %s' % fq_file)
+    out1 = out1.strip().split()[0]
+    n_reads = int(int(out1.strip()) / 4)
     oh.write('raw_reads\t%d\n' % n_reads)
 
     # trim and discard short reads, count
     logging.debug('trimming with seqtk')
     cml = 'trimfq %s | seqtk seq -L 75 - > intermediate.fastq' % fq_file
     out1 = run_child('seqtk', cml)
-    out1 = run_child('wc', '-l intermediate.fastq | cut -f 1 -d \" \"')
-    long_reads = int(int(out1) / 4)
+    out1 = run_child('wc', '-l intermediate.fastq')
+    out1 = out1.strip().split()[0]
+
+    long_reads = int(int(out1.strip()) / 4)
     short = n_reads - long_reads
     oh.write('trimmed_too_short\t%d\n' % short)
 
@@ -88,51 +92,54 @@ def hunter(fq_file):
     splitted = glob.glob('splitted*')
     n_splitted = len(splitted)
     for i, spf in enumerate(sorted(splitted)):
-        os.rename(spf, 'splitted%0.2d.fastq' % i)  # W.O. max 100 files/cpus
+        os.rename(spf, 'splitted%03d.fastq' % i)  # W.O. max 1000 files/cpus
 
     # filter with prinseq, parallelize with xargs
     logging.debug('filtering with prinseq')
-    cml = '-w 0 %d | xargs -P %d -I {} %s \
+    cml = '-w 000 %03d | xargs -P %d -I {} %s \
             -fastq splitted{}.fastq -lc_method entropy -lc_threshold 70 \
             -log prinseq{}.log -min_qual_mean 20 \
             -out_good ./good{} -out_bad ./bad{} > ./prinseq.err 2>&1' % (n_splitted - 1, n_splitted, prinseq_exe)
     run_child('seq', cml)
 
     logging.debug('cleaning up')
-    if len(glob.glob('good??.fastq')):
-        run_child('cat', 'good??.fastq > good.fastq')
-        run_child('rm', 'good??.fastq')
+    if len(glob.glob('good???.fastq')):
+        run_child('cat', 'good???.fastq > good.fastq')
+        run_child('rm', 'good???.fastq')
 
-    if len(glob.glob('bad??.fastq')):
-        run_child('cat', 'bad??.fastq > bad.fastq')
-        run_child('rm', 'bad??.fastq')
+    if len(glob.glob('bad???.fastq')):
+        run_child('cat', 'bad???.fastq > bad.fastq')
+        run_child('rm', 'bad???.fastq')
 
-    if len(glob.glob('prinseq??.log')):
-        run_child('cat', 'prinseq??.log > prinseq.log')
-        run_child('rm', 'prinseq??.log')
+    if len(glob.glob('prinseq???.log')):
+        run_child('cat', 'prinseq???.log > prinseq.log')
+        run_child('rm', 'prinseq???.log')
+
     run_child('rm', 'splitted*fastq')
 
     # parsing number of reads deleted because of low entropy
     low_ent = 0
     min_qual = 0
-    for l in open('prinseq.log'):
-        match_lc = re.search('lc_method\:\s(\d*)$', l)
-        match_mq = re.search('min_qual_mean\:\s(\d*)$', l)
-        if match_lc:
-            low_ent += int(match_lc.group(1))
-        elif match_mq:
-            min_qual += int(match_mq.group(1))
+    with open('prinseq.log') as f:
+        for l in f:
+            match_lc = re.search('lc_method\:\s(\d*)$', l)
+            match_mq = re.search('min_qual_mean\:\s(\d*)$', l)
+            if match_lc:
+                low_ent += int(match_lc.group(1))
+            elif match_mq:
+                min_qual += int(match_mq.group(1))
     oh.write('low_entropy\t%d\n' % low_ent)
     oh.write('low_quality\t%d\n' % min_qual)
 
-    out1 = run_child('wc', '-l good.fastq | cut -f 1 -d \" \"')
+    out1 = run_child('wc', '-l good.fastq')
+    out1 = out1.strip().split()[0]
     n_reads = int(int(out1) / 4)
     lost_reads = n_reads + low_ent + min_qual - long_reads
     if lost_reads > 0:
         logging.error('%d reads were lost' % lost_reads)
         warnings.warn('%d reads were lost' % lost_reads, RuntimeWarning)
     oh.write('passing_filter\t%d\n' % n_reads)
-
+    oh.close()
     os.chdir(os.pardir)
     return s_dir
 

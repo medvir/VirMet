@@ -8,3 +8,4 @@ viral_dates.txt
 *pyc
 .coverage
 coverage.xml
+old_data/

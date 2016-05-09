@@ -8,7 +8,10 @@ omit =
     /usr/local/lib*
 
 include =
-    virmet/*
+    virmet/covplot.py
+    virmet/common.py
+    virmet/wolfpack.py
+
 
 source =
     virmet
