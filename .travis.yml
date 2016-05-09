@@ -16,7 +16,7 @@ addons:
     - tabix
     - libwww-perl
     - seqtk
-    - r-base
+
 
 cache:
   directories:
