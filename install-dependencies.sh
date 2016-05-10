@@ -2,15 +2,15 @@
 set -e
 
 # seqtk
-cd $HOME
 if [ ! -e "$HOME/seqtk/seqtk" ]; then
     if [ ! -d "$HOME/seqtk" ]; then
         mkdir $HOME/seqtk
     fi
+    cd /tmp
     wget https://github.com/lh3/seqtk/archive/v1.1.tar.gz \
-    -O /tmp/seqtk-1.1.tar.gz;
-    tar xvfz /tmp/seqtk-1.1.tar.gz;
-    cd /tmp/seqtk-1.1 && make && cp /tmp/seqtk-1.1/seqtk $HOME/seqtk;
+    -O seqtk-1.1.tar.gz;
+    tar xvfz seqtk-1.1.tar.gz;
+    cd seqtk-1.1 && make && cp /tmp/seqtk-1.1/seqtk $HOME/seqtk;
 else
    echo "Using cache for seqtk"
 fi
@@ -28,15 +28,15 @@ else
 fi
 
 # prinseq
-cd /tmp
 if [ ! -e "$HOME/prinseq/prinseq-lite.pl" ]; then
     if [ ! -d "$HOME/prinseq" ]; then
         mkdir $HOME/prinseq
     fi
+    cd /tmp
     wget http://downloads.sourceforge.net/project/prinseq/standalone/prinseq-lite-0.20.4.tar.gz \
     -O /tmp/prinseq-lite-0.20.4.tar.gz;
-    tar -xvf /tmp/prinseq-lite-0.20.4.tar.gz;
-    cp /tmp/prinseq-lite-0.20.4/prinseq-lite.pl $HOME/prinseq;
+    tar -xvf prinseq-lite-0.20.4.tar.gz;
+    cp prinseq-lite-0.20.4/prinseq-lite.pl $HOME/prinseq;
 else
     echo "Using cache for prinseq"
 fi
@@ -45,9 +45,9 @@ fi
 if [ ! -e "$HOME/samtools-1.3/samtools" ]; then
     cd /tmp
     wget https://github.com/samtools/samtools/releases/download/1.3/samtools-1.3.tar.bz2 \
-    -O /tmp/samtools-1.3.tar.bz2;
-    tar xvfj /tmp/samtools-1.3.tar.bz2;
-    cd /tmp/samtools-1.3 && make && make prefix=$HOME/samtools-1.3 install;
+    -O samtools-1.3.tar.bz2;
+    tar xvfj samtools-1.3.tar.bz2;
+    cd samtools-1.3 && make && make prefix=$HOME/samtools-1.3 install;
 else
    echo "Using cache for samtools"
 fi
