@@ -3,6 +3,7 @@ set -e
 
 # seqtk
 if [ ! -e "$HOME/seqtk/seqtk" ]; then
+    echo "Compiling and installing seqtk"
     if [ ! -d "$HOME/seqtk" ]; then
         mkdir $HOME/seqtk
     fi
@@ -17,12 +18,16 @@ fi
 
 # NCBI edirect tools
 if [ ! -e "$HOME/edirect/efetch" ]; then
+    echo "Installing edirect"
+    cd $HOME
     perl -MNet::FTP -e \
       '$ftp = new Net::FTP("ftp.ncbi.nlm.nih.gov", Passive => 1); $ftp->login;
        $ftp->binary; $ftp->get("/entrez/entrezdirect/edirect.zip");';
     unzip -u -q edirect.zip;
     rm edirect.zip;
     ./edirect/setup.sh;
+    ./edirect/efetch -version;
+    ls -lrht edirect;
 else
     echo 'Using cache for edirect';
 fi
