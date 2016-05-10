@@ -17,10 +17,12 @@ addons:
 
 cache:
   directories:
-  - $HOME/samtools-1.3
+  - $HOME/seqtk
   - $HOME/edirect
   - $HOME/prinseq
+  - $HOME/samtools-1.3
   - $HOME/ncbi-blast-2.3.0+
+
 
 before_install:
     - ./install-dependencies.sh
@@ -48,6 +50,7 @@ before_install:
     - python -m coverage --version
     - pip$TRAVIS_PYTHON_VERSION install codecov
 
+    - export PATH=$PATH:$HOME/seqtk
     - export PATH=$PATH:$HOME/edirect
     - export PATH=$PATH:$HOME/prinseq
     - export PATH=$PATH:$HOME/samtools-1.3

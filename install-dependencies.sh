@@ -1,8 +1,21 @@
 #!/bin/bash
 set -e
 
-#  NCBI edirect tools
+# seqtk
 cd $HOME
+if [ ! -e "$HOME/seqtk" ]; then
+    if [ ! -d "$HOME/seqtk" ]; then
+        mkdir $HOME/seqtk
+    fi
+    wget https://github.com/lh3/seqtk/archive/v1.1.tar.gz \
+    -O /tmp/seqtk-1.1.tar.gz;
+    tar xvfz /tmp/seqtk-1.1.tar.gz;
+    cd /tmp/seqtk-1.1 && make && cp /tmp/seqtk-1.1/seqtk $HOME/seqtk;
+else
+   echo "Using cache for seqtk"
+fi
+
+# NCBI edirect tools
 if [ ! -e "$HOME/edirect/efetch" ]; then
     perl -MNet::FTP -e \
       '$ftp = new Net::FTP("ftp.ncbi.nlm.nih.gov", Passive => 1); $ftp->login;
