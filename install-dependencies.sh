@@ -47,7 +47,7 @@ else
 fi
 
 # samtools 1.3
-if [ ! -e "$HOME/samtools-1.3/samtools" ]; then
+if [ ! -e "$HOME/samtools-1.3/bin" ]; then
     cd /tmp
     wget https://github.com/samtools/samtools/releases/download/1.3/samtools-1.3.tar.bz2 \
     -O samtools-1.3.tar.bz2;
