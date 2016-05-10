@@ -12,7 +12,6 @@ addons:
     - unzip
     - bwa
     - libwww-perl
-    - seqtk
 
 
 cache:
