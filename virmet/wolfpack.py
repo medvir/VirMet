@@ -96,7 +96,7 @@ def hunter(fq_file):
 
     # filter with prinseq, parallelize with xargs
     logging.debug('filtering with prinseq')
-    cml = '-w 000 %03d | xargs -P %d -I {} %s \
+    cml = '-f %%03g 0 %d | xargs -P %d -I {} %s \
             -fastq splitted{}.fastq -lc_method entropy -lc_threshold 70 \
             -log prinseq{}.log -min_qual_mean 20 \
             -out_good ./good{} -out_bad ./bad{} > ./prinseq.err 2>&1' % (n_splitted - 1, n_splitted, prinseq_exe)
