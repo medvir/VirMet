@@ -11,7 +11,7 @@ if [ ! -e "$HOME/seqtk/seqtk" ]; then
     wget https://github.com/lh3/seqtk/archive/v1.1.tar.gz \
     -O seqtk-1.1.tar.gz;
     tar xvfz seqtk-1.1.tar.gz;
-    cd seqtk-1.1 && make && cp /tmp/seqtk-1.1/seqtk $HOME/seqtk;
+    cd seqtk-1.1 && make && install -v /tmp/seqtk-1.1/seqtk $HOME/seqtk/;
 else
    echo "Using cache for seqtk"
 fi
@@ -27,7 +27,6 @@ if [ ! -e "$HOME/edirect/efetch" ]; then
     rm edirect.zip;
     ./edirect/setup.sh;
     ./edirect/efetch -version;
-    ls -lrht edirect;
 else
     echo 'Using cache for edirect';
 fi
@@ -41,7 +40,7 @@ if [ ! -e "$HOME/prinseq/prinseq-lite.pl" ]; then
     wget http://downloads.sourceforge.net/project/prinseq/standalone/prinseq-lite-0.20.4.tar.gz \
     -O /tmp/prinseq-lite-0.20.4.tar.gz;
     tar -xvf prinseq-lite-0.20.4.tar.gz;
-    cp prinseq-lite-0.20.4/prinseq-lite.pl $HOME/prinseq;
+    install -v prinseq-lite-0.20.4/prinseq-lite.pl $HOME/prinseq;
 else
     echo "Using cache for prinseq"
 fi

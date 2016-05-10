@@ -38,6 +38,8 @@ def hunter(fq_file):
 
     try:
         n_proc = min(os.cpu_count(), 16)
+        if n_proc == 1:
+            n_proc = 2
     except NotImplementedError:
         n_proc = 2
 
