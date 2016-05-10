@@ -100,7 +100,7 @@ def hunter(fq_file):
             -fastq splitted{}.fastq -lc_method entropy -lc_threshold 70 \
             -log prinseq{}.log -min_qual_mean 20 \
             -out_good ./good{} -out_bad ./bad{} > ./prinseq.err 2>&1' % (n_splitted - 1, n_splitted, prinseq_exe)
-    run_child('seq', cml, exe='/bin/bash')
+    run_child('/usr/bin/seq', cml, exe='/bin/bash')
 
     logging.debug('cleaning up')
     if len(glob.glob('good???.fastq')):
