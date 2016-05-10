@@ -9,7 +9,6 @@ addons:
   apt:
     packages:
     - build-essential
-    - ftp
     - unzip
     - bwa
     - libwww-perl
