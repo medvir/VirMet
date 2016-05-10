@@ -25,7 +25,8 @@ cache:
 
 before_install:
     - ./install-dependencies.sh
-
+    - seq --version
+    - seq --help
     # Install conda only if necessary
     # We do this conditionally because it saves us some downloading if the
     # version is the same.
