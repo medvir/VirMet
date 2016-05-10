@@ -10,10 +10,8 @@ addons:
     packages:
     - build-essential
     - ftp
-    - golang
     - unzip
     - bwa
-    - tabix
     - libwww-perl
     - seqtk
 
