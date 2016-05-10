@@ -3,7 +3,7 @@ set -e
 
 # seqtk
 cd $HOME
-if [ ! -e "$HOME/seqtk" ]; then
+if [ ! -e "$HOME/seqtk/seqtk" ]; then
     if [ ! -d "$HOME/seqtk" ]; then
         mkdir $HOME/seqtk
     fi
