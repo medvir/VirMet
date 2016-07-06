@@ -34,6 +34,7 @@ def hunter(fq_file):
     import warnings
     #    from virmet.common import prinseq_exe
     prinseq_exe = 'prinseq-lite.pl'
+    prinseq_exe = 'prinseq'
 
     try:
         n_proc = min(os.cpu_count(), 16)
@@ -64,9 +65,9 @@ def hunter(fq_file):
     oh = open('stats.tsv', 'w+')
     # count raw reads
     if fq_file.endswith('gz'):
-        out1 = run_child('gunzip', '-c %s | wc -l' % fq_file)
+        out1 = run_child('gunzip -c %s | wc -l' % fq_file)
     else:
-        out1 = run_child('wc', '-l %s' % fq_file)
+        out1 = run_child('wc -l %s' % fq_file)
     out1 = out1.strip().split()[0]
     n_reads = int(int(out1.strip()) / 4)
     oh.write('raw_reads\t%d\n' % n_reads)
@@ -74,8 +75,8 @@ def hunter(fq_file):
     # trim and discard short reads, count
     logging.debug('trimming with seqtk')
     cml = 'trimfq %s | seqtk seq -L 75 - > intermediate.fastq' % fq_file
-    out1 = run_child('seqtk', cml)
-    out1 = run_child('wc', '-l intermediate.fastq')
+    out1 = run_child('seqtk ' + cml)
+    out1 = run_child('wc -l intermediate.fastq')
     out1 = out1.strip().split()[0]
 
     long_reads = int(int(out1.strip()) / 4)
@@ -88,7 +89,7 @@ def hunter(fq_file):
     max_reads_per_file = int(n_reads / n_proc) + 1
     max_l = max_reads_per_file * 4
     # split and rename
-    run_child('split', '-l %d intermediate.fastq splitted' % max_l)
+    run_child('split -l %d intermediate.fastq splitted' % max_l)
     os.remove('intermediate.fastq')
     splitted = glob.glob('splitted*')
     n_splitted = len(splitted)
@@ -101,22 +102,22 @@ def hunter(fq_file):
             -fastq splitted{}.fastq -lc_method entropy -lc_threshold 70 \
             -log prinseq{}.log -min_qual_mean 20 \
             -out_good ./good{} -out_bad ./bad{} > ./prinseq.err 2>&1' % (n_splitted - 1, n_splitted, prinseq_exe)
-    run_child('/usr/bin/seq', cml, exe='/bin/bash')
+    run_child('/usr/bin/seq ' + cml, exe='/bin/bash')
 
     logging.debug('cleaning up')
     if len(glob.glob('good???.fastq')):
-        run_child('cat', 'good???.fastq > good.fastq')
-        run_child('rm', 'good???.fastq')
+        run_child('cat good???.fastq > good.fastq')
+        run_child('rm good???.fastq')
 
     if len(glob.glob('bad???.fastq')):
-        run_child('cat', 'bad???.fastq > bad.fastq')
-        run_child('rm', 'bad???.fastq')
+        run_child('cat bad???.fastq > bad.fastq')
+        run_child('rm bad???.fastq')
 
     if len(glob.glob('prinseq???.log')):
-        run_child('cat', 'prinseq???.log > prinseq.log')
-        run_child('rm', 'prinseq???.log')
+        run_child('cat prinseq???.log > prinseq.log')
+        run_child('rm prinseq???.log')
 
-    run_child('rm', 'splitted*fastq')
+    run_child('rm splitted*fastq')
 
     # parsing number of reads deleted because of low entropy
     low_ent = 0
@@ -132,7 +133,7 @@ def hunter(fq_file):
     oh.write('low_entropy\t%d\n' % low_ent)
     oh.write('low_quality\t%d\n' % min_qual)
 
-    out1 = run_child('wc', '-l good.fastq')
+    out1 = run_child('wc -l good.fastq')
     out1 = out1.strip().split()[0]
     n_reads = int(int(out1) / 4)
     lost_reads = n_reads + low_ent + min_qual - long_reads
@@ -170,12 +171,12 @@ def victor(input_reads, contaminant):
     # alignment with bwa
     cml = 'mem -t %d -R \'@RG\tID:foo\tSM:bar\tLB:library1\' -T 75 -M %s %s 2> \
     %s | samtools view -h -F 4 - > %s' % (n_proc, contaminant, input_reads, err_name, sam_name)
-    run_child('bwa', cml)
+    run_child('bwa ' + cml)
     logging.debug('running bwa %s %s on %d cores' % (cont_name, rf_head, n_proc))
 
     # reading sam file to remove reads with hits
     # test if an object is in set is way faster than in list
-    mapped_reads = set(run_child('grep', '-v \"^@\" %s | cut -f 1' % sam_name).strip().split('\n'))
+    mapped_reads = set(run_child('grep -v \"^@\" %s | cut -f 1' % sam_name).strip().split('\n'))
     try:  # if no matches, empty string is present
         mapped_reads.remove('')
     except KeyError:
@@ -213,15 +214,15 @@ def viral_blast(file_in, n_proc):
 
     # on hot start, blast again all decontaminated reads
     if os.path.exists('viral_reads.fastq.gz') and os.path.exists('undetermined_reads.fastq.gz'):
-        run_child('zcat', 'viral_reads.fastq.gz undetermined_reads.fastq.gz > %s' % file_in)
+        run_child('zcat viral_reads.fastq.gz undetermined_reads.fastq.gz > %s' % file_in)
         os.remove('viral_reads.fastq.gz')
         os.remove('undetermined_reads.fastq.gz')
 
     oh = open('stats.tsv', 'a')
     os.rename(file_in, 'hq_decont_reads.fastq')
     fasta_file = 'hq_decont_reads.fasta'
-    run_child('seqtk', 'seq -A hq_decont_reads.fastq > %s' % fasta_file)
-    tot_seqs = int(run_child('grep', '-c \"^>\" %s' % fasta_file).strip())
+    run_child('seqtk seq -A hq_decont_reads.fastq > %s' % fasta_file)
+    tot_seqs = int(run_child('grep -c \"^>\" %s' % fasta_file).strip())
     oh.write('reads_to_blast\t%d\n' % tot_seqs)
     max_n = (tot_seqs / n_proc) + 1
 
@@ -230,7 +231,7 @@ def viral_blast(file_in, n_proc):
     cml = "-v \"MAX_N=%d\" \'BEGIN {n_seq=0;} /^>/ \
     {if(n_seq %% %d == 0){file=sprintf(\"splitted_clean_%%d.fasta\", n_seq/%d);} \
     print >> file; n_seq++; next;} { print >> file; }' %s" % (max_n, max_n, max_n, fasta_file)
-    run_child('awk', cml)
+    run_child('awk ' + cml)
 
     # blast needs access to taxdb files to retrieve organism name
     os.environ['BLASTDB'] = DB_DIR
@@ -242,7 +243,7 @@ def viral_blast(file_in, n_proc):
            -outfmt \'6 qseqid sseqid sscinames stitle pident qcovs score length mismatch gapopen qstart qend sstart send staxids\'' \
         % (n_proc - 1, xargs_thread, os.path.join(DB_DIR, 'viral_nuccore/viral_db'))
     logging.debug('running blast now')
-    run_child('seq', cml)
+    run_child('seq ' + cml)
 
     logging.debug('parsing best HSP for each query sequence')
     qseqid = ''
@@ -312,8 +313,8 @@ def cleaning_up():
     logging.info('written %d undet reads' % undet_c)
     logging.info('written %d viral reads' % viral_c)
 
-    run_child('gzip', '-f viral_reads.fastq')
-    run_child('gzip', '-f undetermined_reads.fastq')
+    run_child('gzip -f viral_reads.fastq')
+    run_child('gzip -f undetermined_reads.fastq')
     os.remove(all_reads)
 
     cmls = []
@@ -343,7 +344,7 @@ def cleaning_up():
 
     for gf in glob.glob('good_*fastq'):
         os.remove(gf)
-    run_child('gzip', '-f unique.tsv')
+    run_child('gzip -f unique.tsv')
 
 
 def main(args):

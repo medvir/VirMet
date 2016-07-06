@@ -90,11 +90,12 @@ WORKDIR /opt/VirMet
 COPY ./virmet virmet
 COPY ./tests tests
 COPY ./bin bin
-# COPY data ./
+COPY ./data data
 # COPY docs ./
 # COPY scripts ./
 
 RUN ls
+RUN python -m unittest tests/test_wolfpack.py
 #RUN coverage run -m unittest
 
 WORKDIR /home/ubuntu

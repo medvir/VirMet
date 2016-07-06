@@ -5,21 +5,23 @@ import random
 import logging
 import urllib.request
 from urllib.request import urlopen, Request
+import shlex
 import subprocess
 import multiprocessing as mp
 import pandas as pd
 
 DB_DIR = '/data/virmet_databases/'
-#prinseq_exe = '/usr/local/bin/prinseq-lite.pl'
 
-
-def run_child(exe_name, arg_string, exe='/bin/sh'):
+def run_child(cmd, exe='/bin/sh'):
     '''use subrocess.check_output to run an external program with arguments'''
     try:
-        output = subprocess.check_output(exe_name + ' ' + arg_string, universal_newlines=True, shell=True, executable=exe)
+        output = subprocess.check_output(cmd, universal_newlines=True,
+        shell=True)
+#        executable=exe,
+#        stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as ee:
-        logging.error("Execution of %s failed with returncode %d: %s" % (exe_name, ee.returncode, ee.output))
-        logging.error(exe_name + ' ' + arg_string)
+        logging.error("Execution of %s failed with returncode %d: %s" % (cmd_string, ee.returncode, ee.output))
+        logging.error(cmd_string)
         output = None
     return output
 

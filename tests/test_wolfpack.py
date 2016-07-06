@@ -24,7 +24,7 @@ class TestHunter(unittest.TestCase):
         os.chdir(self.tmpdir)
         s_dir = hunter(self.reads)
         os.chdir(s_dir)
-        raw_reads = run_child('zcat', '%s | wc -l' % self.reads)
+        raw_reads = run_child('gunzip -c %s | wc -l' % self.reads)
         raw_reads = int(raw_reads.strip().split()[0]) / 4
         with open('good.fastq') as f:
             good_n = sum(1 for l in f) / 4
@@ -39,5 +39,5 @@ class TestHunter(unittest.TestCase):
 
     def tearDown(self):
         os.chdir(self.tmpdir)
-        for f in ['good.fastq', 'bad.fastq', 'prinseq.log', 'prinseq.err']:
+        for f in ['good.fastq', 'bad.fastq', 'prinseq.log', 'prinseq.err', 'stats.tsv']:
             os.remove(f)
