@@ -4,16 +4,17 @@ manually added list of GIs
 '''
 import os
 import sys
-import time
 import logging
-import subprocess
-import urllib.request
 import pandas as pd
 from virmet.common import run_child, viral_query, bact_fung_query, get_gids, \
 download_genomes, DB_DIR
 
 
 def bact_fung_update(query_type=None, picked=None):
+    '''
+    '''
+    import glob
+    import itertools
 
     cont_dir = os.path.join(DB_DIR, query_type)
     os.chdir(cont_dir)
@@ -46,7 +47,7 @@ def bact_fung_update(query_type=None, picked=None):
     if picked is None:
         return
 
-    present_ids = itertools.chain.from_iterable([get_ids(f) \
+    present_ids = itertools.chain.from_iterable([get_gids(f) \
         for f in glob.glob('fasta/*.fasta.gz')])
     picked_ids = [l.strip() for l in open(picked)]
     to_add = set(present_ids) - set(picked_ids)

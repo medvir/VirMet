@@ -110,7 +110,7 @@ def bact_fung_query(query_type=None, download=True, info_file=None):
     if download is false, an already present file will be read.
     '''
     if query_type not in ['bacteria', 'fungi']:
-        sys.exit()
+        raise SystemExit('Choose bacteria or fungi')
     if not info_file:
         info_file = '%s_refseq_info.tsv' % query_type
     if download:

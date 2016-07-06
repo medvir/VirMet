@@ -2,7 +2,6 @@
 
 '''Runs on all samples of a MiSeq run or on a single fastq file'''
 import os
-import sys
 import glob
 import logging
 import pandas as pd
@@ -187,7 +186,7 @@ def victor(input_reads, contaminant):
     oh.close()
 
     output_handle = open(clean_name, 'w')
-    logging.debug('Cleaning reads in %s with alignments in %s' %
+    logging.debug('Cleaning reads in %s with alignments in %s' % \
                  (input_reads, sam_name))
     logging.debug('Writing to %s' % clean_name)
     if input_reads.endswith('.gz'):

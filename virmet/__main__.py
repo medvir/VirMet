@@ -10,11 +10,11 @@ mod = __import__('virmet')
 sys.modules["virmet"] = mod
 
 # each subcommand takes one of these functions as default
-def covplot(args):
+def covplot_run(args):
     from virmet import covplot
     covplot.main(args)
 
-def wolfpack(args):
+def wolfpack_run(args):
     from shutil import move, Error
     from virmet import wolfpack
     od = wolfpack.main(args)
@@ -60,9 +60,9 @@ def main():
 
     # create the parser for command "update"
     parser_update = subparsers.add_parser('update', help='update viral/bacterial database')
-    parser_update.add_argument('--viral', choices='np', help='update viral [n]ucleic/[p]rotein', default = False)
-    parser_update.add_argument('--bact', help='update bacterial database', action='store_true', default = False)
-    parser_update.add_argument('--fungal', help='update fungal database', action='store_true', default = False)
+    parser_update.add_argument('--viral', choices='np', help='update viral [n]ucleic/[p]rotein', default=False)
+    parser_update.add_argument('--bact', help='update bacterial database', action='store_true', default=False)
+    parser_update.add_argument('--fungal', help='update fungal database', action='store_true', default=False)
     parser_update.add_argument('--picked', help='file with additional sequences, one GI per line', default=None)
     parser_update.set_defaults(func=update_db)
 
@@ -84,13 +84,13 @@ def main():
     parser_wolf = subparsers.add_parser('wolfpack', help='analyze a Miseq run')
     parser_wolf.add_argument('--run', type=str, help='Miseq run directory')
     parser_wolf.add_argument('--file', type=str, help='single fastq file')
-    parser_wolf.set_defaults(func=wolfpack)
+    parser_wolf.set_defaults(func=wolfpack_run)
 
     # create the parser for command "covplot"
     parser_cov = subparsers.add_parser('covplot', help='plot coverage for a specific organism')
     parser_cov.add_argument('--outdir', type=str, help='path to sample results directory')
     parser_cov.add_argument('--organism', type=str, help='name of the organism as reported in orgs_list.tsv file')
-    parser_cov.set_defaults(func=covplot)
+    parser_cov.set_defaults(func=covplot_run)
 
     # exit so that log file is not written
     if len(sys.argv) == 1 or sys.argv[1] == '-h' or sys.argv[1] == '--help':

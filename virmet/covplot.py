@@ -2,7 +2,6 @@
 
 '''Runs on all samples of a MiSeq run or on a single fastq file'''
 import os
-import sys
 import pandas as pd
 from virmet.common import run_child
 
