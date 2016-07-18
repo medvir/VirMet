@@ -5,7 +5,7 @@ import os
 import glob
 import logging
 import pandas as pd
-from virmet.common import run_child, single_process, DB_DIR
+from virmet.common import run_child, DB_DIR #  , single_process
 
 contaminant_db = ['/data/virmet_databases/human/bwa/humanGRCh38',
                   '/data/virmet_databases/bacteria/bwa/bact1',
@@ -169,9 +169,9 @@ def victor(input_reads, contaminant):
         return clean_name
 
     # alignment with bwa
-    cml = 'mem -t %d -R \'@RG\tID:foo\tSM:bar\tLB:library1\' -T 75 -M %s %s 2> \
+    cml = 'bwa mem -t %d -R \'@RG\tID:foo\tSM:bar\tLB:library1\' -T 75 -M %s %s 2> \
     %s | samtools view -h -F 4 - > %s' % (n_proc, contaminant, input_reads, err_name, sam_name)
-    run_child('bwa ' + cml)
+    run_child(cml)
     logging.debug('running bwa %s %s on %d cores' % (cont_name, rf_head, n_proc))
 
     # reading sam file to remove reads with hits
@@ -228,22 +228,22 @@ def viral_blast(file_in, n_proc):
 
     # We want to split in n_proc processors, so each file has at most
     # (tot_seqs / n_proc) + 1 reads
-    cml = "-v \"MAX_N=%d\" \'BEGIN {n_seq=0;} /^>/ \
+    cml = "awk -v \"MAX_N=%d\" \'BEGIN {n_seq=0;} /^>/ \
     {if(n_seq %% %d == 0){file=sprintf(\"splitted_clean_%%d.fasta\", n_seq/%d);} \
     print >> file; n_seq++; next;} { print >> file; }' %s" % (max_n, max_n, max_n, fasta_file)
-    run_child('awk ' + cml)
+    run_child(cml)
 
     # blast needs access to taxdb files to retrieve organism name
     os.environ['BLASTDB'] = DB_DIR
 
     xargs_thread = 0  # means on all available cores, caution
-    cml = '0 %s | xargs -P %d -I {} blastn -task megablast \
+    cml = 'seq 0 %s | xargs -P %d -I {} blastn -task megablast \
            -query splitted_clean_{}.fasta -db %s \
            -out tmp_{}.tsv \
            -outfmt \'6 qseqid sseqid sscinames stitle pident qcovs score length mismatch gapopen qstart qend sstart send staxids\'' \
         % (n_proc - 1, xargs_thread, os.path.join(DB_DIR, 'viral_nuccore/viral_db'))
     logging.debug('running blast now')
-    run_child('seq ' + cml)
+    run_child(cml)
 
     logging.debug('parsing best HSP for each query sequence')
     qseqid = ''
@@ -323,13 +323,13 @@ def cleaning_up():
         cont = stem.split('_')[-1]
         if cont == 'ref':  # hack because _ in bovine file name
             cont = 'bt_ref'
-        cml = 'sort -O bam -l 0 -T /tmp -@ 4 %s | \
+        cml = 'samtools sort -O bam -l 0 -T /tmp -@ 4 %s | \
         samtools view -T %s -C -o %s.cram -@ 4 -' % (samfile, ref_map[cont], stem)
-        cmls.append(('samtools', cml))
+        cmls.append(cml)
 
     # run in parallel
     pool = mp.Pool()
-    results = pool.map(single_process, cmls)
+    results = pool.map(run_child, cmls)
     for r in results:
         logging.debug(r)
 

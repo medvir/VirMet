@@ -50,8 +50,8 @@ RUN perl -MNet::FTP -e \
    $ftp->binary; $ftp->get("/entrez/entrezdirect/edirect.zip");';
 RUN unzip -u -q edirect.zip
 RUN rm edirect.zip
-RUN ./edirect/setup.sh
-RUN ./edirect/efetch -version
+RUN ./edirect/setup.sh \
+    && /bin/bash -c "source $HOME/.bash_profile"
 
 # now the python environment with conda
 
@@ -59,7 +59,7 @@ RUN ./edirect/efetch -version
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 WORKDIR /home/ubuntu
 # maybe move CONDA_ENV_PATH to /opt/miniconda
-ENV CONDA_ENV_PATH /home/ubuntu/miniconda
+ENV CONDA_ENV_PATH /opt/miniconda
 ENV MY_CONDA_PY3ENV "python3.5"
 
 # TODO: remove miniconda.sh
@@ -80,7 +80,7 @@ RUN conda env create -q python=3.5
 # source activate does not work, see
 # http://stackoverflow.com/questions/37945759/condas-source-activate-virtualenv-does-not-work-within-dockerfile
 # so we manually adjust the path
-ENV PATH /home/ubuntu/miniconda/envs/test-virmet/bin:$PATH
+ENV PATH /usr/local/edirect/:/opt/miniconda/envs/test-virmet/bin:$PATH
 # RUN python -m coverage --version
 RUN pip install codecov
 
@@ -94,9 +94,13 @@ COPY ./data data
 # COPY docs ./
 # COPY scripts ./
 
+# without setting the locale test_common fail due to non ascii code in downloaded files
+RUN locale-gen "en_US.UTF-8"
+ENV LC_ALL="en_US.UTF-8"
+
 RUN ls
-RUN python -m unittest tests/test_wolfpack.py
-#RUN coverage run -m unittest
+#RUN python -m unittest
+RUN coverage run -m unittest
 
 WORKDIR /home/ubuntu
 ENTRYPOINT ["/bin/bash"]

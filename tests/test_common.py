@@ -36,7 +36,7 @@ class TestFTPDown(unittest.TestCase):
     def test_nodecompress(self):
         out_file = os.path.join(tempfile.gettempdir(), 'gtf.txt.gz')
         ftp_down(self.remote_1, out_file)
-        ftl = run_child('file', out_file)
+        ftl = run_child('file %s' % out_file)
         os.remove(out_file)
         ft = parse_file_line(ftl)
         self.assertEqual(ft, 'gzipped')
@@ -44,7 +44,7 @@ class TestFTPDown(unittest.TestCase):
     def test_decompress(self):
         out_file = os.path.join(tempfile.gettempdir(), 'gtf.txt')
         ftp_down(self.remote_1, out_file)
-        ftl = run_child('file', out_file)
+        ftl = run_child('file %s' % out_file)
         os.remove(out_file)
         ft = parse_file_line(ftl)
         self.assertEqual(ft, 'ascii')
@@ -58,7 +58,7 @@ class TestFTPDown(unittest.TestCase):
         with open(out_file) as f:
             n_lines_2 = sum(1 for _ in f)
         self.assertEqual(n_lines_2, 2 * n_lines_1)
-        os.remove(out_file)
+        #os.remove(out_file)
 
 class TestMisc(unittest.TestCase):
 

@@ -12,26 +12,26 @@ import pandas as pd
 
 DB_DIR = '/data/virmet_databases/'
 
-def run_child(cmd, exe='/bin/sh'):
+def run_child(cmd, exe='/bin/bash'):
     '''use subrocess.check_output to run an external program with arguments'''
     try:
         output = subprocess.check_output(cmd, universal_newlines=True,
-        shell=True)
+        shell=True,
 #        executable=exe,
-#        stderr=subprocess.STDOUT)
+        stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as ee:
-        logging.error("Execution of %s failed with returncode %d: %s" % (cmd_string, ee.returncode, ee.output))
-        logging.error(cmd_string)
+        logging.error("Execution of %s failed with returncode %d: %s" % (cmd, ee.returncode, ee.output))
+        logging.error(cmd)
         output = None
     return output
 
 
-def single_process(ec_pair):
-    '''single process via run_child, used to parallelize
-    '''
-    exe, cml = ec_pair
-    out = run_child(exe, cml)
-    return out
+# def single_process(ec_pair):
+#     '''single process via run_child, used to parallelize
+#     '''
+#     exe, cml = ec_pair
+#     out = run_child(exe, cml)
+#     return out
 
 
 def ftp_down(remote_url, local_url=None):
@@ -74,7 +74,8 @@ def ftp_down(remote_url, local_url=None):
         else:
             outhandle = open(outname, 'w')
         with urllib.request.urlopen(remote_url, timeout=30) as f:
-            print(f.read().decode('utf-8'), file=outhandle)
+            #print(f.read().decode('utf-8', 'replace').encode('utf-8', 'replace'), file=outhandle)
+            outhandle.write(f.read().decode('utf-8', 'replace'))#.encode('utf-8', 'replace'), file=outhandle)
 
     outhandle.close()
 
@@ -97,10 +98,10 @@ def viral_query(viral_db):
     except FileExistsError:
         pass
     os.chdir(target_dir)
-    run_child('esearch', search_text)
+    run_child('esearch ' + search_text)
     efetch_xtract = '-format docsum < ncbi_search | xtract'
     efetch_xtract += ' -pattern DocumentSummary -element Gi TaxId Caption Slen Organism Title > viral_seqs_info.tsv'
-    run_child('efetch', efetch_xtract)
+    run_child('efetch ' + efetch_xtract)
     logging.info('downloaded viral seqs info in %s' % target_dir)
 
 
@@ -176,9 +177,9 @@ def multiple_download(dl_pair):
 
 def get_gids(fasta_file):
     if fasta_file.endswith('.gz'):
-        cml = '%s | grep \"^>\" | cut -f 2 -d \"|\"' % fasta_file
-        gids = run_child('zcat', cml).strip().split('\n')
+        cml = 'zcat %s | grep \"^>\" | cut -f 2 -d \"|\"' % fasta_file
+        gids = run_child(cml).strip().split('\n')
     else:
-        cml = '\"^>\" %s | cut -f 2 -d \"|\"' % fasta_file
-        gids = run_child('grep', cml).strip().split('\n')
+        cml = 'grep \"^>\" %s | cut -f 2 -d \"|\"' % fasta_file
+        gids = run_child(cml).strip().split('\n')
     return gids
