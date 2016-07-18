@@ -6,7 +6,7 @@ services:
     - docker
 
 before_install:
-- docker build . -t ozagordi/virmet:latest
+- docker build -t ozagordi/virmet:latest .
 - docker run ozagordi/virmet /bin/sh -c "cd /opt/VirMet; coverage run -m unittest;"
 - docker ps -a
 
