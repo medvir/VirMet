@@ -100,7 +100,7 @@ ENV LC_ALL="en_US.UTF-8"
 
 RUN ls
 #RUN python -m unittest
-RUN coverage run -m unittest
+#RUN coverage run -m unittest
 
 WORKDIR /home/ubuntu
 ENTRYPOINT ["/bin/bash"]

@@ -51,6 +51,10 @@ class TestFTPDown(unittest.TestCase):
 
     def test_append(self):
         out_file = os.path.join(tempfile.gettempdir(), 'README.TXT')
+        try:
+            os.remove(out_file)
+        except FileNotFoundError:
+            pass           
         ftp_down(self.remote_2, out_file)
         with open(out_file) as f:
             n_lines_1 = sum(1 for _ in f)
