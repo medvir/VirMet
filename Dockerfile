@@ -75,7 +75,7 @@ RUN hash -r \
 #RUN conda info -a
 
 # install deps from environment.yml and create the env
-COPY environment.yml .
+COPY environment.yml ./
 RUN conda env create -q python=3.5
 # source activate does not work, see
 # http://stackoverflow.com/questions/37945759/condas-source-activate-virtualenv-does-not-work-within-dockerfile
