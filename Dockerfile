@@ -94,7 +94,7 @@ COPY ./data data
 # COPY docs ./
 # COPY scripts ./
 
-# without setting the locale test_common fail due to non ascii code in downloaded files
+# without setting the locale test_common fails due to non ascii code in downloaded files
 RUN locale-gen "en_US.UTF-8"
 ENV LC_ALL="en_US.UTF-8"
 
@@ -103,4 +103,4 @@ RUN ls
 #RUN coverage run -m unittest
 
 WORKDIR /home/ubuntu
-ENTRYPOINT ["/bin/bash"]
+#ENTRYPOINT ["/bin/bash"]
