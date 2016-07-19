@@ -89,7 +89,7 @@ RUN pip install codecov
 RUN locale-gen "en_US.UTF-8"
 ENV LC_ALL="en_US.UTF-8"
 
-WORKDIR /opt/VirMet
+WORKDIR /opt
 RUN git clone --depth=50 --branch=master https://github.com/ozagordi/VirMet.git
 
 WORKDIR /home/ubuntu
