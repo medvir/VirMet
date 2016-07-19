@@ -4,6 +4,7 @@ MAINTAINER osvaldo.zagordi@gmail.com
 RUN apt-get update -y && apt-get install -y \
     build-essential \
     bwa \
+    git \
     libncurses5-dev \
     libwww-perl \
     seqtk \
@@ -84,23 +85,11 @@ ENV PATH /usr/local/edirect/:/opt/miniconda/envs/test-virmet/bin:$PATH
 # RUN python -m coverage --version
 RUN pip install codecov
 
-RUN mkdir /opt/VirMet
-WORKDIR /opt/VirMet
-
-COPY ./virmet virmet
-COPY ./tests tests
-COPY ./bin bin
-COPY ./data data
-# COPY docs ./
-# COPY scripts ./
-
 # without setting the locale test_common fails due to non ascii code in downloaded files
 RUN locale-gen "en_US.UTF-8"
 ENV LC_ALL="en_US.UTF-8"
 
-RUN ls
-#RUN python -m unittest
-#RUN coverage run -m unittest
+WORKDIR /opt/VirMet
+RUN git clone --depth=50 --branch=master https://github.com/ozagordi/VirMet.git
 
 WORKDIR /home/ubuntu
-#ENTRYPOINT ["/bin/bash"]
