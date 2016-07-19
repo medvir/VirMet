@@ -11,8 +11,5 @@ before_install:
 - docker run ozagordi/virmet /bin/bash -c "cd /opt/VirMet; coverage run -m unittest && codecov -t 2be1463f-1047-4365-bada-baf842b26119"
 - docker ps -a
 
-#script:
-#- coverage run -m unittest
-
-#after_success:
-#    - codecov
+script:
+- pass
