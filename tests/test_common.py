@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.4
+#!/usr/bin/env python3
 import os
 import io
 import sys
@@ -54,7 +54,7 @@ class TestFTPDown(unittest.TestCase):
         try:
             os.remove(out_file)
         except FileNotFoundError:
-            pass           
+            pass
         ftp_down(self.remote_2, out_file)
         with open(out_file) as f:
             n_lines_1 = sum(1 for _ in f)

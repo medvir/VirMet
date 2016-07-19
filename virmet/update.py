@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.4
+#!/usr/bin/env python3
 ''' updates viral and bacterial database based on a new query to ncbi and a
 manually added list of GIs
 '''

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.4
+#!/usr/bin/env python3
 
 '''Runs on all samples of a MiSeq run or on a single fastq file'''
 import os
