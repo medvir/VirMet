@@ -15,8 +15,8 @@ from virmet.common import run_child, DB_DIR
 def single_bwa_index(index_params):
     '''run a single bwa indexing job'''
     in_fasta, index_prefix = index_params
-    cml = 'index -p %s %s &> %s_bwa_index.log' % (index_prefix, in_fasta, index_prefix)
-    run_child('bwa', cml, exe='/bin/bash')
+    cml = 'bwa index -p %s %s &> %s_bwa_index.log' % (index_prefix, in_fasta, index_prefix)
+    run_child(cml, exe='/bin/bash')
     return 'index %s done' % index_prefix
 
 
@@ -28,21 +28,21 @@ def main(args):
         target_dir = os.path.join(DB_DIR, 'viral_nuccore')
         os.chdir(target_dir)
         dt = datetime.date.today().isoformat()
-        cml = "-in viral_database.fasta -dbtype nucl -hash_index \
+        cml = "makeblastdb -in viral_database.fasta -dbtype nucl -hash_index \
         -title \"Viral database indexed {}\" \
         -out viral_db \
         -logfile blast.log -parse_seqids -taxid_map viral_gi_taxid.dmp".format(dt)
-        run_child('makeblastdb', cml)
+        run_child(cml)
 
     if args.viral == 'p':
         target_dir = os.path.join(DB_DIR, 'viral_protein')
         os.chdir(target_dir)
         dt = datetime.date.today().isoformat()
-        cml = "-in viral_database.fasta -dbtype prot -hash_index \
+        cml = "makeblastdb -in viral_database.fasta -dbtype prot -hash_index \
         -title \"Viral database indexed {}\" \
         -out viral_db \
         -logfile blast.log -parse_seqids -taxid_map viral_gi_taxid.dmp".format(dt)
-        run_child('makeblastdb', cml)
+        run_child(cml)
 
     index_pairs = []  # holds (fasta, index) tuples to run in parallel
     if args.bact:
@@ -95,4 +95,4 @@ def main(args):
 
     # TODO parallelize this too
     for fasta_file, prefix in index_pairs:
-        run_child('samtools', 'faidx %s' % fasta_file)
+        run_child('samtools faidx %s' % fasta_file)

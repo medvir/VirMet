@@ -20,11 +20,12 @@ def main(args):
         viral_query('n')
         target_dir = os.path.join(DB_DIR, 'viral_nuccore')
         os.chdir(target_dir)
-        cml = '-format fasta < ncbi_search > viral_database.fasta'
-        run_child('efetch', cml)
+        cml = 'efetch -format fasta < ncbi_search > viral_database.fasta'
+        run_child(cml)
         logging.info('saving viral nuccore taxonomy')
         # viral_seqs_info.tsv contains Gi TaxId
-        run_child('cut', '-f 1,2 viral_seqs_info.tsv > viral_gi_taxid.dmp')
+        cml = 'cut -f 1,2 viral_seqs_info.tsv > viral_gi_taxid.dmp'
+        run_child(cml)
         gids_1 = set(get_gids('viral_database.fasta'))
         gids_2 = set([l.split()[0] for l in open('viral_gi_taxid.dmp')])
         assert gids_1 == gids_2
@@ -34,16 +35,16 @@ def main(args):
         viral_query('p')
         target_dir = os.path.join(DB_DIR, 'viral_protein')
         os.chdir(target_dir)
-        cml = ' -format fasta < ncbi_search > viral_database.fasta'
-        run_child('efetch', cml)
+        cml = 'efetch -format fasta < ncbi_search > viral_database.fasta'
+        run_child(cml)
 
         logging.info('saving viral protein taxonomy')
-        cml = '-format docsum < ncbi_search | xtract -pattern DocumentSummary \
+        cml = 'efetch -format docsum < ncbi_search | xtract -pattern DocumentSummary \
         -element Gi TaxId Caption > tmp.dmp'
-        run_child('efetch', cml)
+        run_child(cml)
         logging.info('saving viral nuccore taxonomy')
         # viral_seqs_info.tsv contains Gi TaxId
-        run_child('cut', '-f 1,2 viral_seqs_info.tsv > viral_gi_taxid.dmp')
+        run_child('cut -f 1,2 viral_seqs_info.tsv > viral_gi_taxid.dmp')
         gids_1 = set(get_gids('viral_database.fasta'))
         gids_2 = set([l.split()[0] for l in open('viral_gi_taxid.dmp')])
         assert gids_1 == gids_2
@@ -51,7 +52,7 @@ def main(args):
     if args.viral:
         os.chdir(DB_DIR)
         ftp_down('ftp://ftp.ncbi.nlm.nih.gov/blast/db/taxdb.tar.gz')
-        run_child('tar', 'xvfz taxdb.tar.gz')
+        run_child('tar xvfz taxdb.tar.gz')
         os.remove('taxdb.tar.gz')
 
     if args.bact:
@@ -69,7 +70,7 @@ def main(args):
         # then download genomic_fna.gz files
         download_genomes(all_urls, prefix='bact', n_files=3)
         for j in [1, 2, 3]:
-            run_child('bgzip', 'fasta/bact%d.fasta' % j)
+            run_child('bgzip fasta/bact%d.fasta' % j)
 
     elif args.human:
         target_dir = os.path.join(DB_DIR, 'human')
@@ -91,7 +92,7 @@ def main(args):
         if os.path.exists('GRCh38.fasta'):
             os.remove('GRCh38.fasta')
         ftp_down(fasta_url, 'GRCh38.fasta')
-        run_child('bgzip', 'GRCh38.fasta')
+        run_child('bgzip GRCh38.fasta')
 
     elif args.fungal:
         target_dir = os.path.join(DB_DIR, 'fungi')
@@ -106,7 +107,7 @@ def main(args):
         logging.info('%d fungal genomes were found' % len(all_urls))
         # then download genomic_fna.gz files
         download_genomes(all_urls, prefix='fungi', n_files=1)
-        run_child('bgzip', 'fasta/fungi1.fasta')
+        run_child('bgzip fasta/fungi1.fasta')
 
     elif args.bovine:
         target_dir = os.path.join(DB_DIR, 'bovine')
@@ -130,7 +131,7 @@ def main(args):
             logging.debug('Downloading bovine chromosome %s' % chrom)
             fasta_url = 'ftp://ftp.ncbi.nlm.nih.gov/genomes/Bos_taurus/Assembled_chromosomes/seq/bt_ref_Bos_taurus_UMD_3.1.1_%s.fa.gz' % chrom
             ftp_down(fasta_url, local_file_name)
-        run_child('bgzip', local_file_name)
+        run_child('bgzip %s' % local_file_name)
         logging.info('Downloading gff annotation file')
         gff3_url = 'ftp://ftp.ncbi.nlm.nih.gov/genomes/Bos_taurus/GFF/ref_Bos_taurus_UMD_3.1.1_top_level.gff3.gz'
         ftp_down(gff3_url)

@@ -26,14 +26,6 @@ def run_child(cmd, exe='/bin/bash'):
     return output
 
 
-# def single_process(ec_pair):
-#     '''single process via run_child, used to parallelize
-#     '''
-#     exe, cml = ec_pair
-#     out = run_child(exe, cml)
-#     return out
-
-
 def ftp_down(remote_url, local_url=None):
     '''Handles correctly gzipped and uncompressed files'''
     import gzip
@@ -54,7 +46,7 @@ def ftp_down(remote_url, local_url=None):
             outhandle = open(outname, 'a')
         else:
             outhandle = open(outname, 'w')
-        with urlopen(Request(remote_url, headers={"Accept-Encoding": "gzip"}), timeout=30) as response, \
+        with urlopen(Request(remote_url, headers={"Accept-Encoding": "gzip"}), timeout=60) as response, \
                 gzip.GzipFile(fileobj=response) as f:
             outhandle.write(f.read().decode('utf-8'))
 
@@ -64,7 +56,7 @@ def ftp_down(remote_url, local_url=None):
             outhandle = open(outname, 'ab')
         else:
             outhandle = open(outname, 'wb')
-        with urllib.request.urlopen(remote_url, timeout=30) as f:
+        with urllib.request.urlopen(remote_url, timeout=60) as f:
             outhandle.write(f.read())
 
     # uncompressed to uncompressed
@@ -73,7 +65,7 @@ def ftp_down(remote_url, local_url=None):
             outhandle = open(outname, 'a')
         else:
             outhandle = open(outname, 'w')
-        with urllib.request.urlopen(remote_url, timeout=30) as f:
+        with urllib.request.urlopen(remote_url, timeout=60) as f:
             #print(f.read().decode('utf-8', 'replace').encode('utf-8', 'replace'), file=outhandle)
             outhandle.write(f.read().decode('utf-8', 'replace'))#.encode('utf-8', 'replace'), file=outhandle)
 
@@ -99,9 +91,9 @@ def viral_query(viral_db):
         pass
     os.chdir(target_dir)
     run_child('esearch ' + search_text)
-    efetch_xtract = '-format docsum < ncbi_search | xtract'
+    efetch_xtract = 'efetch -format docsum < ncbi_search | xtract'
     efetch_xtract += ' -pattern DocumentSummary -element Gi TaxId Caption Slen Organism Title > viral_seqs_info.tsv'
-    run_child('efetch ' + efetch_xtract)
+    run_child(efetch_xtract)
     logging.info('downloaded viral seqs info in %s' % target_dir)
 
 

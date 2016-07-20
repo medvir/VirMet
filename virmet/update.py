@@ -37,11 +37,11 @@ def bact_fung_update(query_type=None, picked=None):
     if query_type == 'bacteria':
         download_genomes(to_add, prefix='tmp', n_files=3)
         for i in [1, 2, 3]:
-            run_child('bgzip', '-c fasta/tmp%d.fasta >> fasta/bact%d.fasta.gz' % (i, i))
+            run_child('bgzip -c fasta/tmp%d.fasta >> fasta/bact%d.fasta.gz' % (i, i))
             os.remove('fasta/bact%d.fasta.gz' % i)
     elif query_type == 'fungi':
         download_genomes(to_add, prefix='tmp', n_files=1)
-        run_child('bgzip', '-c fasta/tmp1.fasta >> fasta/fungi1.fasta.gz')
+        run_child('bgzip -c fasta/tmp1.fasta >> fasta/fungi1.fasta.gz')
         os.remove('fasta/fungi1.fasta.gz')
 
     if picked is None:
@@ -57,14 +57,14 @@ def bact_fung_update(query_type=None, picked=None):
             fileout = 'fasta/bact%d.fasta.gz' % ((i % 3) + 1)
         elif query_type == 'fungi':
             fileout = 'fasta/fungi%d.fasta.gz' % ((i % 1) + 1)
-        run_child('bgzip', '-c <(efetch -db nuccore -id %s -format fasta) >> %s' % (gid, fileout),
+        run_child('bgzip -c <(efetch -db nuccore -id %s -format fasta) >> %s' % (gid, fileout),
                   exe='/bin/bash')
     logging.info('added %d sequences from file %s' % (i, picked))
     if query_type == 'bacteria':
         for i in [1, 2, 3]:
-            run_child('bgzip', '-r fasta/bact%d.fasta.gz')
+            run_child('bgzip -r fasta/bact%d.fasta.gz')
     elif query_type == 'fungi':
-        run_child('bgzip', '-r fasta/fungi1.fasta.gz')
+        run_child('bgzip -r fasta/fungi1.fasta.gz')
     logging.debug('reindexed')
 
 def virupdate(viral_type, picked=None):
@@ -105,8 +105,7 @@ def virupdate(viral_type, picked=None):
         sys.exit('too many sequences to add: run `virmet fetch` first')
     else:
         logging.info('adding %d sequences to fasta file' % len(ids_to_add))
-        s_code = run_child('efetch',
-                           '-db %s -id ' % db_type + ','.join(ids_to_add) +
+        s_code = run_child('efetch -db %s -id ' % db_type + ','.join(ids_to_add) +
                            ' -format fasta >> %s' % fasta_db)
 
     # update viral_seqs_info.tsv and taxonomy
@@ -120,13 +119,13 @@ def virupdate(viral_type, picked=None):
         # (change introduced in edirect 3.30, December 2015)
         # slow, but other solutions seem complicated with edirect
         for ita in ids_to_add:
-            cml = '-db %s -id %s' % (db_type, ita)
+            cml = 'efetch -db %s -id %s' % (db_type, ita)
             cml = cml + ' -format docsum | xtract -pattern DocumentSummary \
             -element Gi TaxId Caption Slen Organism Title >> %s' % info_file
-            run_child('efetch', cml)
+            run_child(cml)
 
     logging.info('updating taxonomy')
-    s_code = run_child('cut', '-f 1,2 %s > %s' % (info_file, os.path.join(viral_dir, 'viral_gi_taxid.dmp')))
+    s_code = run_child('cut -f 1,2 %s > %s' % (info_file, os.path.join(viral_dir, 'viral_gi_taxid.dmp')))
 
     # perform tests
     gids_1 = set(get_gids('viral_database.fasta'))

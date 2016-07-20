@@ -42,13 +42,13 @@ def main(args):
 
     os.chdir(outdir)
     # download single genome, index, align viral_reads
-    cml = '-db nuccore -query \"%s[Accession]\" | efetch -format fasta > single.fasta' % acc
-    run_child('esearch', cml)
-    run_child('bwa', 'index single.fasta')
-    run_child('bwa', 'mem single.fasta viral_reads.fastq.gz 2> /dev/null | samtools view -u - | samtools sort -O bam -T tmp -o single_sorted.bam -')
-    run_child('samtools', 'index single_sorted.bam')
-    run_child('samtools', 'depth -q 0 -Q 0 single_sorted.bam > depth.txt')
+    cml = 'esearch -db nuccore -query \"%s[Accession]\" | efetch -format fasta > single.fasta' % acc
+    run_child(cml)
+    run_child('bwa index single.fasta')
+    run_child('bwa mem single.fasta viral_reads.fastq.gz 2> /dev/null | samtools view -u - | samtools sort -O bam -T tmp -o single_sorted.bam -')
+    run_child('samtools index single_sorted.bam')
+    run_child('samtools depth -q 0 -Q 0 single_sorted.bam > depth.txt')
     image_name = organism.replace(' ', '_') + '_coverage.pdf'
-    run_child('Rscript', '%s depth.txt %s %s' % (covpl_exe, acc, image_name))
+    run_child('Rscript %s depth.txt %s %s' % (covpl_exe, acc, image_name))
 
     return best_species
