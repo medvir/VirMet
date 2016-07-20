@@ -93,5 +93,4 @@ WORKDIR /opt
 RUN git clone --depth=50 --branch=master https://github.com/ozagordi/VirMet.git
 
 WORKDIR /home/ubuntu
-RUN ["/bin/bash", "-c", "source activate test-virmet"]
-ENTRYPOINT ["/bin/bash"]
+ENTRYPOINT "/bin/bash"

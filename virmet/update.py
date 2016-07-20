@@ -135,7 +135,7 @@ def virupdate(viral_type, picked=None):
 
 def main(args):
     logging.info('now in update_db')
-    if args.viral + args.bact + args.fungal > 1:
+    if bool(args.viral) + args.bact + args.fungal > 1:
         logging.error('update either viral or bacterial or fungal in a single call')
         sys.exit('update either viral or bacterial or fungal in a single call')
     if args.viral:
