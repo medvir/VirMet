@@ -4,7 +4,7 @@ setup(
     version = "1.0rc1",
     packages = find_packages(),
     scripts = ['bin/virmet'],
-
+    data_files = [('Rscripts', ['Rscripts/covplot.R'])],
     entry_points={
         'console_scripts': [
             'virmet = virmet.__main__:main'

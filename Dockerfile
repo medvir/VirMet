@@ -7,6 +7,7 @@ RUN apt-get update -y && apt-get install -y \
     git \
     libncurses5-dev \
     libwww-perl \
+    r-base \
     seqtk \
     tabix \
     unzip \
