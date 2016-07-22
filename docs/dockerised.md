@@ -12,7 +12,7 @@ disk space (hundreds of gigabytes) to save databases.
 Follow the instructions reported [here](https://www.docker.com/products/docker)
 to install docker on your host machine.
 
-Check your installation with `docker version` and `docker run hello-world`.11
+Check your installation with `docker version` and `docker run hello-world`.
 
 #### Pull docker image for VirMet
 
