@@ -5,7 +5,7 @@ import os
 import pandas as pd
 from virmet.common import run_child
 
-covpl_exe = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'scripts', 'covplot.R')
+covpl_exe = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'Rscripts', 'covplot.R')
 
 
 def best_species(orgs_file, organism):

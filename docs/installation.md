@@ -2,11 +2,13 @@
 
 The classic `python setup.py install` should work, provided the user has the
 necessary permission.
-
 VirMet relies on a number of third-party tools used to access databases, trim,
-convert, filter and map reads.
+convert, filter and map reads: these must be installed by the user.
 
-The tools VirMet dependends on are:
+Alternatively, we provide a [docker](http://docker.com) image with everything
+installed, see instructions for [dockerised VirMet](dockerised.md).
+
+The tools VirMet depends on are:
 
 - bwa
 - samtools 1.3
@@ -21,16 +23,14 @@ Moreover, the following languages are used
 - python (3.x, it's 2016...) with pandas and Biopython
 - R (for `covplot` only)
 
-
 ### Commands to install dependencies on Ubuntu
 On a Ubuntu 14.04 the following commands should provide a system wide
-installation of the tools mentioned above plus R, although on Travis a slightly
-different strategy is used.
+installation of the tools mentioned above.
 
     # system wide configuration available as Ubuntu packages
     sudo apt-get update -qq
     sudo apt-get install -qq -y build-essential ftp golang unzip \
-    bwa tabix seqtk libwww-perl r-base
+    bwa tabix seqtk libwww-perl r-cran-ggplot2
 
     #  NCBI edirect tools
     cd /tmp
@@ -76,8 +76,6 @@ different strategy is used.
 Then, one needs python 3 (VirMet was mainly developed and tested on 3.4, but
 any 3.x should work), together with [pandas](http://pandas.pydata.org) and
 [Biopython](http://biopython.org/wiki/Main_Page). Go to the respective
-installation pages and choose your favourite method. For continuous
-integration on Travis we used conda (see [`.travis.yml`](./.travis.yml)).
-Finally, R packages ggplot2 and ggthemes are needed to run `covplot`.
-To install these, type `install.packages(c('ggplot2', 'ggthemes'))` inside the
-R console.
+installation pages and choose your favourite method.
+[conda](http://conda.pydata.org/docs/) is becoming the standard package
+management system for Python, and we use this in the docker image.
