@@ -1,4 +1,4 @@
-# VirMet: a set of tools for viral metagenomics in markdown
+# VirMet: a set of tools for viral metagenomics
 
 
 VirMet is a software suite designed to help users running viral metagenomics
@@ -19,13 +19,3 @@ database. Other available subcommands so far are
 A short help is obtained with `virmet subcommand -h`.
 
 Further detail following the menu on the left.
-
-.. toctree::
-   :maxdepth: 2
-
-   installation
-   dockerised
-   preparation
-   virus_scan
-   covplot
-   updating
