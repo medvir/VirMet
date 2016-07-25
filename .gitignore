@@ -1,6 +1,7 @@
 taxo_files.zip
 human_chromosome_size.*
 viral_dates.txt
+docs/_build/
 */__pycache__
 */*/__pycache__
 .dropbox.attr

@@ -3,7 +3,7 @@
 ### Fetching databases
 
 After installation, one needs to populate the database directory. By default
-this will be `\data\virmet_databases` and will occupy about 60 GB. In order to
+this will be `/data/virmet_databases` and will occupy about 60 GB. In order to
 populate this, use the subcommand `fetch`, for example as follows
 
     virmet fetch --viral n  # this downloads viral sequences, nucleotide only
