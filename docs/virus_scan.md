@@ -26,7 +26,7 @@ present, the most important ones being `orgs_list.csv` and `stats.tsv`. The
 first lists the viral organisms found with a count of reads that could be
 matched to them.
 
-    [user@host test_virmet]$ cat virmet_output_test_dir_150123/3-1-65_S5/orgs_list.tsv
+    [user@host test_virmet]$ cat virmet_output_exp_01/AR-1_S1/orgs_list.tsv
     organism	reads
     Human adenovirus 7	126
     Human poliovirus 1 strain Sabin	45
