@@ -1,0 +1,10 @@
+site_name: Marshmallow Generator
+
+theme: bootstrap
+
+pages:
+    - 'Installation': 'installation.md'
+    - 'Preparation': 'preparation.md'
+    - 'Updating': 'updating.md'
+    - 'Virus scan': 'virus_scan.md'
+    - 'Coverage plot': 'covplot.md'
