@@ -1,6 +1,6 @@
 site_name: Marshmallow Generator
 
-theme: bootstrap
+# theme: bootstrap
 
 pages:
     - 'Installation': 'installation.md'
