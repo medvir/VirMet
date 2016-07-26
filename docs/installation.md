@@ -1,4 +1,4 @@
-## Installation
+# Installation
 
 The classic `python setup.py install` should work, provided the user has the
 necessary permission.
@@ -23,7 +23,7 @@ Moreover, the following languages are used
 - python (3.x, it's 2016...) with pandas and Biopython
 - R (for `covplot` only)
 
-### Commands to install dependencies on Ubuntu
+## Commands to install dependencies on Ubuntu
 On a Ubuntu 14.04 the following commands should provide a system wide
 installation of the tools mentioned above.
 

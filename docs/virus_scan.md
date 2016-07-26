@@ -1,4 +1,4 @@
-### `wolfpack`: running a virus scan
+# `wolfpack`: running a virus scan
 
 This can be run on a single file or on a directory. It will try to guess from
 the naming scheme if it is a Miseq output directory (_i.e._ with
@@ -54,7 +54,7 @@ were passing a specific step of the pipeline or matching a specific database.
     undetermined_reads      163
 
 
-#### Additional files
+## Additional files
 At the end of a run a directory for each sample (fastq file analyzed) is
 created containing the following files:
 

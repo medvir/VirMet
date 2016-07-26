@@ -1,6 +1,6 @@
-## `fetch` and `index`: preparing for a real run
+# `fetch` and `index`: preparing for a real run
 
-### Fetching databases
+## Fetching databases
 
 After installation, one needs to populate the database directory. By default
 this will be `/data/virmet_databases` and will occupy about 60 GB. In order to
@@ -20,8 +20,7 @@ protein viral database. Currently only nucleotide sequences are used, while the
 protein ones are foreseen as useful in discovery of novel viral sequences
 (in a future version).
 
-
-### Indexing databases
+## Indexing databases
 
 The subcommand `virmet index` can take multiple arguments, so you can run
 

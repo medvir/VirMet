@@ -1,4 +1,4 @@
-### `covplot`: specify the genome to plot coverage
+# `covplot`: specify the genome to plot coverage
 
 After a run of [`wolfpack`](./virus_scan.md) we have a count of how many reads
 in a sample are assigned to a given organism, but we might be interested to

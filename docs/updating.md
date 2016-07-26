@@ -1,4 +1,4 @@
-### `update`: refreshing the databases
+# `update`: refreshing the databases
 
 More and more sequences are uploaded to NCBI database every month. The figure
 shows the number of viral sequences with _complete genome_ in the title
@@ -17,7 +17,7 @@ updated so often.
 
 Don't forget to index the database again once it has been updated.
 
-#### Adding sequences manually
+### Adding sequences manually
 
 By adding the switch `--picked file_with_ids` users can add sequences by
 writing their ids in a file, one per line.
