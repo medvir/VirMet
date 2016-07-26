@@ -7,20 +7,20 @@ OS X. Within any of these hosts, it will run an isolated container inside which
 VirMet is installed together with its dependencies. Make sure you have enough
 disk space (hundreds of gigabytes) to save databases.
 
-### Install docker
+## Install docker
 
 Follow the instructions reported [here](https://www.docker.com/products/docker)
 to install docker on your host machine.
 
 Check your installation with `docker version` and `docker run hello-world`.
 
-### Pull docker image for VirMet
+## Pull docker image for VirMet
 
 Simply type `docker pull ozagordi/virmet`. This will download approximately 1GB
 of data: it contains a Linux Ubuntu distribution with all the required software
 pre-installed.
 
-### Start a docker container
+## Start a docker container
 
 The command to give is the following (backslashes can be omitted if the command
 is given on a single line)
@@ -54,7 +54,7 @@ container, _i.e._ to VirMet.
 The official reference for `docker run` is
 [here](https://docs.docker.com/engine/reference/run/).
 
-### Once in the container
+## Once in the container
 
 The prompt is now different, now we are root inside the container
 (identified with an ID string) and the prompt reads `root@18ef5268a7a4:/home/ubuntu#`.
@@ -86,7 +86,7 @@ Once the databases are ready, we can finally run our first `wolfpack` command.
 
 and wait for the results to appear.
 
-### Some suggestions
+## Some suggestions
 
 #### Mount multiple volumes
 
