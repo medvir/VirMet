@@ -38,11 +38,10 @@ def main(args):
         cml = 'efetch -format fasta < ncbi_search > viral_database.fasta'
         run_child(cml)
 
-        logging.info('saving viral protein taxonomy')
         cml = 'efetch -format docsum < ncbi_search | xtract -pattern DocumentSummary \
         -element Gi TaxId Caption > tmp.dmp'
         run_child(cml)
-        logging.info('saving viral nuccore taxonomy')
+        logging.info('saving viral protein taxonomy')
         # viral_seqs_info.tsv contains Gi TaxId
         run_child('cut -f 1,2 viral_seqs_info.tsv > viral_gi_taxid.dmp')
         gids_1 = set(get_gids('viral_database.fasta'))

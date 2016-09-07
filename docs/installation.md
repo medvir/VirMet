@@ -21,11 +21,11 @@ The tools VirMet depends on are:
 Moreover, the following languages are used
 
 - python (3.x, it's 2016...) with pandas and Biopython
-- R (for `covplot` only)
+- R (for `covplot` only, with ggplot2)
 
 ## Commands to install dependencies on Ubuntu
 On a Ubuntu 14.04 the following commands should provide a system wide
-installation of the tools mentioned above.
+installation of the tools mentioned above (sudo required).
 
     # system wide configuration available as Ubuntu packages
     sudo apt-get update -qq
@@ -73,7 +73,7 @@ installation of the tools mentioned above.
 
     export PATH=/usr/local/bin:$PATH
 
-Then, one needs python 3 (VirMet was mainly developed and tested on 3.4, but
+Then, one needs python 3 (VirMet was mainly developed and tested on 3.4/3.5), but
 any 3.x should work), together with [pandas](http://pandas.pydata.org) and
 [Biopython](http://biopython.org/wiki/Main_Page). Go to the respective
 installation pages and choose your favourite method.

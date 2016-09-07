@@ -100,7 +100,7 @@ def virupdate(viral_type, picked=None):
     ids_to_add = ids_to_add - set(present_ids)
     if len(ids_to_add) == 0:
         logging.info('no sequences to add to fasta file')
-    elif len(ids_to_add) > 200:
+    elif len(ids_to_add) > 2000:
         logging.error('cannot add %d sequences, exiting' % len(ids_to_add))
         sys.exit('too many sequences to add: run `virmet fetch` first')
     else:
