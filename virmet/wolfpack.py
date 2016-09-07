@@ -171,8 +171,8 @@ def victor(input_reads, contaminant):
     # alignment with bwa
     cml = 'bwa mem -t %d -R \'@RG\tID:foo\tSM:bar\tLB:library1\' -T 75 -M %s %s 2> \
     %s | samtools view -h -F 4 - > %s' % (n_proc, contaminant, input_reads, err_name, sam_name)
-    run_child(cml)
     logging.debug('running bwa %s %s on %d cores' % (cont_name, rf_head, n_proc))
+    run_child(cml)
 
     # reading sam file to remove reads with hits
     # test if an object is in set is way faster than in list
@@ -204,6 +204,9 @@ def victor(input_reads, contaminant):
                 logging.debug('written %d clean reads' % c)
     logging.info('written %d clean reads' % c)
     output_handle.close()
+
+    if input_reads != 'good.fastq':
+        os.remove(input_reads)
 
     return clean_name
 
