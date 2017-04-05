@@ -12,6 +12,7 @@ p = ggplot(data=depth, aes(x=V2, y=V3)) +
   xlab('genome position') +
   ylab('coverage [reads]') +
   ggtitle(paste0('Sequence accession number: ', args[2])) +
-  scale_y_log10()
+  scale_y_log10() +
+  expand_limits(x=c(0, as.numeric(args[4])), y=c(0, 10000))
 
 ggsave(args[3], width=297, height=210, units='mm')

@@ -10,3 +10,7 @@ docs/_build/
 .coverage
 coverage.xml
 old_data/
+VirMet.egg-info/
+build/
+dist/
+installed_files.txt
