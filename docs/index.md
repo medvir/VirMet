@@ -16,6 +16,6 @@ database. Other available subcommands so far are
 - `covplot`:             plot coverage for a specific organism
 
 
-A short help is obtained with `virmet subcommand -h`.
+A short help is obtained with `virmet <subcommand> -h`.
 
 Further detail following the menu on the left.
