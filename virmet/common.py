@@ -3,6 +3,7 @@
 import os
 import random
 import logging
+from time import sleep
 import urllib.request
 from urllib.request import urlopen, Request
 import shlex
@@ -76,9 +77,10 @@ def viral_query(viral_db):
     # Viruses, Taxonomy ID: 10239
     # Human adenovirus A, Taxonomy ID: 129875 (only for testing, 7 hits)
     # Mastadenovirus, Taxonomy ID: 10509 (only for testing, 440 hits)
+    # Alphatorquevirus Taxonomy ID: 687331
     # Cellular organisms, Taxonomy ID: 131567 (to avoid chimeras)
     txid = '10239'  # change here for viruses or smaller taxa
-
+    txid = '687331'
     if viral_db == 'n':
         target_dir = os.path.join(DB_DIR, 'viral_nuccore')
         search_text = '-db nuccore -query \"txid%s [orgn] AND \\"complete genome\\" [Title] NOT txid131567 [orgn]\" > ncbi_search' % txid
@@ -90,11 +92,7 @@ def viral_query(viral_db):
     except FileExistsError:
         pass
     os.chdir(target_dir)
-    run_child('esearch ' + search_text)
-    efetch_xtract = 'efetch -format docsum < ncbi_search | xtract'
-    efetch_xtract += ' -pattern DocumentSummary -element Gi TaxId Caption Slen Organism Title > viral_seqs_info.tsv'
-    run_child(efetch_xtract)
-    logging.info('downloaded viral seqs info in %s' % target_dir)
+    return('esearch ' + search_text)
 
 
 def bact_fung_query(query_type=None, download=True, info_file=None):
@@ -175,3 +173,12 @@ def get_gids(fasta_file):
         cml = 'grep \"^>\" %s | cut -f 2 -d \"|\"' % fasta_file
         gids = run_child(cml).strip().split('\n')
     return gids
+
+def get_accs(fasta_file):
+    if fasta_file.endswith('.gz'):
+        cml = 'zcat %s | grep \"^>\" | tr -d \">\" | cut -f 1 -d \".\"' % fasta_file
+        accs = run_child(cml).strip().split('\n')
+    else:
+        cml = 'grep \"^>\" %s | tr -d \">\" | cut -f 1 -d \".\"' % fasta_file
+        accs = run_child(cml).strip().split('\n')
+    return accs

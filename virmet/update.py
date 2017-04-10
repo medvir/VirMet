@@ -6,7 +6,7 @@ import os
 import sys
 import logging
 import pandas as pd
-from virmet.common import run_child, viral_query, bact_fung_query, get_gids, \
+from virmet.common import run_child, viral_query, bact_fung_query, get_accs, \
 download_genomes, DB_DIR
 
 
@@ -76,16 +76,21 @@ def virupdate(viral_type, picked=None):
 
     # this query downloads a new viral_seqs_info.tsv and parses the GI
     logging.info('interrogating NCBI again')
-    viral_query(viral_type)
+    os.chdir(viral_dir)
+    cml_search = viral_query(viral_type)
+    run_child(cml_search)
+    efetch_xtract = 'efetch -format docsum < ncbi_search | xtract'
+    efetch_xtract += ' -pattern DocumentSummary -element Caption TaxId Slen Organism Title > viral_seqs_info.tsv'
+    run_child(efetch_xtract)
     info_file = os.path.join(viral_dir, 'viral_seqs_info.tsv')
     info_seqs = pd.read_csv(info_file, sep='\t',
-                            names=['Gi', 'TaxId', 'Caption', 'Slen', 'Organism', 'Title'])
-    new_ids = [str(gi) for gi in info_seqs['Gi'].tolist()]
+                            names=['Caption', 'TaxId', 'Slen', 'Organism', 'Title'])
+    new_ids = [str(acc) for acc in info_seqs['Caption'].tolist()]
     logging.info('NCBI reports %d sequences' % len(new_ids))
 
     # read ids already present in fasta file
     fasta_db = os.path.join(viral_dir, 'viral_database.fasta')
-    present_ids = get_gids(fasta_db)
+    present_ids = get_accs(fasta_db)
     logging.info('fasta file has %d sequences' % len(present_ids))
 
     # sequences given manually by specifying file with GI
@@ -121,14 +126,14 @@ def virupdate(viral_type, picked=None):
         for ita in ids_to_add:
             cml = 'efetch -db %s -id %s' % (db_type, ita)
             cml = cml + ' -format docsum | xtract -pattern DocumentSummary \
-            -element Gi TaxId Caption Slen Organism Title >> %s' % info_file
+            -element Caption TaxId Slen Organism Title >> %s' % info_file
             run_child(cml)
 
     logging.info('updating taxonomy')
     s_code = run_child('cut -f 1,2 %s > %s' % (info_file, os.path.join(viral_dir, 'viral_gi_taxid.dmp')))
 
     # perform tests
-    gids_1 = set(get_gids('viral_database.fasta'))
+    gids_1 = set(get_accs('viral_database.fasta'))
     gids_2 = set([l.split()[0] for l in open('viral_gi_taxid.dmp')])
     assert gids_1 == gids_2, 'taxonomy/viral_seqs_info not matching with fasta'
 

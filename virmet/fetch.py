@@ -7,7 +7,7 @@ import subprocess
 import pandas as pd
 
 from virmet.common import viral_query, bact_fung_query, ftp_down, run_child, \
-download_genomes, get_gids, DB_DIR
+download_genomes, get_accs, DB_DIR
 
 
 def main(args):
@@ -17,36 +17,36 @@ def main(args):
 
     if args.viral == 'n':
         logging.info('downloading viral nuccore sequences')
-        viral_query('n')
         target_dir = os.path.join(DB_DIR, 'viral_nuccore')
-        os.chdir(target_dir)
-        cml = 'efetch -format fasta < ncbi_search > viral_database.fasta'
-        run_child(cml)
-        logging.info('saving viral nuccore taxonomy')
-        # viral_seqs_info.tsv contains Gi TaxId
-        cml = 'cut -f 1,2 viral_seqs_info.tsv > viral_gi_taxid.dmp'
-        run_child(cml)
-        gids_1 = set(get_gids('viral_database.fasta'))
-        gids_2 = set([l.split()[0] for l in open('viral_gi_taxid.dmp')])
-        assert gids_1 == gids_2
-
+        cml_search = viral_query('n')
     elif args.viral == 'p':
         logging.info('downloaded viral protein sequences')
-        viral_query('p')
         target_dir = os.path.join(DB_DIR, 'viral_protein')
-        os.chdir(target_dir)
-        cml = 'efetch -format fasta < ncbi_search > viral_database.fasta'
-        run_child(cml)
+        cml_search = viral_query('p')
 
-        cml = 'efetch -format docsum < ncbi_search | xtract -pattern DocumentSummary \
-        -element Gi TaxId Caption > tmp.dmp'
-        run_child(cml)
+    try:
+        os.mkdir(target_dir)
+    except FileExistsError:
+        pass
+
+    os.chdir(target_dir)
+    run_child(cml_search)
+    cml_fetch_fasta = 'efetch -format fasta < ncbi_search > viral_database.fasta'
+    run_child(cml_fetch_fasta)
+    cml_efetch_xtract = 'efetch -format docsum < ncbi_search | xtract'
+    cml_efetch_xtract += ' -pattern DocumentSummary -element Caption TaxId Slen Organism Title > viral_seqs_info.tsv'
+    run_child(cml_efetch_xtract)
+    logging.info('downloaded viral seqs info in %s' % target_dir)
+    if args.viral == 'n':
+        logging.info('saving viral nuccore taxonomy')
+    elif args.viral == 'p':
         logging.info('saving viral protein taxonomy')
-        # viral_seqs_info.tsv contains Gi TaxId
-        run_child('cut -f 1,2 viral_seqs_info.tsv > viral_gi_taxid.dmp')
-        gids_1 = set(get_gids('viral_database.fasta'))
-        gids_2 = set([l.split()[0] for l in open('viral_gi_taxid.dmp')])
-        assert gids_1 == gids_2
+    # viral_seqs_info.tsv contains Accn TaxId
+    cml = 'cut -f 1,2 viral_seqs_info.tsv > viral_accn_taxid.dmp'
+    run_child(cml)
+    accs_1 = set(get_accs('viral_database.fasta'))
+    accs_2 = set([l.split()[0] for l in open('viral_accn_taxid.dmp')])
+    assert accs_1 == accs_2, accs_1 ^ accs_2
 
     if args.viral:
         os.chdir(DB_DIR)
