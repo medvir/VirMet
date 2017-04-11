@@ -80,7 +80,6 @@ def viral_query(viral_db):
     # Alphatorquevirus Taxonomy ID: 687331
     # Cellular organisms, Taxonomy ID: 131567 (to avoid chimeras)
     txid = '10239'  # change here for viruses or smaller taxa
-    txid = '687331'
     if viral_db == 'n':
         target_dir = os.path.join(DB_DIR, 'viral_nuccore')
         search_text = '-db nuccore -query \"txid%s [orgn] AND \\"complete genome\\" [Title] NOT txid131567 [orgn]\" > ncbi_search' % txid
