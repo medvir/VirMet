@@ -130,11 +130,11 @@ def virupdate(viral_type, picked=None):
             run_child(cml)
 
     logging.info('updating taxonomy')
-    s_code = run_child('cut -f 1,2 %s > %s' % (info_file, os.path.join(viral_dir, 'viral_gi_taxid.dmp')))
+    s_code = run_child('cut -f 1,2 %s > %s' % (info_file, os.path.join(viral_dir, 'viral_accn_taxid.dmp')))
 
     # perform tests
     gids_1 = set(get_accs('viral_database.fasta'))
-    gids_2 = set([l.split()[0] for l in open('viral_gi_taxid.dmp')])
+    gids_2 = set([l.split()[0] for l in open('viral_accn_taxid.dmp')])
     assert gids_1 == gids_2, 'taxonomy/viral_seqs_info not matching with fasta'
 
 def main(args):

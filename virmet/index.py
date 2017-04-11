@@ -31,7 +31,7 @@ def main(args):
         cml = "makeblastdb -in viral_database.fasta -dbtype nucl -hash_index \
         -title \"Viral database indexed {}\" \
         -out viral_db \
-        -logfile blast.log -parse_seqids -taxid_map viral_gi_taxid.dmp".format(dt)
+        -logfile blast.log -parse_seqids -taxid_map viral_accn_taxid.dmp".format(dt)
         run_child(cml)
 
     if args.viral == 'p':
@@ -41,7 +41,7 @@ def main(args):
         cml = "makeblastdb -in viral_database.fasta -dbtype prot -hash_index \
         -title \"Viral database indexed {}\" \
         -out viral_db \
-        -logfile blast.log -parse_seqids -taxid_map viral_gi_taxid.dmp".format(dt)
+        -logfile blast.log -parse_seqids -taxid_map viral_accn_taxid.dmp".format(dt)
         run_child(cml)
 
     index_pairs = []  # holds (fasta, index) tuples to run in parallel
