@@ -122,7 +122,7 @@ def bact_fung_query(query_type=None, download=True, info_file=None):
                       (querinfo.genome_rep == 'Full') &
                       (querinfo.release_type == 'Major')]
     gb.set_index('assembly_accession')
-    x = gb['ftp_path'].apply(lambda col: col + '/' + col.split('/')[5] + '_genomic.fna.gz')
+    x = gb['ftp_path'].apply(lambda col: col + '/' + col.split('/')[-1] + '_genomic.fna.gz')
     gb = gb.assign(ftp_genome_path=x)
     all_urls = list(gb['ftp_genome_path'])
     assert len(all_urls) == len(gb)
@@ -160,7 +160,11 @@ def download_genomes(all_urls, prefix, n_files=1):
 def multiple_download(dl_pair):
     fasta_out, urls = dl_pair
     for url in urls:
-        ftp_down(url, fasta_out)
+        try:
+            ftp_down(url, fasta_out)
+        except:
+            print(url, fasta_out)
+            sys.exit()
     return
 
 

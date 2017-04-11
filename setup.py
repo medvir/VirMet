@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 setup(
     name = "VirMet",
-    version = "1.0rc1",
+    version = "1.0rc2",
     packages = find_packages(),
     scripts = ['bin/virmet'],
     data_files = [('Rscripts', ['Rscripts/covplot.R'])],
