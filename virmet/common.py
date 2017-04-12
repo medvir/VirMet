@@ -15,11 +15,13 @@ DB_DIR = '/data/virmet_databases/'
 
 def run_child(cmd, exe='/bin/bash'):
     '''use subrocess.check_output to run an external program with arguments'''
+    logging.info('Running instance of %s' % cmd.split()[0])
     try:
         output = subprocess.check_output(cmd, universal_newlines=True,
         shell=True,
 #        executable=exe,
         stderr=subprocess.STDOUT)
+        logging.debug('Completed')
     except subprocess.CalledProcessError as ee:
         logging.error("Execution of %s failed with returncode %d: %s" % (cmd, ee.returncode, ee.output))
         logging.error(cmd)
@@ -117,7 +119,8 @@ def bact_fung_query(query_type=None, download=True, info_file=None):
         gb = querinfo[(querinfo.assembly_level == 'Complete Genome') &
                       (querinfo.version_status == 'latest')]
     elif query_type == 'fungi':
-        gb = querinfo[(querinfo.refseq_category != 'na') &
+        gb = querinfo[((querinfo.assembly_level == 'Complete Genome') | (querinfo.assembly_level == 'Chromosome')) &
+                      (querinfo.refseq_category != 'na') &
                       (querinfo.version_status == 'latest') &
                       (querinfo.genome_rep == 'Full') &
                       (querinfo.release_type == 'Major')]
@@ -160,11 +163,7 @@ def download_genomes(all_urls, prefix, n_files=1):
 def multiple_download(dl_pair):
     fasta_out, urls = dl_pair
     for url in urls:
-        try:
-            ftp_down(url, fasta_out)
-        except:
-            print(url, fasta_out)
-            sys.exit()
+        ftp_down(url, fasta_out)
     return
 
 
