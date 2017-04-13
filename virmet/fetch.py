@@ -43,7 +43,8 @@ def main(args):
         logging.info('taxonomy and fasta sequences match')
 
         os.chdir(DB_DIR)
-        ftp_down('ftp://ftp.ncbi.nlm.nih.gov/blast/db/taxdb.tar.gz')
+        download_handle = ftp_down('ftp://ftp.ncbi.nlm.nih.gov/blast/db/taxdb.tar.gz')
+        download_handle.close()
         run_child('tar xvfz taxdb.tar.gz')
         os.remove('taxdb.tar.gz')
 
@@ -78,11 +79,13 @@ def main(args):
         fasta_url = 'ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_24/GRCh38.primary_assembly.genome.fa.gz'
         gtf_url = 'ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_24/gencode.v24.primary_assembly.annotation.gtf.gz'
         logging.info('Downloading human annotation')
-        ftp_down(gtf_url)
+        download_handle = ftp_down(gtf_url)
+        download_handle.close()
         logging.info('Downloading human genome and bgzip compressing')
         if os.path.exists('GRCh38.fasta'):
             os.remove('GRCh38.fasta')
-        ftp_down(fasta_url, 'GRCh38.fasta')
+        download_handle = ftp_down(fasta_url, 'GRCh38.fasta')
+        download_handle.close()
         run_child('bgzip GRCh38.fasta')
 
     elif args.fungal:
@@ -121,8 +124,11 @@ def main(args):
         for chrom in chromosomes:
             logging.debug('Downloading bovine chromosome %s' % chrom)
             fasta_url = 'ftp://ftp.ncbi.nlm.nih.gov/genomes/Bos_taurus/Assembled_chromosomes/seq/bt_ref_Bos_taurus_UMD_3.1.1_%s.fa.gz' % chrom
-            ftp_down(fasta_url, local_file_name)
+            download_handle = ftp_down(fasta_url, local_file_name)
+            download_handle.close()
+            logging.debug('Downloaded bovine chromosome %s' % chrom)
         run_child('bgzip %s' % local_file_name)
         logging.info('Downloading gff annotation file')
         gff3_url = 'ftp://ftp.ncbi.nlm.nih.gov/genomes/Bos_taurus/GFF/ref_Bos_taurus_UMD_3.1.1_top_level.gff3.gz'
-        ftp_down(gff3_url)
+        download_handle = ftp_down(gff3_url)
+        download_handle.close()

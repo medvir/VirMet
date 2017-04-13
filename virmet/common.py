@@ -13,6 +13,44 @@ import pandas as pd
 
 DB_DIR = '/data/virmet_databases/'
 
+# decorator for taken from RepoPhlan
+# https://bitbucket.org/nsegata/repophlan/src/5804db9d341165f72c4f7e448691ce90a1465764/repophlan_get_microbes.py?at=ncbi2017&fileviewer=file-view-default
+def retry(tries, delay=3, backoff=2):
+    if backoff <= 1:
+        raise ValueError("backoff must be greater than 1")
+
+    # tries = math.floor(tries)
+    if tries < 0:
+        raise ValueError("tries must be 0 or greater")
+
+    if delay <= 0:
+        raise ValueError("delay must be greater than 0")
+
+    def deco_retry(f):
+        def f_retry(*args, **kwargs):
+            mtries, mdelay = tries, delay  # make mutable
+            # rv = f(*args, **kwargs) # first attempt
+            while mtries > 1:
+                try:
+                    return f(*args, **kwargs)
+                except Exception as e:
+                    if "No such file or directory" in e.reason and "550" in e.reason:
+                        msg = "No remote file found (some ffn and faa are know to be missing remotely). Aborting the download of %s. %s" % (
+                            str(args[0]), str(e))
+                        logging.warning(msg)
+                        raise e
+                    else:
+                        msg = "%s: %s, Retrying in %d seconds..." % (
+                            str(args[0]), str(e), mdelay)
+                        logging.warning(msg)
+                sleep(mdelay)
+                mtries -= 1  # consume an attempt
+                mdelay *= backoff  # make future wait longer
+            return f(*args, **kwargs)  # Ran out of tries :-(
+        return f_retry  # true decorator -> decorated function
+    return deco_retry  # @retry(arg[, ...]) -> true decorator
+
+
 def run_child(cmd, exe='/bin/bash'):
     '''use subrocess.check_output to run an external program with arguments'''
     logging.info('Running instance of %s' % cmd.split()[0])
@@ -28,7 +66,7 @@ def run_child(cmd, exe='/bin/bash'):
         output = None
     return output
 
-
+@retry(tries=8, delay=5, backoff=1.5)
 def ftp_down(remote_url, local_url=None):
     '''Handles correctly gzipped and uncompressed files'''
     import gzip
@@ -38,7 +76,7 @@ def ftp_down(remote_url, local_url=None):
         outname = local_url
     else:
         outname = remote_url.split('/')[-1]
-
+    logging.debug('Downloading %s' % remote_url)
     # compressing
     if not remote_url.endswith('.gz') and outname.endswith('.gz'):
         raise NotImplementedError('compressing on the fly not implemented (yet?)')
@@ -49,7 +87,8 @@ def ftp_down(remote_url, local_url=None):
             outhandle = open(outname, 'a')
         else:
             outhandle = open(outname, 'w')
-        with urlopen(Request(remote_url, headers={"Accept-Encoding": "gzip"}), timeout=60) as response, \
+        logging.debug('Downloading %s' % remote_url)
+        with urlopen(Request(remote_url, headers={"Accept-Encoding": "gzip"}), timeout=30) as response, \
                 gzip.GzipFile(fileobj=response) as f:
             outhandle.write(f.read().decode('utf-8'))
 
@@ -59,7 +98,8 @@ def ftp_down(remote_url, local_url=None):
             outhandle = open(outname, 'ab')
         else:
             outhandle = open(outname, 'wb')
-        with urllib.request.urlopen(remote_url, timeout=60) as f:
+        logging.debug('Downloading %s' % remote_url)
+        with urllib.request.urlopen(remote_url, timeout=30) as f:
             outhandle.write(f.read())
 
     # uncompressed to uncompressed
@@ -68,11 +108,13 @@ def ftp_down(remote_url, local_url=None):
             outhandle = open(outname, 'a')
         else:
             outhandle = open(outname, 'w')
-        with urllib.request.urlopen(remote_url, timeout=60) as f:
+        logging.debug('Downloading %s' % remote_url)
+        with urllib.request.urlopen(remote_url, timeout=30) as f:
             #print(f.read().decode('utf-8', 'replace').encode('utf-8', 'replace'), file=outhandle)
             outhandle.write(f.read().decode('utf-8', 'replace'))#.encode('utf-8', 'replace'), file=outhandle)
 
-    outhandle.close()
+    #outhandle.close()
+    return(outhandle)
 
 
 def viral_query(viral_db):
@@ -158,13 +200,16 @@ def download_genomes(all_urls, prefix, n_files=1):
     # run download in parallel
     pool = mp.Pool()
     results = pool.map(multiple_download, dl_pairs)
+    return results
 
 
 def multiple_download(dl_pair):
     fasta_out, urls = dl_pair
+    logging.debug('About to download %d files' % len(urls))
     for url in urls:
-        ftp_down(url, fasta_out)
-    return
+        downloaded_handle = ftp_down(url, fasta_out)
+        downloaded_handle.close()
+    return len(urls)
 
 
 def get_gids(fasta_file):
