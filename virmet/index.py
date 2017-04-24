@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-'''index sequences with blast or STAR
+'''index sequences with blast or bwa
 '''
 
 import sys
