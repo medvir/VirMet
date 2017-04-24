@@ -10,6 +10,11 @@ mod = __import__('virmet')
 sys.modules["virmet"] = mod
 
 # each subcommand takes one of these functions as default
+
+def tidytable_run(args):
+    from virmet import tidytable
+    tidytable.main(args)
+
 def covplot_run(args):
     from virmet import covplot
     covplot.main(args)
@@ -85,6 +90,11 @@ def main():
     parser_wolf.add_argument('--run', type=str, help='Miseq run directory')
     parser_wolf.add_argument('--file', type=str, help='single fastq file')
     parser_wolf.set_defaults(func=wolfpack_run)
+
+    # create the parser for command "tidytable"
+    parser_tidy = subparsers.add_parser('tidytable', help='make tables summarising the whole run')
+    parser_tidy.add_argument('--outdir', type=str, help='path to run results directory (virmet_output_...)')
+    parser_tidy.set_defaults(func=tidytable_run)
 
     # create the parser for command "covplot"
     parser_cov = subparsers.add_parser('covplot', help='plot coverage for a specific organism')
