@@ -93,7 +93,7 @@ class TestMisc(unittest.TestCase):
     def test_fung_query(self):
         all_urls = bact_fung_query(query_type='fungi', download=True)
         fung_lines = len(all_urls)
-        self.assertGreater(fung_lines, 100)
+        self.assertGreater(fung_lines, 10)
         self.assertTrue(os.path.exists('fungi_refseq_info.tsv'))
         os.rename('fungi_refseq_info.tsv', 'xyz.tsv')
         urls_again = bact_fung_query(query_type='fungi', download=False,
