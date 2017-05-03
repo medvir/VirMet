@@ -1,6 +1,8 @@
 VirMet
 ------
 
+[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat-square)](http://bioconda.github.io/recipes/virmet/README.html)
+
 [![Build Status](https://travis-ci.org/ozagordi/VirMet.svg?branch=master)](https://travis-ci.org/ozagordi/VirMet)
 
 [![codecov.io](https://codecov.io/github/ozagordi/VirMet/coverage.svg?branch=master)](https://codecov.io/github/ozagordi/VirMet?branch=master)  
@@ -23,9 +25,35 @@ database. Other available subcommands so far are
 
 A short help is obtained with `virmet subcommand -h`.
 
+#### The simplest example
+
+    [user@host ~]$ virmet wolfpack --run path_to_run_directory
+    ... some time later ...
+    [user@host ~]$ cat virmet_output_name_of_the_run/sample_name/orgs_list.csv
+    organism                        reads
+    Torque teno virus 3             140
+    Torque teno virus               101
+    BeAn 58058 virus                14
+    Caulobacter phage Ccr29         5
+    Human immunodeficiency virus 1  3
+    Moraxella phage Mcat16          2
+    Torque teno virus 15            1
+    ...
+
+
 ### Installation
 
-The classic `python setup.py install`, but see the relevant
+#### Bioconda
+
+VirMet is available through [Bioconda](https://bioconda.github.io), a channel
+for the [conda](http://conda.pydata.org/docs/intro.html) package manager. Once
+conda is [installed](https://bioconda.github.io/#install-conda) and the
+[channels](https://bioconda.github.io/#set-up-channels) are set up,
+`conda install virmet` installs the package with all its dependencies.
+
+#### `setuptools` or Docker
+
+The classic `python setup.py install` will work, but see the relevant
 [page](http://virmet.readthedocs.io/en/latest/installation/) of the
 documentation to install third-party tools, or follow the instructions
 to run the [docker version](http://virmet.readthedocs.io/en/latest/dockerised/).

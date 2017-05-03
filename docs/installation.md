@@ -1,27 +1,36 @@
 # Installation
 
+[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat-square)](http://bioconda.github.io/recipes/virmet/README.html)
+
+VirMet is available through [Bioconda](https://bioconda.github.io), a channel
+for the [conda](http://conda.pydata.org/docs/intro.html) package manager. Once
+conda is [installed](https://bioconda.github.io/#install-conda) and the
+[channels](https://bioconda.github.io/#set-up-channels) are set up,
+`conda install virmet` installs the package with all its dependencies.
+
+## Dependencies
+
 The classic `python setup.py install` should work, provided the user has the
 necessary permission.
 VirMet relies on a number of third-party tools used to access databases, trim,
-convert, filter and map reads: these must be installed by the user.
+convert, filter and map reads: these are automatically installed if VirMet is
+installed with `conda install`. If, for some reason, the user prefers to manually
+install everything, the tools VirMet depends on are:
+
+- biopython (Python package)
+- blast >= 2.3
+- bwa
+- entrez-direct (E-utilities from the command line)
+- htslib
+- pandas (Python package)
+- prinseq
+- python (3.x)
+- R with ggplot2 library
+- samtools >= 1.3
+- seqtk
 
 Alternatively, we provide a [docker](http://docker.com) image with everything
 installed, see instructions for [dockerised VirMet](dockerised.md).
-
-The tools VirMet depends on are:
-
-- bwa
-- samtools 1.3
-- tabix
-- seqtk
-- prinseq-lite
-- edirect command line tools
-- blast+ 2.3.0
-
-Moreover, the following languages are used
-
-- python (3.x, it's 2016...) with pandas and Biopython
-- R (for `covplot` only, with ggplot2)
 
 ## Commands to install dependencies on Ubuntu
 On a Ubuntu 14.04 the following commands should provide a system wide
@@ -77,5 +86,3 @@ Then, one needs python 3 (VirMet was mainly developed and tested on 3.4/3.5), bu
 any 3.x should work), together with [pandas](http://pandas.pydata.org) and
 [Biopython](http://biopython.org/wiki/Main_Page). Go to the respective
 installation pages and choose your favourite method.
-[conda](http://conda.pydata.org/docs/) is becoming the standard package
-management system for Python, and we use this in the docker image.
