@@ -289,11 +289,11 @@ def viral_blast(file_in, n_proc):
     good_hits = hits[(hits.pident > blast_ident_threshold) & \
         (hits.qcovs > blast_cov_threshold)]
     matched_reads = good_hits.shape[0]
-    if matched_reads > 0:  # deals with no good_hits
-        ds = good_hits.groupby('sscinames').size().order(ascending=False)
-        org_count = pd.DataFrame({'organism': ds.index.tolist(), 'reads': ds.values},
-                                 index=ds.index)
-        org_count.to_csv('orgs_list.tsv', header=True, sep='\t', index=False)
+    #if matched_reads > 0:  # deals with no good_hits
+    ds = good_hits.groupby('sscinames').size().sort_values(ascending=False)
+    org_count = pd.DataFrame({'organism': ds.index.tolist(), 'reads': ds.values},
+                             index=ds.index)
+    org_count.to_csv('orgs_list.tsv', header=True, sep='\t', index=False)
 
     logging.debug('%d hits passing coverage and identity filter' % matched_reads)
     oh.write('viral_reads\t%s\n' % matched_reads)
