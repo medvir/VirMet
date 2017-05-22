@@ -392,7 +392,7 @@ def main(args):
     elif args.file:
         all_fastq_files = [os.path.abspath(args.file)]
         logging.info('running on a single file %s' % all_fastq_files[0])
-        run_name = args.file.split('.')[0]
+        run_name = os.path.split(args.file)[1].split('.')[0]
 
     out_dir = 'virmet_output_%s' % run_name
 
