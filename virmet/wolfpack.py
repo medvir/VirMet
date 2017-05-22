@@ -221,12 +221,29 @@ def viral_blast(file_in, n_proc):
         os.remove('viral_reads.fastq.gz')
         os.remove('undetermined_reads.fastq.gz')
 
+    # streams will be used during the execution
     oh = open('stats.tsv', 'a')
+    bh = open('unique.tsv', 'w')
+    bh.write('qseqid\tsseqid\tsscinames\tstitle\tpident\tqcovs\tscore\tlength\tmismatch\tgapopen\tqstart\tqend\tsstart\tsend\tstaxids\n')
+
     os.rename(file_in, 'hq_decont_reads.fastq')
     fasta_file = 'hq_decont_reads.fasta'
     run_child('seqtk seq -A hq_decont_reads.fastq > %s' % fasta_file)
-    tot_seqs = int(run_child('grep -c \"^>\" %s' % fasta_file).strip())
+    try:
+        tot_seqs = int(run_child('grep -c \"^>\" %s' % fasta_file).strip())
+    except AttributeError:  # deals with empty file
+        tot_seqs = 0
+        logging.info('No reads left after decontamination')
+
     oh.write('reads_to_blast\t%d\n' % tot_seqs)
+
+    if tot_seqs == 0:
+        bh.close()
+        oh.write('viral_reads\t0\n')
+        oh.write('undetermined_reads\t0\n')
+        oh.close()
+        return
+
     max_n = (tot_seqs / n_proc) + 1
 
     # We want to split in n_proc processors, so each file has at most
@@ -251,8 +268,7 @@ def viral_blast(file_in, n_proc):
     logging.debug('parsing best HSP for each query sequence')
     qseqid = ''
 
-    bh = open('unique.tsv', 'w')
-    bh.write('qseqid\tsseqid\tsscinames\tstitle\tpident\tqcovs\tscore\tlength\tmismatch\tgapopen\tqstart\tqend\tsstart\tsend\tstaxids\n')
+    # write to unique.tsv
     for i in range(n_proc):
         tmpf = 'tmp_%d.tsv' % i
         with open(tmpf) as f:
@@ -272,11 +288,13 @@ def viral_blast(file_in, n_proc):
     # select according to identity and coverage, count occurrences
     good_hits = hits[(hits.pident > blast_ident_threshold) & \
         (hits.qcovs > blast_cov_threshold)]
-    ds = good_hits.groupby('sscinames').size().order(ascending=False)
+    matched_reads = good_hits.shape[0]
+    #if matched_reads > 0:  # deals with no good_hits
+    ds = good_hits.groupby('sscinames').size().sort_values(ascending=False)
     org_count = pd.DataFrame({'organism': ds.index.tolist(), 'reads': ds.values},
                              index=ds.index)
     org_count.to_csv('orgs_list.tsv', header=True, sep='\t', index=False)
-    matched_reads = good_hits.shape[0]
+
     logging.debug('%d hits passing coverage and identity filter' % matched_reads)
     oh.write('viral_reads\t%s\n' % matched_reads)
     unknown_reads = tot_seqs - matched_reads
