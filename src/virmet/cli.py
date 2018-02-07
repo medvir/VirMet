@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+"""Command line interfaces defining subcommands and options."""
 import os
 import sys
 
@@ -11,15 +11,21 @@ sys.modules["virmet"] = mod
 
 # each subcommand takes one of these functions as default
 
+
 def tidytable_run(args):
+    """Default function for command line parser."""
     from virmet import tidytable
     tidytable.main(args)
 
+
 def covplot_run(args):
+    """Default function for command line parser."""
     from virmet import covplot
     covplot.main(args)
 
+
 def wolfpack_run(args):
+    """Default function for command line parser."""
     from shutil import move, Error
     from virmet import wolfpack
     od = wolfpack.main(args)
@@ -31,22 +37,28 @@ def wolfpack_run(args):
     except Error:
         sys.exit('logging file not moved after hot run')
 
+
 def index_db(args):
+    """Default function for command line parser."""
     from virmet import index
     index.main(args)
 
+
 def update_db(args):
+    """Default function for command line parser."""
     from virmet import update
     update.main(args)
 
+
 def fetch_db(args):
+    """Default function for command line parser."""
     from virmet import fetch
     fetch.main(args)
 
 
 def main():
+    """Parse command line, run default functions."""
     import argparse
-
     # parse command line
     # create the top-level parser
     parser = argparse.ArgumentParser(usage='%(prog)s <command> [options]',
@@ -111,13 +123,15 @@ def main():
     import logging
     import logging.handlers
     logging.basicConfig(filename='virmet.log', level=logging.DEBUG,
-                        format='%(levelname)s %(asctime)s %(filename)s: %(funcName)s() %(lineno)d: \t%(message)s', datefmt='%Y/%m/%d %H:%M:%S')
+                        format='%(levelname)s %(asctime)s %(filename)s: %(funcName)s() %(lineno)d: \t%(message)s',
+                        datefmt='%Y/%m/%d %H:%M:%S')
 
     logging.info(' '.join(sys.argv))
 
     # parse the args
     args = parser.parse_args()
     args.func(args)
+
 
 if __name__ == "__main__":  # and __package__ is None:
     main()
