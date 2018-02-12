@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 
 import os
-import sys
 import logging
-import subprocess
-import pandas as pd
 
 from virmet.common import viral_query, bact_fung_query, ftp_down, run_child, \
 download_genomes, get_accs, DB_DIR
 
 
 def main(args):
-    import random
 
     logging.info('now in fetch_data')
 
@@ -32,7 +28,7 @@ def main(args):
         cml_efetch_xtract = 'efetch -format docsum < ncbi_search | xtract'
         cml_efetch_xtract += ' -pattern DocumentSummary -element Caption TaxId Slen Organism Title > viral_seqs_info.tsv'
         run_child(cml_efetch_xtract)
-        logging.info('downloaded viral seqs info in %s' % target_dir)
+        logging.info('downloaded viral seqs info in %s', target_dir)
         logging.info('saving viral taxonomy')
         # viral_seqs_info.tsv contains Accn TaxId
         cml = 'cut -f 1,2 viral_seqs_info.tsv > viral_accn_taxid.dmp'
@@ -58,7 +54,7 @@ def main(args):
 
         # first download summary file with all ftp paths and return urls
         all_urls = bact_fung_query(query_type='bacteria')
-        logging.info('%d bacterial genomes were found' % len(all_urls))
+        logging.info('%d bacterial genomes were found', len(all_urls))
         # then download genomic_fna.gz files
         download_genomes(all_urls, prefix='bact', n_files=3)
         for j in [1, 2, 3]:
@@ -98,7 +94,7 @@ def main(args):
 
         # first download summary file with all ftp paths and return urls
         all_urls = bact_fung_query(query_type='fungi')
-        logging.info('%d fungal genomes were found' % len(all_urls))
+        logging.info('%d fungal genomes were found', len(all_urls))
         # then download genomic_fna.gz files
         download_genomes(all_urls, prefix='fungi', n_files=1)
         run_child('bgzip fasta/fungi1.fasta')
@@ -122,11 +118,11 @@ def main(args):
         if os.path.exists(local_file_name):
             os.remove(local_file_name)
         for chrom in chromosomes:
-            logging.debug('Downloading bovine chromosome %s' % chrom)
+            logging.debug('Downloading bovine chromosome %s', chrom)
             fasta_url = 'ftp://ftp.ncbi.nlm.nih.gov/genomes/Bos_taurus/Assembled_chromosomes/seq/bt_ref_Bos_taurus_UMD_3.1.1_%s.fa.gz' % chrom
             download_handle = ftp_down(fasta_url, local_file_name)
             download_handle.close()
-            logging.debug('Downloaded bovine chromosome %s' % chrom)
+            logging.debug('Downloaded bovine chromosome %s', chrom)
         run_child('bgzip %s' % local_file_name)
         logging.info('Downloading gff annotation file')
         gff3_url = 'ftp://ftp.ncbi.nlm.nih.gov/genomes/Bos_taurus/GFF/ref_Bos_taurus_UMD_3.1.1_top_level.gff3.gz'

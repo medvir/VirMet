@@ -54,7 +54,7 @@ def retry(tries, delay=3, backoff=2):
 
 def run_child(cmd, exe='/bin/bash'):
     """Use subrocess.check_output to run an external program with arguments."""
-    logging.info('Running instance of %s' % cmd.split()[0])
+    logging.info('Running instance of %s', cmd.split()[0])
     try:
         output = subprocess.check_output(cmd, universal_newlines=True, shell=True, stderr=subprocess.STDOUT)
         logging.debug('Completed')
@@ -123,12 +123,15 @@ def viral_query(viral_db):
     # Alphatorquevirus Taxonomy ID: 687331
     # Cellular organisms, Taxonomy ID: 131567 (to avoid chimeras)
     txid = '10239'  # change here for viruses or smaller taxa
+    query_text = '-query \"txid%s [orgn] AND (\\"complete genome\\" [Title] OR srcdb_refseq[prop])' % txid
+    query_text += ' NOT wgs[PROP] NOT \\"cellular organisms\\"[Organism] NOT AC_000001[PACC] : AC_999999[PACC]\"'
+    query_text += ' > ncbi_search'
     if viral_db == 'n':
         target_dir = os.path.join(DB_DIR, 'viral_nuccore')
-        search_text = '-db nuccore -query \"txid%s [orgn] AND \\"complete genome\\" [Title] NOT txid131567 [orgn]\" > ncbi_search' % txid
+        search_text = '-db nuccore ' + query_text
     elif viral_db == 'p':
         target_dir = os.path.join(DB_DIR, 'viral_protein')
-        search_text = '-db protein -query \"refseq [filter] AND txid%s [orgn] NOT txid131567 [orgn]\" > ncbi_search' % txid
+        search_text = '-db protein ' + query_text
     try:
         os.mkdir(target_dir)
     except FileExistsError:
