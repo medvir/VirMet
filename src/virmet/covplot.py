@@ -6,7 +6,7 @@ import pandas as pd
 from Bio import SeqIO
 from virmet.common import run_child
 
-covpl_exe = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'Rscripts', 'covplot.R')
+covpl_exe = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'scripts', 'covplot.R')
 
 
 def best_species(orgs_file, organism):
@@ -43,18 +43,22 @@ def main(args):
 
     # copy single genome, index, align viral_reads
     os.chdir(outdir)
+    organism = organism.replace(' ', '-')
     best_seq = [s for s in SeqIO.parse('/data/virmet_databases/viral_nuccore/viral_database.fasta', 'fasta') if acc in s.id]
     seq_len = len(best_seq[0])
     SeqIO.write(best_seq, 'single.fasta', 'fasta')
     run_child('bwa index single.fasta')
-    run_child('bwa mem single.fasta viral_reads.fastq.gz 2> /dev/null | samtools view -u - | samtools sort -O bam -T tmp -o single_sorted.bam -')
-    run_child('samtools index single_sorted.bam')
-    run_child('samtools depth -q 0 -Q 0 single_sorted.bam > depth.txt')
+    bam_file = 'single_sorted_%s.bam' % organism
+    run_child('bwa mem -t 2 single.fasta viral_reads.fastq.gz 2> /dev/null | samtools view -u - | samtools sort -O bam -T tmp -o %s -' % bam_file)
+    run_child('samtools index %s' % bam_file)
+    depth_file = 'depth_%s.txt' % organism
+    run_child('samtools depth -a -q 0 -Q 0 %s > %s' % (bam_file, depth_file))
     image_name = organism.replace(' ', '_') + '_coverage.pdf'
-    run_child('Rscript %s depth.txt %s %s %s' % (covpl_exe, acc, image_name, seq_len))
+    run_child('Rscript %s %s %s %s %s' % (covpl_exe, depth_file, acc, seq_len, image_name))
 
     return best_species
 
 if __name__ == '__main__':
-    args = {outdir: sys.argv[1], organism: sys.argv[2]}
+    import sys
+    args = {'outdir': sys.argv[1], 'organism': sys.argv[2]}
     main(args)
