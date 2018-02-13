@@ -1,7 +1,30 @@
 #!/usr/bin/env python3
-"""Command line interfaces defining subcommands and options."""
+"""
+Module that contains the command line app.
+
+Why does this file exist, and why not put this in __main__?
+
+  You might be tempted to import things from __main__ later, but that will cause
+  problems: the code will get executed twice:
+
+  - When you run `python -mminvar` python will execute
+    ``__main__.py`` as a script. That means there won't be any
+    ``minvar.__main__`` in ``sys.modules``.
+  - When you import __main__ it will get executed again (as a module) because
+    there's no ``minvar.__main__`` in ``sys.modules``.
+
+  Also see (1) from http://click.pocoo.org/5/setuptools/#setuptools-integration
+"""
 import os
 import sys
+
+from pkg_resources import (get_distribution, DistributionNotFound)
+
+try:
+    __version__ = get_distribution('virmet').version
+except DistributionNotFound:
+    # package is not installed
+    pass
 
 # manipulate path to import functions
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -63,6 +86,8 @@ def main():
     # create the top-level parser
     parser = argparse.ArgumentParser(usage='%(prog)s <command> [options]',
                                      epilog="Run `virmet subcommand -h` for more help")
+    parser.add_argument('-v', '--version', action='version', version=__version__)
+
     subparsers = parser.add_subparsers(help='available sub-commands')
 
     # create the parser for command "fetch"
@@ -115,7 +140,8 @@ def main():
     parser_cov.set_defaults(func=covplot_run)
 
     # exit so that log file is not written
-    if len(sys.argv) == 1 or sys.argv[1] == '-h' or sys.argv[1] == '--help':
+    if len(sys.argv) == 1 or sys.argv[1] == '-h' or sys.argv[1] == '--help' \
+        or sys.argv[1] == '-v' or sys.argv[1] == '--version':
         parser.print_help()
         sys.exit()
 
@@ -127,7 +153,7 @@ def main():
                         datefmt='%Y/%m/%d %H:%M:%S')
 
     logging.info(' '.join(sys.argv))
-
+    logging.info('VirMet version:%s', __version__)
     # parse the args
     args = parser.parse_args()
     args.func(args)

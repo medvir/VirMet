@@ -1,11 +1,21 @@
 #!/usr/bin/env python3
 
-'''Runs on all samples of a MiSeq run or on a single fastq file'''
+"""Runs on all samples of a MiSeq run or on a single fastq file"""
 import os
 import glob
 import logging
+import shlex
+import subprocess
 import pandas as pd
 from virmet.common import run_child, DB_DIR #  , single_process
+
+from pkg_resources import (get_distribution, DistributionNotFound)
+
+try:
+    __version__ = get_distribution('virmet').version
+except DistributionNotFound:
+    # package is not installed
+    pass
 
 contaminant_db = ['/data/virmet_databases/human/bwa/humanGRCh38',
                   '/data/virmet_databases/bacteria/bwa/bact1',
@@ -27,9 +37,9 @@ blast_ident_threshold = 75.
 
 
 def hunter(fq_file):
-    '''runs quality filter on a fastq file with seqtk and prinseq,
+    """runs quality filter on a fastq file with seqtk and prinseq,
     simple parallelisation with xargs, returns output directory
-    '''
+    """
     import re
     import warnings
     #    from virmet.common import prinseq_exe
@@ -43,13 +53,13 @@ def hunter(fq_file):
     except NotImplementedError:
         n_proc = 2
 
-    logging.debug('hunter will run on %s processors' % n_proc)
+    logging.debug('hunter will run on %s processors', n_proc)
     if 'L001' in fq_file:
         s_dir = '_'.join(os.path.split(fq_file)[1].split('_')[:2])
         try:
             os.mkdir(s_dir)
         except FileExistsError:
-            logging.debug('entering %s already existing' % s_dir)
+            logging.debug('entering %s already existing', s_dir)
         os.chdir(s_dir)
         s_dir = os.getcwd()
     else:
@@ -57,7 +67,7 @@ def hunter(fq_file):
 
     # skip if this is a hot run
     if os.path.exists('prinseq.err') and os.path.exists('prinseq.log'):
-        logging.info('hunter was already run in %s, skipping' % s_dir)
+        logging.info('hunter was already run in %s, skipping', s_dir)
         os.chdir(os.pardir)
         return s_dir
 
@@ -105,15 +115,15 @@ def hunter(fq_file):
     run_child('/usr/bin/seq ' + cml, exe='/bin/bash')
 
     logging.debug('cleaning up')
-    if len(glob.glob('good???.fastq')):
+    if glob.glob('good???.fastq'):
         run_child('cat good???.fastq > good.fastq')
         run_child('rm good???.fastq')
 
-    if len(glob.glob('bad???.fastq')):
+    if glob.glob('bad???.fastq'):
         run_child('cat bad???.fastq > bad.fastq')
         run_child('rm bad???.fastq')
 
-    if len(glob.glob('prinseq???.log')):
+    if glob.glob('prinseq???.log'):
         run_child('cat prinseq???.log > prinseq.log')
         run_child('rm prinseq???.log')
 
@@ -138,18 +148,22 @@ def hunter(fq_file):
     n_reads = int(int(out1) / 4)
     lost_reads = n_reads + low_ent + min_qual - long_reads
     if lost_reads > 0:
-        logging.error('%d reads were lost' % lost_reads)
+        logging.error('%d reads were lost', lost_reads)
         warnings.warn('%d reads were lost' % lost_reads, RuntimeWarning)
     oh.write('passing_filter\t%d\n' % n_reads)
     oh.close()
+
+    with open('sample_info.txt', 'a') as oh:
+        oh.write('VirMet version: %s\n' % __version__)
+
     os.chdir(os.pardir)
     return s_dir
 
 
 def victor(input_reads, contaminant):
-    '''decontaminate reads by aligning against contaminants with bwa and removing
+    """decontaminate reads by aligning against contaminants with bwa and removing
     reads with alignments
-    '''
+    """
     import gzip
     from Bio.SeqIO.QualityIO import FastqGeneralIterator
     try:
@@ -171,7 +185,7 @@ def victor(input_reads, contaminant):
     # alignment with bwa
     cml = 'bwa mem -t %d -R \'@RG\tID:foo\tSM:bar\tLB:library1\' -T 75 -M %s %s 2> \
     %s | samtools view -h -F 4 - > %s' % (n_proc, contaminant, input_reads, err_name, sam_name)
-    logging.debug('running bwa %s %s on %d cores' % (cont_name, rf_head, n_proc))
+    logging.debug('running bwa %s %s on %d cores', cont_name, rf_head, n_proc)
     run_child(cml)
 
     # reading sam file to remove reads with hits
@@ -187,9 +201,8 @@ def victor(input_reads, contaminant):
     oh.close()
 
     output_handle = open(clean_name, 'w')
-    logging.debug('Cleaning reads in %s with alignments in %s' % \
-                 (input_reads, sam_name))
-    logging.debug('Writing to %s' % clean_name)
+    logging.debug('Cleaning reads in %s with alignments in %s', input_reads, sam_name)
+    logging.debug('Writing to %s', clean_name)
     if input_reads.endswith('.gz'):
         cont_handle = gzip.open(input_reads)
     else:
@@ -201,8 +214,8 @@ def victor(input_reads, contaminant):
             c += 1
             output_handle.write("@%s\n%s\n+\n%s\n" % (title, seq, qual))
             if c % 100000 == 0:
-                logging.debug('written %d clean reads' % c)
-    logging.info('written %d clean reads' % c)
+                logging.debug('written %d clean reads', c)
+    logging.info('written %d clean reads', c)
     output_handle.close()
 
     if input_reads != 'good.fastq':
@@ -212,8 +225,8 @@ def victor(input_reads, contaminant):
 
 
 def viral_blast(file_in, n_proc):
-    '''runs blast against viral database, parallelise with xargs
-    '''
+    """runs blast against viral database, parallelise with xargs
+    """
 
     # on hot start, blast again all decontaminated reads
     if os.path.exists('viral_reads.fastq.gz') and os.path.exists('undetermined_reads.fastq.gz'):
@@ -265,9 +278,13 @@ def viral_blast(file_in, n_proc):
     logging.debug('running blast now')
     run_child(cml)
 
+    logging.debug('saving blast database info')
+    cml = shlex.split('blastdbcmd -db /data/virmet_databases/viral_nuccore/viral_db -info')
+    with open('blast_info.txt', 'a') as oh:
+        subprocess.call(cml, stdout=oh)
+
     logging.debug('parsing best HSP for each query sequence')
     qseqid = ''
-
     # write to unique.tsv
     for i in range(n_proc):
         tmpf = 'tmp_%d.tsv' % i
@@ -283,7 +300,7 @@ def viral_blast(file_in, n_proc):
     logging.debug('filtering and grouping by scientific name')
     hits = pd.read_csv('unique.tsv', index_col='qseqid',  # delim_whitespace=True)
                        delimiter="\t")
-    logging.debug('found %d hits' % hits.shape[0])
+    logging.debug('found %d hits', hits.shape[0])
 
     # select according to identity and coverage, count occurrences
     good_hits = hits[(hits.pident > blast_ident_threshold) & \
@@ -295,7 +312,7 @@ def viral_blast(file_in, n_proc):
                              index=ds.index)
     org_count.to_csv('orgs_list.tsv', header=True, sep='\t', index=False)
 
-    logging.debug('%d hits passing coverage and identity filter' % matched_reads)
+    logging.debug('%d hits passing coverage and identity filter', matched_reads)
     oh.write('viral_reads\t%s\n' % matched_reads)
     unknown_reads = tot_seqs - matched_reads
     oh.write('undetermined_reads\t%d\n' % unknown_reads)
@@ -303,8 +320,8 @@ def viral_blast(file_in, n_proc):
 
 
 def cleaning_up():
-    '''sift reads into viral/unknown, compresses and removes files
-    '''
+    """sift reads into viral/unknown, compresses and removes files
+    """
     import multiprocessing as mp
     from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
@@ -323,16 +340,16 @@ def cleaning_up():
             undet_c += 1
             undet_handle.write("@%s\n%s\n+\n%s\n" % (title, seq, qual))
             if undet_c % 100000 == 0:
-                logging.debug('written %d undet reads' % undet_c)
+                logging.debug('written %d undet reads', undet_c)
         else:
             viral_c += 1
             viral_handle.write("@%s\n%s\n+\n%s\n" % (title, seq, qual))
             if viral_c % 10000 == 0:
-                logging.debug('written %d viral reads' % viral_c)
+                logging.debug('written %d viral reads', viral_c)
     undet_handle.close()
     viral_handle.close()
-    logging.info('written %d undet reads' % undet_c)
-    logging.info('written %d viral reads' % viral_c)
+    logging.info('written %d undet reads', undet_c)
+    logging.info('written %d viral reads', viral_c)
 
     run_child('gzip -f viral_reads.fastq')
     run_child('gzip -f undetermined_reads.fastq')
@@ -369,7 +386,7 @@ def cleaning_up():
 
 
 def main(args):
-    ''''''
+    """"""
 
     if args.run:
         miseq_dir = args.run.rstrip('/')
@@ -378,20 +395,20 @@ def main(args):
             run_name.split('_')[1].startswith('M'):
             try:
                 run_date, machine_name = run_name.split('_')[:2]
-                logging.info('running on run %s from machine %s' % (run_name, machine_name))
+                logging.info('running on run %s from machine %s', run_name, machine_name)
             except ValueError:
-                logging.info('running on directory %s' % miseq_dir)
+                logging.info('running on directory %s', miseq_dir)
             bc_dir = os.path.join(miseq_dir, 'Data/Intensities/BaseCalls/')
         else:
             bc_dir = miseq_dir
 
         rel_fastq_files = glob.glob('%s/*_S*.fastq*' % bc_dir)
         samples_to_run = [os.path.split(fq)[1].split('_')[1] for fq in rel_fastq_files]
-        logging.info('samples to run: %s' % ' '.join(samples_to_run))
+        logging.info('samples to run: %s', ' '.join(samples_to_run))
         all_fastq_files = [os.path.abspath(f) for f in rel_fastq_files]
     elif args.file:
         all_fastq_files = [os.path.abspath(args.file)]
-        logging.info('running on a single file %s' % all_fastq_files[0])
+        logging.info('running on a single file %s', all_fastq_files[0])
         run_name = os.path.split(args.file)[1].split('.')[0]
 
     out_dir = 'virmet_output_%s' % run_name
@@ -399,22 +416,22 @@ def main(args):
     try:
         os.mkdir(out_dir)
     except OSError:
-        logging.error('directory %s exists' % out_dir)
+        logging.error('directory %s exists', out_dir)
     os.chdir(out_dir)
 
     # run hunter on all fastq files
     s_dirs = []
     for fq in all_fastq_files:
-        logging.info('running hunter on %s' % fq)
+        logging.info('running hunter on %s', fq)
         sd = hunter(fq)
         s_dirs.append(sd)
 
     # run mapping against contaminants to remove
     cont_reads = 'good.fastq'  # first run on good.fastq
     for cont in contaminant_db:
-        logging.info('decontamination against %s' % cont)
+        logging.info('decontamination against %s', cont)
         for sample_dir in s_dirs:
-            logging.info('--- now for sample %s' % sample_dir)
+            logging.info('--- now for sample %s', sample_dir)
             os.chdir(sample_dir)
             decont_reads = victor(input_reads=cont_reads, contaminant=cont)
             os.chdir(os.pardir)
@@ -426,19 +443,19 @@ def main(args):
         n_proc = min(os.cpu_count(), 12)
     except NotImplementedError:
         n_proc = 2
-    logging.info('%d cores that will be used' % n_proc)
+    logging.info('%d cores that will be used', n_proc)
 
     for sample_dir in s_dirs:
         os.chdir(sample_dir)
-        logging.info('now sample %s' % sample_dir)
+        logging.info('now sample %s', sample_dir)
         viral_blast(file_to_blast, n_proc)
-        logging.info('sample %s blasted' % sample_dir)
+        logging.info('sample %s blasted', sample_dir)
         os.chdir(os.pardir)
 
     logging.info('summarising and cleaning up')
     for sample_dir in s_dirs:
         os.chdir(sample_dir)
-        logging.info('now in %s' % sample_dir)
+        logging.info('now in %s', sample_dir)
         cleaning_up()
         os.chdir(os.pardir)
 
