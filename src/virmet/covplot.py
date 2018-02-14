@@ -81,7 +81,6 @@ def main(args):
         sys.exit('directory %s exists already: delete it to run covplot again' % organism)
     os.chdir(organism)
     viral_db = os.path.join(DB_DIR, 'viral_nuccore/viral_database.fasta')
-    viral_db = '/Users/ozagordi/test_virmet/fake.fasta'
     best_seq = [s for s in SeqIO.parse(viral_db, 'fasta') if acc in s.id]
     seq_len = len(best_seq[0])
     SeqIO.write(best_seq, 'single.fasta', 'fasta')
