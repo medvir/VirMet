@@ -12,7 +12,6 @@ p = ggplot(data=depth, aes(x=V2, y=V3)) +
   scale_y_log10() +
   expand_limits(x=c(0, as.numeric(args[3])), y=c(0, 10000))
 
-library(ggthemes)
 if(is.element("ggthemes", installed.packages()[,1])){
     library(ggthemes)
     p = p + theme_solarized()
