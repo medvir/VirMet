@@ -140,8 +140,8 @@ def main():
     parser_cov.set_defaults(func=covplot_run)
 
     # exit so that log file is not written
-    if len(sys.argv) == 1 or sys.argv[1] == '-h' or sys.argv[1] == '--help' \
-        or sys.argv[1] == '-v' or sys.argv[1] == '--version':
+    if len(sys.argv) == 1 or sys.argv[1] == '-h' or sys.argv[1] == '--help':
+        # or sys.argv[1] == '-v' or sys.argv[1] == '--version':
         parser.print_help()
         sys.exit()
 

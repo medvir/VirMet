@@ -36,7 +36,7 @@ setup(
     packages=find_packages('src'),  # include all packages under src
     package_dir={'': 'src'},  # tell setuptools packages are under src
     # package_data={'virmet': ['db/*', 'db/template.tex']},
-    scripts=['bin/virmet'],
+    # scripts=['bin/virmet'],
     data_files=[('Rscripts', ['Rscripts/covplot.R'])],
     entry_points={
         'console_scripts': ['virmet = virmet.cli:main']
