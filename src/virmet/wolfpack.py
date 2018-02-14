@@ -280,8 +280,8 @@ def viral_blast(file_in, n_proc):
 
     logging.debug('saving blast database info')
     cml = shlex.split('blastdbcmd -db /data/virmet_databases/viral_nuccore/viral_db -info')
-    with open('blast_info.txt', 'a') as oh:
-        subprocess.call(cml, stdout=oh)
+    with open('blast_info.txt', 'a') as boh:
+        subprocess.call(cml, stdout=boh)
 
     logging.debug('parsing best HSP for each query sequence')
     qseqid = ''
