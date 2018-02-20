@@ -2,8 +2,10 @@
 
 """Runs on all samples of a MiSeq run or on a single fastq file"""
 import os
+import re
 import glob
 import logging
+import warnings
 import shlex
 import subprocess
 import pandas as pd
@@ -36,13 +38,94 @@ blast_cov_threshold = 75.
 blast_ident_threshold = 75.
 
 
+def strip(str_):
+    """Make the strip method a function"""
+    return str_.strip()
+
+
+def span_coverage(row):
+    """Return a set of covered positions given a blast alignment entry."""
+    start, end = min(row.sstart, row.send), max(row.sstart, row.send)
+    return set(range(start, end + 1))
+
+
+def merge_coverage(series):
+    """Join the covered ranges and return the length."""
+    covered = set()
+    for s in series.tolist():
+        covered |= s
+    return len(covered)
+
+
+def get_nodes_names(dir_name):
+    """Look for dmp taxonomy files in dir_name, read and return them
+
+    Some lines from https://github.com/zyxue/ncbitax2lin are used.
+    """
+    nodes_file = os.path.join(dir_name, 'nodes.dmp.gz')
+    logging.info('reading nodes file %s', nodes_file)
+    colnames = ['tax_id', 'parent_tax_id', 'rank', 'embl_code', 'division_id', 'inherited_div_flag',
+                'genetic_code_id', 'inherited_GC__flag', 'mitochondrial_genetic_code_id', 'inherited_MGC_flag',
+                'GenBank_hidden_flag', 'hidden_subtree_root_flag', 'comments']
+    nodes = pd.read_csv(nodes_file, sep="|", header=None, index_col=False, names=colnames, compression='gzip')
+    # To get rid of flanking tab characters
+    nodes['rank'] = nodes['rank'].apply(strip)
+    nodes['embl_code'] = nodes['embl_code'].apply(strip)
+    nodes['comments'] = nodes['comments'].apply(strip)
+    nodes.set_index('tax_id', inplace=True)
+
+    names_file = os.path.join(dir_name, 'names.dmp.gz')
+    logging.info('reading names file %s', names_file)
+    colnames = ['tax_id', 'name', 'name_2', 'class_name']
+    names = pd.read_csv(names_file, sep="|", header=None, index_col=False, names=colnames, compression='gzip')
+
+    names['name'] = names['name'].apply(strip)
+    names['name_2'] = names['name_2'].apply(strip)
+    names['class_name'] = names['class_name'].apply(strip)
+    sci_names = names[names['class_name'] == 'scientific name']
+    sci_names.set_index('tax_id', inplace=True)
+
+    return nodes, sci_names
+
+
+def get_parent_species(inrow, nodes, names):
+    """Travel the whole taxonomy above query until species, return the species name
+
+    :param query:
+    :param nodes:
+    :param names:
+
+    """
+    query = inrow['tax_id']
+    if query == 0:
+        return 'NA'
+    # print('Query tax id is %d' % query)
+
+    row = nodes.loc[query]
+    if str(row['rank']) == 'species':
+        return names.loc[query]['name']
+
+    rank = ''
+    while rank != 'species':
+        parent = row.parent_tax_id
+        row = nodes.loc[parent]
+        rank = str(row['rank'])
+        break
+    # print('Tax id of the species above query is %d' % parent)
+
+    #    row_query = names.loc[query]
+    #    print('Query was %s' % row_query['name'])
+    row_result = names.loc[parent]
+    #print('Species above is %s' % row_result['name'])
+
+    return row_result['name']
+
+
 def hunter(fq_file):
     """runs quality filter on a fastq file with seqtk and prinseq,
     simple parallelisation with xargs, returns output directory
     """
-    import re
-    import warnings
-    #    from virmet.common import prinseq_exe
+    # from virmet.common import prinseq_exe
     prinseq_exe = 'prinseq-lite.pl'
     prinseq_exe = 'prinseq'
 
@@ -224,10 +307,11 @@ def victor(input_reads, contaminant):
     return clean_name
 
 
-def viral_blast(file_in, n_proc):
+def viral_blast(file_in, n_proc, nodes, names):
     """runs blast against viral database, parallelise with xargs
     """
-
+    import re
+    import warnings
     # on hot start, blast again all decontaminated reads
     if os.path.exists('viral_reads.fastq.gz') and os.path.exists('undetermined_reads.fastq.gz'):
         run_child('zcat viral_reads.fastq.gz undetermined_reads.fastq.gz > %s' % file_in)
@@ -237,7 +321,7 @@ def viral_blast(file_in, n_proc):
     # streams will be used during the execution
     oh = open('stats.tsv', 'a')
     bh = open('unique.tsv', 'w')
-    bh.write('qseqid\tsseqid\tsscinames\tstitle\tpident\tqcovs\tscore\tlength\tmismatch\tgapopen\tqstart\tqend\tsstart\tsend\tstaxids\n')
+    bh.write('qseqid\tsseqid\tssciname\tstitle\tpident\tqcovs\tscore\tlength\tmismatch\tgapopen\tqstart\tqend\tsstart\tsend\tstaxid\n')
 
     os.rename(file_in, 'hq_decont_reads.fastq')
     fasta_file = 'hq_decont_reads.fasta'
@@ -270,10 +354,12 @@ def viral_blast(file_in, n_proc):
     os.environ['BLASTDB'] = DB_DIR
 
     xargs_thread = 0  # means on all available cores, caution
+    xargs_thread = n_proc
+    # if Darwin then xargs_thread must be n_proc
     cml = 'seq 0 %s | xargs -P %d -I {} blastn -task megablast \
            -query splitted_clean_{}.fasta -db %s \
            -out tmp_{}.tsv \
-           -outfmt \'6 qseqid sseqid sscinames stitle pident qcovs score length mismatch gapopen qstart qend sstart send staxids\'' \
+           -outfmt \'6 qseqid sseqid ssciname stitle pident qcovs score length mismatch gapopen qstart qend sstart send staxid\'' \
         % (n_proc - 1, xargs_thread, os.path.join(DB_DIR, 'viral_nuccore/viral_db'))
     logging.debug('running blast now')
     run_child(cml)
@@ -297,26 +383,48 @@ def viral_blast(file_in, n_proc):
         os.remove('splitted_clean_%d.fasta' % i)
     bh.close()
 
-    logging.debug('filtering and grouping by scientific name')
-    hits = pd.read_csv('unique.tsv', index_col='qseqid',  # delim_whitespace=True)
-                       delimiter="\t")
+    logging.debug('filtering and grouping by hit sequence')
+    hits = pd.read_csv('unique.tsv', index_col='qseqid', delimiter="\t")
     logging.debug('found %d hits', hits.shape[0])
-
     # select according to identity and coverage, count occurrences
-    good_hits = hits[(hits.pident > blast_ident_threshold) & \
-        (hits.qcovs > blast_cov_threshold)]
+    good_hits = hits[(hits.pident > blast_ident_threshold) & (hits.qcovs > blast_cov_threshold)]
     matched_reads = good_hits.shape[0]
-    #if matched_reads > 0:  # deals with no good_hits
-    ds = good_hits.groupby('sscinames').size().sort_values(ascending=False)
-    org_count = pd.DataFrame({'organism': ds.index.tolist(), 'reads': ds.values},
-                             index=ds.index)
-    org_count.to_csv('orgs_list.tsv', header=True, sep='\t', index=False)
-
     logging.debug('%d hits passing coverage and identity filter', matched_reads)
     oh.write('viral_reads\t%s\n' % matched_reads)
     unknown_reads = tot_seqs - matched_reads
     oh.write('undetermined_reads\t%d\n' % unknown_reads)
     oh.close()
+
+    if matched_reads == 0:  # deals with no good_hits
+        warnings.warn('No hits')
+        return
+
+    # convert to int, allowing for N/A and rename column to match nodes
+    good_hits.loc[:, 'staxid'] = good_hits.loc[:, 'staxid'].fillna(0.0).astype(int)
+    good_hits = good_hits.rename(columns={'staxid': 'tax_id'})
+
+    # fill the species and the covered range on subject sequence
+    good_hits['species'] = good_hits.apply(lambda row: get_parent_species(row, nodes, names), axis=1)
+    good_hits['covered_region'] = good_hits.apply(lambda row: span_coverage(row), axis=1)
+    good_hits['accn'] = good_hits.apply(lambda row: re.search(r'([A-Z]+_?\d*)\.\d*', row['sseqid']).group(1), axis=1)
+
+    # read sequence lenght from file and merge into good_hits
+    viral_info_file = os.path.join(DB_DIR, 'viral_nuccore/viral_seqs_info.tsv')
+    viral_info = pd.read_table(viral_info_file, names=['accn', 'TaxId', 'seq_len', 'Organism', 'Title'])
+    good_hits = pd.merge(good_hits, viral_info, on='accn')
+
+    # now summarise and write the covered region length
+    ds = good_hits.groupby(['accn', 'stitle', 'ssciname', 'species', 'tax_id']).agg({'covered_region': merge_coverage})
+    ds['reads'] = good_hits.groupby(['accn', 'stitle', 'ssciname', 'species', 'tax_id']).size()
+    ds = ds.reset_index()
+
+    viral_info = viral_info.drop(columns=['TaxId', 'Organism', 'Title'])
+
+    ds = pd.merge(ds, viral_info)
+    #ds['covered_fraction'] = round(ds['covered_region'] / ds['seq_len'], 4)
+    ds = ds.loc[:, ['species', 'reads', 'stitle', 'ssciname', 'covered_region', 'seq_len']]
+    ds = ds.sort_values(by=['reads', 'covered_region'], ascending=[False, False])
+    ds.to_csv('orgs_list.tsv', header=True, sep='\t', index=False)
 
 
 def cleaning_up():
@@ -445,10 +553,13 @@ def main(args):
         n_proc = 2
     logging.info('%d cores that will be used', n_proc)
 
+    logging.info('reading taxonomy files')
+    nodes, names = get_nodes_names(DB_DIR)
+
     for sample_dir in s_dirs:
         os.chdir(sample_dir)
         logging.info('now sample %s', sample_dir)
-        viral_blast(file_to_blast, n_proc)
+        viral_blast(file_to_blast, n_proc, nodes, names)
         logging.info('sample %s blasted', sample_dir)
         os.chdir(os.pardir)
 
@@ -461,3 +572,9 @@ def main(args):
 
     os.chdir(os.pardir)
     return out_dir
+
+
+if __name__ == '__main__':
+    import sys
+    nodes, names = get_nodes_names(DB_DIR)
+    viral_blast(sys.argv[1], 2, nodes, names)
