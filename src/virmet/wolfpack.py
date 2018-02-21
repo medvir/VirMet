@@ -302,6 +302,7 @@ def viral_blast(file_in, n_proc, nodes, names):
     """runs blast against viral database, parallelise with xargs
     """
     import re
+    import sys
     import warnings
     # on hot start, blast again all decontaminated reads
     if os.path.exists('viral_reads.fastq.gz') and os.path.exists('undetermined_reads.fastq.gz'):
@@ -314,7 +315,8 @@ def viral_blast(file_in, n_proc, nodes, names):
     bh = open('unique.tsv', 'w')
     bh.write('qseqid\tsseqid\tssciname\tstitle\tpident\tqcovs\tscore\tlength\tmismatch\tgapopen\tqstart\tqend\tsstart\tsend\tstaxid\n')
 
-    os.rename(file_in, 'hq_decont_reads.fastq')
+    if not os.path.exists('hq_decont_reads.fastq'):
+        os.rename(file_in, 'hq_decont_reads.fastq')
     fasta_file = 'hq_decont_reads.fasta'
     run_child('seqtk seq -A hq_decont_reads.fastq > %s' % fasta_file)
     try:
