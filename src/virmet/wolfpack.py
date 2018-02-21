@@ -76,11 +76,11 @@ def get_nodes_names(dir_name):
 
     names_file = os.path.join(dir_name, 'names.dmp.gz')
     logging.info('reading names file %s', names_file)
-    colnames = ['tax_id', 'name', 'name_2', 'class_name']
+    colnames = ['tax_id', 'taxon_name', 'alt_name', 'class_name']
     names = pd.read_csv(names_file, sep="|", header=None, index_col=False, names=colnames, compression='gzip')
 
-    names['name'] = names['name'].apply(strip)
-    names['name_2'] = names['name_2'].apply(strip)
+    names['taxon_name'] = names['taxon_name'].apply(strip)
+    names['alt_name'] = names['alt_name'].apply(strip)
     names['class_name'] = names['class_name'].apply(strip)
     sci_names = names[names['class_name'] == 'scientific name']
     sci_names.set_index('tax_id', inplace=True)
@@ -91,7 +91,7 @@ def get_nodes_names(dir_name):
 def get_parent_species(inrow, nodes, names):
     """Travel the whole taxonomy above query until species, return the species name
 
-    :param query:
+    :param inrow:
     :param nodes:
     :param names:
 
@@ -99,26 +99,17 @@ def get_parent_species(inrow, nodes, names):
     query = inrow['tax_id']
     if query == 0:
         return 'NA'
-    # print('Query tax id is %d' % query)
-
-    row = nodes.loc[query]
-    if str(row['rank']) == 'species':
-        return names.loc[query]['name']
-
-    rank = ''
-    while rank != 'species':
-        parent = row.parent_tax_id
-        row = nodes.loc[parent]
-        rank = str(row['rank'])
-        break
-    # print('Tax id of the species above query is %d' % parent)
-
-    #    row_query = names.loc[query]
-    #    print('Query was %s' % row_query['name'])
-    row_result = names.loc[parent]
-    #print('Species above is %s' % row_result['name'])
-
-    return row_result['name']
+    i = 100  # failsafe method to avoid infinite loops (shame on me)
+    while i:
+        node_row = nodes.loc[query]
+        rank = node_row['rank']  # rank also a method of DataFrame, can't use node_row.rank
+        name_row = names.loc[query]
+        org_name = name_row.taxon_name
+        if rank == 'species':
+            break
+        query = node_row.parent_tax_id
+        i -= 1
+    return org_name
 
 
 def hunter(fq_file):
@@ -352,9 +343,13 @@ def viral_blast(file_in, n_proc, nodes, names):
 
     # blast needs access to taxdb files to retrieve organism name
     os.environ['BLASTDB'] = DB_DIR
-
-    xargs_thread = 0  # means on all available cores, caution
-    xargs_thread = n_proc
+    if sys.platform.startswith('linux'):
+        xargs_thread = 0  # means on all available cores, caution
+    elif sys.platform.startswith('darwin'):
+        xargs_thread = n_proc  # darwin xargs does not accept -P 0
+    else:
+        logging.info('could not detect system platform: runnning on %d cores', n_proc)
+        xargs_thread = n_proc
     # if Darwin then xargs_thread must be n_proc
     cml = 'seq 0 %s | xargs -P %d -I {} blastn -task megablast \
            -query splitted_clean_{}.fasta -db %s \
@@ -576,5 +571,6 @@ def main(args):
 
 if __name__ == '__main__':
     import sys
-    nodes, names = get_nodes_names(DB_DIR)
-    viral_blast(sys.argv[1], 2, nodes, names)
+    assert os.path.exists(sys.argv[1])
+    all_nodes, all_names = get_nodes_names(DB_DIR)
+    viral_blast(sys.argv[1], 2, all_nodes, all_names)
