@@ -37,11 +37,19 @@ def fetch_viral(viral_mode):
     logging.info('taxonomy and fasta sequences match')
 
     os.chdir(DB_DIR)
+    logging.info('downloading taxonomy databases')
     download_handle = ftp_down('ftp://ftp.ncbi.nlm.nih.gov/blast/db/taxdb.tar.gz')
     download_handle.close()
     run_child('tar xvfz taxdb.tar.gz')
     os.remove('taxdb.tar.gz')
-    #TODO download taxonomy database as well
+    download_handle = ftp_down('ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz')
+    download_handle.close()
+    run_child('tar xvfz taxdump.tar.gz')
+    for ftd in ['taxdump.tar.gz', 'merged.dmp', 'gencode.dmp', 'division.dmp', 'delnodes.dmp', 'citations.dmp']:
+        try:
+            os.remove(ftd)
+        except OSError:
+            logging.warning('Could not find file %s', ftd)
 
 
 def fetch_bacterial():
