@@ -8,6 +8,8 @@ docs/_build/
 */.dropbox.attr
 *pyc
 .coverage
+.cache/
+.eggs/
 coverage.xml
 old_data/
 VirMet.egg-info/

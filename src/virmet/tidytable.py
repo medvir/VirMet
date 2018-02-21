@@ -12,7 +12,7 @@ import pandas as pd
 def main(args):
     '''Everything is defined here'''
     outdir = args.outdir
-    run = outdir.rstrip('/').split('/')[-1].split('virmet_output_')[1]
+    run = os.path.abspath(outdir).split('/')[-1].split('virmet_output_')[1]
     try:
         os.chdir(outdir)
     except FileNotFoundError:

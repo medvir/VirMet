@@ -1,7 +1,30 @@
 #!/usr/bin/env python3
+"""
+Module that contains the command line app.
 
+Why does this file exist, and why not put this in __main__?
+
+  You might be tempted to import things from __main__ later, but that will cause
+  problems: the code will get executed twice:
+
+  - When you run `python -mminvar` python will execute
+    ``__main__.py`` as a script. That means there won't be any
+    ``minvar.__main__`` in ``sys.modules``.
+  - When you import __main__ it will get executed again (as a module) because
+    there's no ``minvar.__main__`` in ``sys.modules``.
+
+  Also see (1) from http://click.pocoo.org/5/setuptools/#setuptools-integration
+"""
 import os
 import sys
+
+from pkg_resources import (get_distribution, DistributionNotFound)
+
+try:
+    __version__ = get_distribution('virmet').version
+except DistributionNotFound:
+    # package is not installed
+    pass
 
 # manipulate path to import functions
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -11,15 +34,21 @@ sys.modules["virmet"] = mod
 
 # each subcommand takes one of these functions as default
 
+
 def tidytable_run(args):
+    """Default function for command line parser."""
     from virmet import tidytable
     tidytable.main(args)
 
+
 def covplot_run(args):
+    """Default function for command line parser."""
     from virmet import covplot
     covplot.main(args)
 
+
 def wolfpack_run(args):
+    """Default function for command line parser."""
     from shutil import move, Error
     from virmet import wolfpack
     od = wolfpack.main(args)
@@ -31,26 +60,34 @@ def wolfpack_run(args):
     except Error:
         sys.exit('logging file not moved after hot run')
 
+
 def index_db(args):
+    """Default function for command line parser."""
     from virmet import index
     index.main(args)
 
+
 def update_db(args):
+    """Default function for command line parser."""
     from virmet import update
     update.main(args)
 
+
 def fetch_db(args):
+    """Default function for command line parser."""
     from virmet import fetch
     fetch.main(args)
 
 
 def main():
+    """Parse command line, run default functions."""
     import argparse
-
     # parse command line
     # create the top-level parser
     parser = argparse.ArgumentParser(usage='%(prog)s <command> [options]',
                                      epilog="Run `virmet subcommand -h` for more help")
+    parser.add_argument('-v', '--version', action='version', version=__version__)
+
     subparsers = parser.add_subparsers(help='available sub-commands')
 
     # create the parser for command "fetch"
@@ -104,6 +141,7 @@ def main():
 
     # exit so that log file is not written
     if len(sys.argv) == 1 or sys.argv[1] == '-h' or sys.argv[1] == '--help':
+        # or sys.argv[1] == '-v' or sys.argv[1] == '--version':
         parser.print_help()
         sys.exit()
 
@@ -111,13 +149,15 @@ def main():
     import logging
     import logging.handlers
     logging.basicConfig(filename='virmet.log', level=logging.DEBUG,
-                        format='%(levelname)s %(asctime)s %(filename)s: %(funcName)s() %(lineno)d: \t%(message)s', datefmt='%Y/%m/%d %H:%M:%S')
+                        format='%(levelname)s %(asctime)s %(filename)s: %(funcName)s() %(lineno)d: \t%(message)s',
+                        datefmt='%Y/%m/%d %H:%M:%S')
 
     logging.info(' '.join(sys.argv))
-
+    logging.info('VirMet version:%s', __version__)
     # parse the args
     args = parser.parse_args()
     args.func(args)
+
 
 if __name__ == "__main__":  # and __package__ is None:
     main()
