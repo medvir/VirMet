@@ -2,10 +2,10 @@ VirMet
 ------
 
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat-square)](http://bioconda.github.io/recipes/virmet/README.html)
-
 [![Build Status](https://travis-ci.org/ozagordi/VirMet.svg?branch=master)](https://travis-ci.org/ozagordi/VirMet)
+[![codecov.io](https://codecov.io/github/ozagordi/VirMet/coverage.svg?branch=master)](https://codecov.io/github/ozagordi/VirMet?branch=master)
+[![codebeat badge](https://codebeat.co/badges/bf360427-6915-4432-b43e-054716e8139f)](https://codebeat.co/projects/github-com-ozagordi-virmet-master)
 
-[![codecov.io](https://codecov.io/github/ozagordi/VirMet/coverage.svg?branch=master)](https://codecov.io/github/ozagordi/VirMet?branch=master)  
 Watch out: only a few files are counted in coverage statistics.
 
 Full documentation on [Read the Docs](http://virmet.rtfd.org/en/latest/).
@@ -29,17 +29,23 @@ A short help is obtained with `virmet subcommand -h`.
 
     [user@host ~]$ virmet wolfpack --run path_to_run_directory
     ... some time later ...
-    [user@host ~]$ cat virmet_output_name_of_the_run/sample_name/orgs_list.csv
-    organism                        reads
-    Torque teno virus 3             140
-    Torque teno virus               101
-    BeAn 58058 virus                14
-    Caulobacter phage Ccr29         5
-    Human immunodeficiency virus 1  3
-    Moraxella phage Mcat16          2
-    Torque teno virus 15            1
-    ...
+    [user@host ~]$ wc virmet_output_name_of_the_run/sample_name/orgs_list.csv
+       9     128     963 orgs_list2.tsv
 
+Reads are filtered, decontaminated, and finally blasted against a (large)
+set of viral sequences. Results for each database sequence to which similar reads
+were found are summarised in a tsv file is with columns
+
+- `species`: scientific name of the species corresponding to the database sequence;
+- `reads`: number of reads assigned to this specific sequence;
+- `stitle`: title of the sequence in the database (fasta header);
+- `ssciname`: scientific name of the sequence;
+- `covered_region`: number of nucleotides covered by at least one read;
+- `seq_len`: length of the sequence.
+
+An example of such a file is reported here.
+
+![Figure 1](output.png " Figure 1")
 
 ### Installation
 
