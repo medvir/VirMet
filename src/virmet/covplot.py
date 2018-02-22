@@ -43,13 +43,13 @@ def best_species(orgs_file, org_name):
     assert (diff > 0).sum() == 0, diff
     # criterion is "startswith"
     # criterion = orgs_list['sscinames'].map(lambda x: x.startswith(organism))
-    criterion = orgs_list.iloc[:, 0].str.startswith(org_name).fillna(False)
+    criterion = orgs_list.loc[:, 'ssciname'].str.startswith(org_name).fillna(False)
     matching_orgs = orgs_list[criterion]
     logging.info('Found %d matchings', orgs_list.shape[0])
 
     # organism matching that given on command line with most reads is the first
     # W.O. this assumes descending order of reads
-    return str(matching_orgs.iloc[0].organism)
+    return str(matching_orgs.iloc[0].ssciname)
 
 
 def main(args):
@@ -66,7 +66,7 @@ def main(args):
     # parse blast results
     blast_file = os.path.join(outdir, 'unique.tsv.gz')
     unique = pd.read_csv(blast_file, sep='\t', header=0, compression='gzip')
-    matching_reads = unique[unique['sscinames'] == best_spec]
+    matching_reads = unique[unique['ssciname'] == best_spec]
     best_seqids = matching_reads.groupby('sseqid').size().sort_values(ascending=False)
 
     dsc, acc = str(best_seqids.index.tolist()[0]).split('|')[:2]
