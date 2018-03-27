@@ -8,6 +8,7 @@ matching sequence among those starting with ``organism``
 """
 import os
 import logging
+import subprocess
 import pandas as pd
 from Bio import SeqIO
 from virmet.common import run_child, DB_DIR
@@ -89,11 +90,12 @@ def main(args):
     logging.info('Aligning viral reads')
     run_child('bwa mem -t 2 single.fasta ../viral_reads.fastq.gz 2> /dev/null | samtools view -u - | samtools sort -O bam -T tmp -o %s -' % bam_file)
     run_child('samtools index %s' % bam_file)
+    n_reads = int(subprocess.check_output("samtools stats %s | grep ^SN | grep \"reads mapped:\" | cut -f 3" % bam_file, shell=True).strip())
     depth_file = 'depth.txt'
     run_child('samtools depth -a -q 0 -Q 0 %s > %s' % (bam_file, depth_file))
     image_name = organism + '_coverage.pdf'
     logging.info('Plotting coverage')
-    run_child('Rscript %s %s %s %s %s' % (covpl_exe, depth_file, acc, seq_len, image_name))
+    run_child('Rscript %s %s %s %s %s %d' % (covpl_exe, depth_file, acc, seq_len, image_name, n_reads))
 
     return best_species
 

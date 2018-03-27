@@ -6,6 +6,7 @@
 import os
 import sys
 import logging
+from collections import Counter
 import pandas as pd
 from virmet.common import run_child, viral_query, bact_fung_query, get_accs, download_genomes, DB_DIR
 
@@ -139,9 +140,17 @@ def virupdate(viral_type, picked=None):
     s_code = run_child('cut -f 1,2 %s > %s' % (info_file, os.path.join(viral_dir, 'viral_accn_taxid.dmp')))
 
     # perform tests
-    gids_1 = set(get_accs('viral_database.fasta'))
-    gids_2 = set([l.split()[0] for l in open('viral_accn_taxid.dmp')])
-    assert gids_1 == gids_2, 'taxonomy/viral_seqs_info not matching with fasta'
+    gids_1 = Counter(get_accs('viral_database.fasta'))
+    gids_2 = Counter([l.split()[0] for l in open('viral_accn_taxid.dmp')])
+    assert set(gids_1) == set(gids_2), 'taxonomy/viral_seqs_info not matching with fasta'
+    duplicates = [k for k, v in gids_1.items() if v > 1]
+    if duplicates:
+        warnings.warn('Duplicate sequences in viral_database.fasta: %s' % ' '.join(duplicates))
+        logging.warning('Duplicate sequences in viral_database.fasta: %s', ' '.join(duplicates))
+    for l in open('viral_database.fasta'):
+        if '>' in l and not l.startswith('>') or l.count('>') > 1:
+            warnings.warn('Invalid line in viral_database.fasta: %s' % l)
+            logging.warning('Invalid line in viral_database.fasta: %s', l)
 
 def main(args):
     logging.info('now in update_db')
