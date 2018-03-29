@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `covplot` has been slightly slightly changed to fix #33 and #28. It's also faster.
 
 ### Changed
+- `covplot` reports more information on sequence length and covered bases, and features the Economist theme.
+- `update` now performs some tests on the integrity of `viral_database.fasta`.
 - `orgs_list` now includes species name and coverage information #32.
 - The viral database now includes all reference viral genomes #34.
 - VirMet now saves its version and the information on the viral database into the output directory #26.
