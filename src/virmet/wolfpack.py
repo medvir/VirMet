@@ -403,7 +403,7 @@ def viral_blast(file_in, n_proc, nodes, names):
     # fill the species and the covered range on subject sequence
     good_hits['species'] = good_hits.apply(lambda row: get_parent_species(row, nodes, names), axis=1)
     good_hits['covered_region'] = good_hits.apply(lambda row: span_coverage(row), axis=1)
-    good_hits['accn'] = good_hits.apply(lambda row: re.search(r'([A-Z]+_?\d*)\.\d*', row['sseqid']).group(1), axis=1)
+    good_hits['accn'] = good_hits.apply(lambda row: re.search(r'([A-Z]+_?\d*)\.?\d*', row['sseqid']).group(1), axis=1)
 
     # read sequence lenght from file and merge into good_hits
     viral_info_file = os.path.join(DB_DIR, 'viral_nuccore/viral_seqs_info.tsv')
