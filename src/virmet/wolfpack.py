@@ -101,7 +101,11 @@ def get_parent_species(inrow, nodes, names):
         return 'NA'
     i = 100  # failsafe method to avoid infinite loops (shame on me)
     while i:
-        node_row = nodes.loc[query]
+        try:
+            node_row = nodes.loc[query]
+        except KeyError:  # databases are sometimes not aligned
+            warnings.warn('Could not find parent for node %s' % query)
+            return 'NA'
         rank = node_row['rank']  # rank also a method of DataFrame, can't use node_row.rank
         name_row = names.loc[query]
         org_name = name_row.taxon_name

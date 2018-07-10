@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Fixed
+- Added a failsafe mechanism to deal with misaligned taxonomy (TaxID not found in `nodes.dmp`).
 - Taxonomy nodes and names files are downloaded together with the rest of the database #36.
 - `tidytable` works with relative path #30.
 - `covplot` has been slightly slightly changed to fix #33 and #28. It's also faster.
