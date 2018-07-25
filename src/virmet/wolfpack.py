@@ -373,15 +373,15 @@ def viral_blast(file_in, n_proc, nodes, names):
     logging.debug('parsing best HSP for each query sequence')
     qseqid = ''
     # write to unique.tsv
-    for i in range(n_proc):
-        tmpf = 'tmp_%d.tsv' % i
+    for tmpf in glob.glob('tmp_*.tsv'):
+        i = tmpf.split('_')[1].split('.')[0]
         with open(tmpf) as f:
             for line in f:
                 if line.split('\t')[0] != qseqid:
                     bh.write(line)
                     qseqid = line.split('\t')[0]
         os.remove(tmpf)
-        os.remove('splitted_clean_%d.fasta' % i)
+        os.remove('splitted_clean_%s.fasta' % i)
     bh.close()
 
     logging.debug('filtering and grouping by hit sequence')
