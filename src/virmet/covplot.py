@@ -96,6 +96,7 @@ def main(args):
     image_name = organism + '_coverage.pdf'
     logging.info('Plotting coverage')
     run_child('Rscript %s %s %s %s %s %d' % (covpl_exe, depth_file, acc, seq_len, image_name, n_reads))
+    print('acc:%s seq_len:%s n_reads:%d' % (acc, seq_len, n_reads))
 
     return best_species
 
