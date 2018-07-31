@@ -76,8 +76,11 @@ def main(args):
     unique = pd.read_csv(blast_file, sep='\t', header=0, compression='gzip')
     matching_reads = unique[unique['ssciname'] == best_spec]
     best_seqids = matching_reads.groupby('sseqid').size().sort_values(ascending=False)
-
-    dsc, acc = str(best_seqids.index.tolist()[0]).split('|')[:2]
+    try:
+        dsc, acc = str(best_seqids.index.tolist()[0]).split('|')[:2]
+    except ValueError:
+        dsc = 'None'
+        acc  = str(best_seqids.index.tolist()[0])
     logging.info('Best hit in blast results: %s accession:%s', dsc, acc)
 
     # copy single genome, index, align viral_reads
