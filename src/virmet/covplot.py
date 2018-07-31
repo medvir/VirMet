@@ -9,8 +9,14 @@ matching sequence among those starting with ``organism``
 import os
 import logging
 import subprocess
+import sys
+import shlex
+from warnings import warn
 import pandas as pd
 from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+from Bio.SeqIO.FastaIO import SimpleFastaParser
 from virmet.common import run_child, DB_DIR
 
 covpl_exe = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'scripts', 'covplot.R')
@@ -56,6 +62,7 @@ def best_species(orgs_file, org_name):
 def main(args):
     """Extract the best species, realign reads, run ``covplot.R`` script to create the plot
     """
+    import datetime
     outdir = args.outdir
     organism = args.organism
 
@@ -75,28 +82,52 @@ def main(args):
 
     # copy single genome, index, align viral_reads
     os.chdir(outdir)
-    organism = organism.replace(' ', '_')
+    organism = organism.replace(' ', '_').replace('/', '_')
     try:
         os.mkdir(organism)
     except FileExistsError:
-        sys.exit('directory %s exists already: delete it to run covplot again' % organism)
+        warn('directory %s exists already: delete it to run covplot from scratch' % organism)
     os.chdir(organism)
-    viral_db = os.path.join(DB_DIR, 'viral_nuccore/viral_database.fasta')
-    best_seq = [s for s in SeqIO.parse(viral_db, 'fasta') if acc in s.id]
-    seq_len = len(best_seq[0])
-    SeqIO.write(best_seq, 'single.fasta', 'fasta')
-    run_child('bwa index single.fasta')
+    
+    if os.path.exists('single.fasta'):
+        warn('Reusing single.fasta')
+        best_seq = SeqIO.parse('single.fasta', 'fasta')
+    else:
+        viral_db = os.path.join(DB_DIR, 'viral_nuccore/viral_database.fasta')
+        time1 = datetime.datetime.now()
+        #best_seq = [s for s in SeqIO.parse(viral_db, 'fasta') if acc in s.id]
+        with open(viral_db) as handle:
+            best_seq = [s for name, s in SimpleFastaParser(handle) if acc in name]
+        print('best_seq found', file=sys.stderr)
+        print(datetime.datetime.now() - time1, file=sys.stderr)
+        sr = [SeqRecord(Seq(best_seq[0]), id=acc, description='')]
+        SeqIO.write(sr, 'single.fasta', 'fasta')
+
+    seq_len = len(list(best_seq)[0])
+
     bam_file = 'single_sorted.bam'
-    logging.info('Aligning viral reads')
-    run_child('bwa mem -t 2 single.fasta ../viral_reads.fastq.gz 2> /dev/null | samtools view -u - | samtools sort -O bam -T tmp -o %s -' % bam_file)
-    run_child('samtools index %s' % bam_file)
+    if os.path.exists(bam_file):
+        warn('Reusing alignment')
+        logging.info('Refusing to rerun alignment')
+    else:
+        run_child('bwa index single.fasta')
+        logging.info('Aligning viral reads')
+        run_child('bwa mem -t 8 single.fasta ../viral_reads.fastq.gz 2> /dev/null | samtools view -@ 2 -u - | samtools sort -@ 2 -O bam -T tmp -o %s -' % bam_file)
+        run_child('samtools index %s' % bam_file)
     n_reads = int(subprocess.check_output("samtools stats %s | grep ^SN | grep \"reads mapped:\" | cut -f 3" % bam_file, shell=True).strip())
     depth_file = 'depth.txt'
-    run_child('samtools depth -a -q 0 -Q 0 %s > %s' % (bam_file, depth_file))
+    if os.path.exists(depth_file):
+        warn('Reusing depth file')
+    else:
+        run_child('samtools depth -a -q 0 -Q 0 %s > %s' % (bam_file, depth_file))
     image_name = organism + '_coverage.pdf'
     logging.info('Plotting coverage')
-    run_child('Rscript %s %s %s %s %s %d' % (covpl_exe, depth_file, acc, seq_len, image_name, n_reads))
-    print('acc:%s seq_len:%s n_reads:%d' % (acc, seq_len, n_reads))
+    perc_obs = subprocess.check_output(shlex.split('Rscript %s %s %s %s %s %d' % (covpl_exe, depth_file, acc, seq_len, image_name, n_reads)))
+    try:
+        perc_obs_string = perc_obs.decode('ascii').split()[1]
+    except IndexError:
+        perc_obs_string = 'NA'
+    print('acc:%s seq_len:%s n_reads:%d perc_obs:%s' % (acc, seq_len, n_reads, perc_obs_string))
 
     return best_species
 
