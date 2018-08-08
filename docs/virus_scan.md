@@ -55,6 +55,7 @@ were passing a specific step of the pipeline or matching a specific database.
 
 
 ## Additional files
+
 At the end of a run a directory for each sample (fastq file analyzed) is
 created containing the following files:
 
@@ -95,3 +96,26 @@ those that were identified as matching human genome, and so on. File ending in
 `err` contain the standard error of the conversion bam -> cram.
 
 A typical cram workflow, also used in VirMet, can be found [here](http://www.htslib.org/workflow/#mapping_to_cram).
+
+## Hot run (not fully tested)
+
+A virus scan on a full MiSeq run typically lasts a few hours, many of which are spent
+in the decontamination phase. Sometimes, after a run is completed, we would like to
+run it again with a new viral database. In these cases, `wolfpack` would run skipping
+the previous phases to save time. It relies on the presence of intermediate files that,
+if present, signals the pipeline that a specific step must be skipped.
+
+These are the rules (must be intended for each sample):
+
+- if both `prinseq.log` and `prinseq.err` exist, skip quality filtering,
+- if `good_humanGRCh38.err` exists, skip the human reads decontamination,
+- if `good_humanGRCh38_bact1.err` exists, skip the decontamination against first bacterial
+  database, and so on.
+
+Blasting against viral database will always be performed. If both `viral_reads.fastq.gz`
+and `undetermined_reads.fastq.gz` exist, their content will be copied into a file,
+they will be removed, and this new file will be blasted against the viral database.
+
+In short, if we change the viral database after a run has already been analyzed, simply
+running `virmet wolfpack` again will skip the quality filtering and go straight to
+blast against viral database.
