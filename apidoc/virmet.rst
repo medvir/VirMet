@@ -12,3 +12,11 @@ virmet.wolfpack module
     :undoc-members:
     :show-inheritance:
 
+
+virmet.covplot module
+----------------------
+
+.. automodule:: virmet.covplot
+    :members:
+    :undoc-members:
+    :show-inheritance:
