@@ -4,14 +4,16 @@ import io
 import sys
 import unittest
 import tempfile
+import pandas as pd
+from pandas.util.testing import assert_frame_equal 
 
 virmet_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.sys.path.insert(1, virmet_dir)
 mod = __import__('virmet')
 sys.modules["virmet"] = mod
 
-from virmet.wolfpack import hunter
-from virmet.common import run_child
+from virmet.wolfpack import hunter, viral_blast, get_nodes_names
+from virmet.common import run_child, DB_DIR
 
 
 class TestHunter(unittest.TestCase):
@@ -41,3 +43,25 @@ class TestHunter(unittest.TestCase):
         os.chdir(self.tmpdir)
         for f in ['good.fastq', 'bad.fastq', 'prinseq.log', 'prinseq.err', 'stats.tsv']:
             os.remove(f)
+
+    
+class TestViralBlast(unittest.TestCase):
+    
+    def setUp(self):
+        self.tmpdir =  tempfile.gettempdir()
+        self.nodes, self.names = get_nodes_names(DB_DIR)
+        self.reads = os.path.join(virmet_dir, 'VirMet', 'data', 'hq_decont_reads.fastq')
+        			
+    def test_viral_blast(self):
+        os.chdir(self.tmpdir)
+        viral_blast(self.reads, 4, self.nodes, self.names)
+        
+        self.orgs_file = os.path.join(self.tmpdir, 'orgs_list.tsv')
+        df_org_list = pd.read_csv(self.orgs_file, index_col='species', delimiter="\t")
+        
+        MG212469_reads = df_org_list.loc['Enterovirus C','reads'].sum()
+        MG212469_reads_expected = 1122
+        self.assertEqual(MG212469_reads, MG212469_reads_expected)
+        #assert_frame_equal(self.fixture, df_row)
+
+        
