@@ -313,7 +313,7 @@ def viral_blast(file_in, n_proc, nodes, names):
         run_child('zcat viral_reads.fastq.gz undetermined_reads.fastq.gz > %s' % file_in)
         os.remove('viral_reads.fastq.gz')
         os.remove('undetermined_reads.fastq.gz')
-
+        
     # streams will be used during the execution
     oh = open('stats.tsv', 'a')
     bh = open('unique.tsv', 'w')
@@ -400,19 +400,21 @@ def viral_blast(file_in, n_proc, nodes, names):
         warnings.warn('No hits')
         return
 
-    # convert to int, allowing for N/A and rename column to match nodes
-    good_hits.loc[:, 'staxid'] = good_hits.loc[:, 'staxid'].fillna(0.0).astype(int)
-    good_hits = good_hits.rename(columns={'staxid': 'tax_id'})
-
-    # fill the species and the covered range on subject sequence
-    good_hits['species'] = good_hits.apply(lambda row: get_parent_species(row, nodes, names), axis=1)
-    good_hits['covered_region'] = good_hits.apply(lambda row: span_coverage(row), axis=1)
+    # create a column for accession number
     good_hits['accn'] = good_hits.apply(lambda row: re.search(r'([A-Z]+_?\d*)\.?\d*', row['sseqid']).group(1), axis=1)
-
-    # read sequence lenght from file and merge into good_hits
+    good_hits = good_hits.rename(columns={'staxid': 'tax_id'})
+    
     viral_info_file = os.path.join(DB_DIR, 'viral_nuccore/viral_seqs_info.tsv')
     viral_info = pd.read_table(viral_info_file, names=['accn', 'TaxId', 'seq_len', 'Organism', 'Title'])
     good_hits = pd.merge(good_hits, viral_info, on='accn')
+    # if blastn gives no taxid and scientific name, fill these col from viral_seqs_info.tsv file
+    good_hits.loc[:, 'ssciname'] = good_hits.loc[:, 'ssciname'].fillna(good_hits['Organism']).astype(str)
+    good_hits.loc[:, 'tax_id'] = good_hits.loc[:, 'tax_id'].fillna(good_hits['TaxId']).astype(int)
+    # fill the species and the covered range on subject sequence
+    good_hits['species'] = good_hits.apply(lambda row: get_parent_species(row, nodes, names), axis=1)
+    good_hits['covered_region'] = good_hits.apply(lambda row: span_coverage(row), axis=1)
+    if good_hits.isnull().any().any():
+        logging.error("There is 'nan' in the result of the blastn after selecting good hits.")
 
     # now summarise and write the covered region length
     ds = good_hits.groupby(['accn', 'stitle', 'ssciname', 'species', 'tax_id']).agg({'covered_region': merge_coverage})
@@ -420,7 +422,6 @@ def viral_blast(file_in, n_proc, nodes, names):
     ds = ds.reset_index()
 
     viral_info = viral_info.drop(columns=['TaxId', 'Organism', 'Title'])
-
     ds = pd.merge(ds, viral_info)
     #ds['covered_fraction'] = round(ds['covered_region'] / ds['seq_len'], 4)
     ds = ds.loc[:, ['species', 'reads', 'stitle', 'ssciname', 'covered_region', 'seq_len']]
