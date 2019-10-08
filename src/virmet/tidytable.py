@@ -24,17 +24,20 @@ def main(args):
     for sd in sample_dirs:
         # parse and save stat files
         stat_file = os.path.join(sd, 'stats.tsv')
-        df = pd.read_table(stat_file, sep='\t', header=None,
+        df = pd.read_csv(stat_file, sep='\t', header=None,
                            names=['category', 'reads'])
         df['sample'] = sd
         df['run'] = run
         all_reads = all_reads.append(df)
         # parse and save orgs_list files
         orgs_file = os.path.join(sd, 'orgs_list.tsv')
-        df = pd.read_table(orgs_file, sep='\t', header=0)
-        df['sample'] = sd
-        df['run'] = run
-        all_orgs = all_orgs.append(df)
+        if  os.path.isfile(orgs_file):
+            df = pd.read_csv(orgs_file, sep='\t', header=0)
+            df['sample'] = sd
+            df['run'] = run
+            all_orgs = all_orgs.append(df)
+        else:
+            continue
 
     all_orgs.to_csv('orgs_species_found.tsv', sep='\t', index=False)
     all_reads.to_csv('run_reads_summary.tsv', sep='\t', index=False)
