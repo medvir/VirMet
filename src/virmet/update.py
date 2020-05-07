@@ -8,7 +8,7 @@ import sys
 import logging
 from collections import Counter
 import pandas as pd
-from virmet.common import run_child, viral_query, bact_fung_query, get_accs, download_genomes, DB_DIR
+from virmet.common import run_child, viral_query, bact_fung_query, get_accs, download_genomes, DB_DIR, N_FILES_BACT
 
 
 def bact_fung_update(query_type=None, picked=None):
@@ -38,8 +38,8 @@ def bact_fung_update(query_type=None, picked=None):
     for t in to_add:
         logging.debug('genome from %s will be added', t)
         if query_type == 'bacteria':
-            download_genomes(to_add, prefix='tmp', n_files=3)
-            for i in [1, 2, 3]:
+            download_genomes(to_add, prefix='tmp', n_files=N_FILES_BACT)
+            for i in range(1, N_FILES_BACT+1):
                 run_child('bgzip -c fasta/tmp%d.fasta >> fasta/bact%d.fasta.gz' % (i, i))
                 os.remove('fasta/bact%d.fasta.gz' % i)
         elif query_type == 'fungi':
@@ -61,13 +61,13 @@ def bact_fung_update(query_type=None, picked=None):
 
     for i, gid in enumerate(to_add):
         if query_type == 'bacteria':
-            fileout = 'fasta/bact%d.fasta.gz' % ((i % 3) + 1)
+            fileout = 'fasta/bact%d.fasta.gz' % ((i % N_FILES_BACT) + 1)
         elif query_type == 'fungi':
             fileout = 'fasta/fungi%d.fasta.gz' % ((i % 1) + 1)
         run_child('bgzip -c <(efetch -db nuccore -id %s -format fasta) >> %s' % (gid, fileout), exe='/bin/bash')
     logging.info('added %d sequences from file %s', i, picked)
     if query_type == 'bacteria':
-        for i in [1, 2, 3]:
+        for i in (1, N_FILES_BACT+1):
             run_child('bgzip -r fasta/bact%d.fasta.gz')
     elif query_type == 'fungi':
         run_child('bgzip -r fasta/fungi1.fasta.gz')

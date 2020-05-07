@@ -11,7 +11,7 @@ import multiprocessing as mp
 import pandas as pd
 
 DB_DIR = '/data/virmet_databases/'
-
+N_FILES_BACT = 5
 
 # decorator for taken from RepoPhlan
 # https://bitbucket.org/nsegata/repophlan/src/5804db9d341165f72c4f7e448691ce90a1465764/repophlan_get_microbes.py?at=ncbi2017&fileviewer=file-view-default

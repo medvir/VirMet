@@ -23,6 +23,8 @@ contaminant_db = ['/data/virmet_databases/human/bwa/humanGRCh38',
                   '/data/virmet_databases/bacteria/bwa/bact1',
                   '/data/virmet_databases/bacteria/bwa/bact2',
                   '/data/virmet_databases/bacteria/bwa/bact3',
+                  '/data/virmet_databases/bacteria/bwa/bact4',
+                  '/data/virmet_databases/bacteria/bwa/bact5',
                   '/data/virmet_databases/fungi/bwa/fungi1',
                   '/data/virmet_databases/bovine/bwa/bt_ref']
 ref_map = {
@@ -30,6 +32,8 @@ ref_map = {
     'bact1': '/data/virmet_databases/bacteria/fasta/bact1.fasta.gz',
     'bact2': '/data/virmet_databases/bacteria/fasta/bact2.fasta.gz',
     'bact3': '/data/virmet_databases/bacteria/fasta/bact3.fasta.gz',
+    'bact4': '/data/virmet_databases/bacteria/fasta/bact4.fasta.gz',
+    'bact5': '/data/virmet_databases/bacteria/fasta/bact5.fasta.gz',
     'fungi1': '/data/virmet_databases/fungi/fasta/fungi1.fasta.gz',
     'bt_ref': '/data/virmet_databases/bovine/fasta/bt_ref_Bos_taurus_UMD_3.1.1.fasta.gz'
 }
@@ -261,7 +265,7 @@ def victor(input_reads, contaminant):
         return clean_name
 
     # alignment with bwa
-    cml = 'bwa mem -t %d -R \'@RG\tID:foo\tSM:bar\tLB:library1\' -T 75 -M %s %s 2> \
+    cml = 'bwa mem -t %d -R \'@RG\\tID:foo\\tSM:bar\\tLB:library1\' -T 75 -M %s %s 2> \
     %s | samtools view -h -F 4 - > %s' % (n_proc, contaminant, input_reads, err_name, sam_name)
     logging.debug('running bwa %s %s on %d cores', cont_name, rf_head, n_proc)
     run_child(cml)
@@ -501,7 +505,7 @@ def main(args):
     if args.run:
         miseq_dir = args.run.rstrip('/')
         run_name = os.path.split(miseq_dir)[1]
-        if run_name.startswith('1') and len(run_name.split('-')[-1]) == 5 and \
+        if run_name.startswith(('1','2'))  and len(run_name.split('-')[-1]) == 5 and \
             run_name.split('_')[1].startswith('M'):
             try:
                 run_date, machine_name = run_name.split('_')[:2]

@@ -9,7 +9,7 @@ import logging
 import datetime
 from shutil import rmtree
 import multiprocessing as mp
-from virmet.common import run_child, DB_DIR
+from virmet.common import run_child, DB_DIR, N_FILES_BACT
 
 
 def single_bwa_index(index_params):
@@ -51,7 +51,7 @@ def main(args):
             os.mkdir(bwa_dir)
         except FileExistsError as err:
             logging.warning('FileExistsError: %s' % err)
-        for i in [1, 2, 3]:
+        for i in range(1, N_FILES_BACT+1):
             fasta_file = os.path.join(DB_DIR, 'bacteria', 'fasta', 'bact%d.fasta.gz' % i)
             index_prefix = os.path.join(bwa_dir, 'bact%d' % i)
             index_pairs.append((fasta_file, index_prefix))
@@ -82,7 +82,7 @@ def main(args):
             os.mkdir(bwa_dir)
         except FileExistsError as err:
             logging.warning('FileExistsError: %s' % err)
-        fasta_file = os.path.join(DB_DIR, 'bovine', 'fasta', 'bt_ref_Bos_taurus_UMD_3.1.1.fasta.gz')
+        fasta_file = os.path.join(DB_DIR, 'bovine', 'fasta', 'ref_Bos_taurus_GCF_002263795.1_ARS-UCD1.2.fasta.gz')
         index_prefix = os.path.join(bwa_dir, 'bt_ref')
         index_pairs.append((fasta_file, index_prefix))
 

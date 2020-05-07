@@ -30,7 +30,7 @@ setup(
     cmdclass={'test': PyTest},
     name='VirMet',
     description='Viral metagenomics in clinical applications',
-    url='http://github.com/ozagordi/VirMet',
+    url='http://github.com/medvir/VirMet',
     author='Osvaldo Zagordi',
     author_email='firstname.lastname@gmail.com',
     packages=find_packages('src'),  # include all packages under src

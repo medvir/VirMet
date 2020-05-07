@@ -4,7 +4,7 @@ import os
 import logging
 
 from virmet.common import viral_query, bact_fung_query, ftp_down, run_child, \
-download_genomes, get_accs, DB_DIR
+download_genomes, get_accs, DB_DIR, N_FILES_BACT
 
 
 def fetch_viral(viral_mode):
@@ -65,8 +65,8 @@ def fetch_bacterial():
     all_urls = bact_fung_query(query_type='bacteria')
     logging.info('%d bacterial genomes were found', len(all_urls))
     # then download genomic_fna.gz files
-    download_genomes(all_urls, prefix='bact', n_files=3)
-    for j in [1, 2, 3]:
+    download_genomes(all_urls, prefix='bact', n_files=N_FILES_BACT)
+    for j in range(1, N_FILES_BACT+1):
         run_child('bgzip fasta/bact%d.fasta' % j)
 
 
@@ -83,8 +83,8 @@ def fetch_human():
     except FileExistsError:
         pass
     os.chdir('fasta')
-    fasta_url = 'ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_24/GRCh38.primary_assembly.genome.fa.gz'
-    gtf_url = 'ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_24/gencode.v24.primary_assembly.annotation.gtf.gz'
+    fasta_url = 'ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_34/GRCh38.primary_assembly.genome.fa.gz'
+    gtf_url = 'ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_34/gencode.v34.primary_assembly.annotation.gtf.gz'    
     logging.info('Downloading human annotation')
     download_handle = ftp_down(gtf_url)
     download_handle.close()
@@ -126,21 +126,30 @@ def fetch_bovine():
         pass
     os.chdir('fasta')
     chromosomes = ['chr%d' % chrom for chrom in range(1, 30)]
-    chromosomes.extend(['chrMT', 'chrX', 'unplaced'])  # Y IS MISSING
+    chromosomes.extend(['chrX']) # chrY is missing 
     logging.info('Downloading bovine genome')
-    local_file_name = os.path.join(target_dir, 'fasta', 'bt_ref_Bos_taurus_UMD_3.1.1.fasta')
+    local_file_name = os.path.join(target_dir, 'fasta', 'ref_Bos_taurus_GCF_002263795.1_ARS-UCD1.2.fasta')
     if os.path.exists(local_file_name):
         os.remove(local_file_name)
     for chrom in chromosomes:
         logging.debug('Downloading bovine chromosome %s', chrom)
-        fasta_url = 'ftp://ftp.ncbi.nlm.nih.gov/genomes/Bos_taurus/Assembled_chromosomes/seq/bt_ref_Bos_taurus_UMD_3.1.1_%s.fa.gz' % chrom
+        fasta_url = 'ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.1_ARS-UCD1.2/GCF_002263795.1_ARS-UCD1.2_assembly_structure/Primary_Assembly/assembled_chromosomes/FASTA/%s.fna.gz' % chrom
         download_handle = ftp_down(fasta_url, local_file_name)
         download_handle.close()
         logging.debug('Downloaded bovine chromosome %s', chrom)
+    fasta_url ='ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.1_ARS-UCD1.2/GCF_002263795.1_ARS-UCD1.2_assembly_structure/non-nuclear/assembled_chromosomes/FASTA/chrMT.fna.gz'
+    download_handle = ftp_down(fasta_url, local_file_name)
+    download_handle.close()
+    logging.debug('Downloaded bovine chromosome MT')
+    fasta_url ='ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.1_ARS-UCD1.2/GCF_002263795.1_ARS-UCD1.2_assembly_structure/Primary_Assembly/unplaced_scaffolds/FASTA/unplaced.scaf.fna.gz'
+    download_handle = ftp_down(fasta_url, local_file_name)
+    download_handle.close()
+    logging.debug('Downloaded bovine chromosome unplaced')
+    
     run_child('bgzip %s' % local_file_name)
     logging.info('Downloading gff annotation file')
-    gff3_url = 'ftp://ftp.ncbi.nlm.nih.gov/genomes/Bos_taurus/GFF/ref_Bos_taurus_UMD_3.1.1_top_level.gff3.gz'
-    download_handle = ftp_down(gff3_url)
+    gff_url = 'ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.1_ARS-UCD1.2/GCF_002263795.1_ARS-UCD1.2_genomic.gff.gz'
+    download_handle = ftp_down(gff_url)
     download_handle.close()
 
 
