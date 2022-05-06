@@ -428,7 +428,7 @@ def viral_blast(file_in, n_proc, nodes, names):
     viral_info = viral_info.drop(columns=['TaxId', 'Organism', 'Title'])
     ds = pd.merge(ds, viral_info)
     #ds['covered_fraction'] = round(ds['covered_region'] / ds['seq_len'], 4)
-    ds = ds.loc[:, ['species', 'reads', 'stitle', 'ssciname', 'covered_region', 'seq_len']]
+    ds = ds.loc[:, ['species', 'accn', 'reads', 'stitle', 'ssciname', 'covered_region', 'seq_len']]
     ds = ds.sort_values(by=['reads', 'covered_region'], ascending=[False, False])
     ds.to_csv('orgs_list.tsv', header=True, sep='\t', index=False)
 

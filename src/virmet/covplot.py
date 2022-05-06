@@ -22,7 +22,7 @@ from virmet.common import run_child, DB_DIR
 covpl_exe = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'scripts', 'covplot.R')
 
 
-def best_species(orgs_file, org_name):
+def best_species(orgs_file, org_name,  best_spec_field_type='ssciname'):
     """Go through tsv file with organism | reads columns (sorted decreasingly by reads) and extract the one with
     most reads by those starting with ``org_name``.
     Example: let's assume that ``org_file`` is as follows::
@@ -56,8 +56,11 @@ def best_species(orgs_file, org_name):
 
     # organism matching that given on command line with most reads is the first
     # W.O. this assumes descending order of reads
-    return str(matching_orgs.iloc[0].ssciname)
-
+    #return str(matching_orgs.iloc[0].ssciname)
+    if best_spec_field_type == 'ssciname': 
+        return str(matching_orgs.iloc[0].ssciname)
+    else:
+        return str(matching_orgs.iloc[0].stitle)
 
 def main(args):
     """Extract the best species, realign reads, run ``covplot.R`` script to create the plot
@@ -69,12 +72,16 @@ def main(args):
     assert os.path.isdir(outdir), 'Where is the output dir? Check the path.'
 
     org_file = os.path.join(outdir, 'orgs_list.tsv')
-    best_spec = best_species(org_file, organism)
+    best_spec = best_species(org_file, organism, 'ssciname')
 
     # parse blast results
     blast_file = os.path.join(outdir, 'unique.tsv.gz')
     unique = pd.read_csv(blast_file, sep='\t', header=0, compression='gzip')
     matching_reads = unique[unique['ssciname'] == best_spec]
+    if matching_reads.empty:
+        best_spec = best_species(org_file, organism, 'sstitle')
+        matching_reads = unique[unique['stitle'] == best_spec]
+ 
     best_seqids = matching_reads.groupby('sseqid').size().sort_values(ascending=False)
     try:
         dsc, acc = str(best_seqids.index.tolist()[0]).split('|')[:2]
