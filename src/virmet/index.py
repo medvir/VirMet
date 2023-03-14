@@ -9,9 +9,9 @@ import logging
 import datetime
 from shutil import rmtree
 import multiprocessing as mp
-from virmet.common import run_child, DB_DIR, N_FILES_BACT
+from virmet.common import run_child, DB_DIR_UPDATE, N_FILES_BACT
 
-
+DB_DIR = DB_DIR_UPDATE
 def single_bwa_index(index_params):
     '''run a single bwa indexing job'''
     in_fasta, index_prefix = index_params
@@ -23,7 +23,7 @@ def single_bwa_index(index_params):
 def main(args):
     '''only function doing all the indexing'''
     logging.info('now in index')
-
+    logging.info('Database real path: %s' %os.path.realpath(DB_DIR))
     if args.viral == 'n':
         target_dir = os.path.join(DB_DIR, 'viral_nuccore')
         os.chdir(target_dir)
@@ -82,7 +82,7 @@ def main(args):
             os.mkdir(bwa_dir)
         except FileExistsError as err:
             logging.warning('FileExistsError: %s' % err)
-        fasta_file = os.path.join(DB_DIR, 'bovine', 'fasta', 'ref_Bos_taurus_GCF_002263795.1_ARS-UCD1.2.fasta.gz')
+        fasta_file = os.path.join(DB_DIR, 'bovine', 'fasta', 'ref_Bos_taurus_GCF_002263795.2_ARS-UCD1.3.fasta.gz')
         index_prefix = os.path.join(bwa_dir, 'bt_ref')
         index_pairs.append((fasta_file, index_prefix))
 

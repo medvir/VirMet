@@ -25,6 +25,17 @@ contaminant_db = ['/data/virmet_databases/human/bwa/humanGRCh38',
                   '/data/virmet_databases/bacteria/bwa/bact3',
                   '/data/virmet_databases/bacteria/bwa/bact4',
                   '/data/virmet_databases/bacteria/bwa/bact5',
+                  '/data/virmet_databases/bacteria/bwa/bact6',
+                  '/data/virmet_databases/bacteria/bwa/bact7',
+                  '/data/virmet_databases/bacteria/bwa/bact8',
+                  '/data/virmet_databases/bacteria/bwa/bact9',
+                  '/data/virmet_databases/bacteria/bwa/bact10',
+                  '/data/virmet_databases/bacteria/bwa/bact11',
+                  '/data/virmet_databases/bacteria/bwa/bact12',
+                  '/data/virmet_databases/bacteria/bwa/bact13',
+                  '/data/virmet_databases/bacteria/bwa/bact14',
+                  '/data/virmet_databases/bacteria/bwa/bact15',
+                  '/data/virmet_databases/bacteria/bwa/bact16',
                   '/data/virmet_databases/fungi/bwa/fungi1',
                   '/data/virmet_databases/bovine/bwa/bt_ref']
 ref_map = {
@@ -34,6 +45,17 @@ ref_map = {
     'bact3': '/data/virmet_databases/bacteria/fasta/bact3.fasta.gz',
     'bact4': '/data/virmet_databases/bacteria/fasta/bact4.fasta.gz',
     'bact5': '/data/virmet_databases/bacteria/fasta/bact5.fasta.gz',
+    'bact6': '/data/virmet_databases/bacteria/fasta/bact6.fasta.gz',
+    'bact7': '/data/virmet_databases/bacteria/fasta/bact7.fasta.gz',
+    'bact8': '/data/virmet_databases/bacteria/fasta/bact8.fasta.gz',
+    'bact9': '/data/virmet_databases/bacteria/fasta/bact9.fasta.gz',
+    'bact10': '/data/virmet_databases/bacteria/fasta/bact10.fasta.gz',
+    'bact11': '/data/virmet_databases/bacteria/fasta/bact11.fasta.gz',
+    'bact12': '/data/virmet_databases/bacteria/fasta/bact12.fasta.gz',
+    'bact13': '/data/virmet_databases/bacteria/fasta/bact13.fasta.gz',
+    'bact14': '/data/virmet_databases/bacteria/fasta/bact14.fasta.gz',
+    'bact15': '/data/virmet_databases/bacteria/fasta/bact15.fasta.gz',
+    'bact16': '/data/virmet_databases/bacteria/fasta/bact16.fasta.gz',
     'fungi1': '/data/virmet_databases/fungi/fasta/fungi1.fasta.gz',
     'bt_ref': '/data/virmet_databases/bovine/fasta/bt_ref_Bos_taurus_UMD_3.1.1.fasta.gz'
 }
@@ -265,6 +287,8 @@ def victor(input_reads, contaminant):
         return clean_name
 
     # alignment with bwa
+    cont_real_link = os.path.realpath(contaminant)
+    logging.info('Database real path: %s' %cont_real_link)
     cml = 'bwa mem -t %d -R \'@RG\\tID:foo\\tSM:bar\\tLB:library1\' -T 75 -M %s %s 2> \
     %s | samtools view -h -F 4 - > %s' % (n_proc, contaminant, input_reads, err_name, sam_name)
     logging.debug('running bwa %s %s on %d cores', cont_name, rf_head, n_proc)
@@ -361,6 +385,8 @@ def viral_blast(file_in, n_proc, nodes, names):
         logging.info('could not detect system platform: runnning on %d cores', n_proc)
         xargs_thread = n_proc
     # if Darwin then xargs_thread must be n_proc
+    DB_real_path = os.path.realpath(os.path.join(DB_DIR, 'viral_nuccore/viral_db'))
+    logging.info('Database real path: %s' %DB_real_path)
     cml = 'seq 0 %s | xargs -P %d -I {} blastn -task megablast \
            -query splitted_clean_{}.fasta -db %s \
            -out tmp_{}.tsv \
@@ -409,7 +435,8 @@ def viral_blast(file_in, n_proc, nodes, names):
     good_hits = good_hits.rename(columns={'staxid': 'tax_id'})
     
     viral_info_file = os.path.join(DB_DIR, 'viral_nuccore/viral_seqs_info.tsv')
-    viral_info = pd.read_table(viral_info_file, names=['accn', 'TaxId', 'seq_len', 'Organism', 'Title'])
+    viral_info = pd.read_table(viral_info_file, names=['accn', 'TaxId', 'seq_len', 'Organism', 'Title', 'accn_version'])
+    viral_info.drop(columns=['accn_version'])
     good_hits = pd.merge(good_hits, viral_info, on='accn')
     # if blastn gives no taxid and scientific name, fill these col from viral_seqs_info.tsv file
     good_hits.loc[:, 'ssciname'] = good_hits.loc[:, 'ssciname'].fillna(good_hits['Organism']).astype(str)

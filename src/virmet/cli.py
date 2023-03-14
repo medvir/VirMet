@@ -98,6 +98,7 @@ def main():
     parser_fetch.add_argument('--bact', help='bacterial (RefSeq)', action='store_true')
     parser_fetch.add_argument('--fungal', help='fungal (RefSeq)', action='store_true')
     parser_fetch.add_argument('--bovine', help='bovine (Bos taurus)', action='store_true')
+    parser_fetch.add_argument('--no_db_compression', help='do not compress the viral database', action='store_true', default=False)
     parser_fetch.set_defaults(func=fetch_db)
 
     # create the parser for command "update"
@@ -106,6 +107,7 @@ def main():
     parser_update.add_argument('--bact', help='update bacterial database', action='store_true', default=False)
     parser_update.add_argument('--fungal', help='update fungal database', action='store_true', default=False)
     parser_update.add_argument('--picked', help='file with additional sequences, one GI per line', default=None)
+    parser_update.add_argument('--update_min_date', help='update viral [n]ucleic/[p]rotein with sequences produced after the date YYYY/MM/DD (e.g. 2022/09/01)', default=None)
     parser_update.set_defaults(func=update_db)
 
     # create the parser for command "index"

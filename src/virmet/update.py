@@ -8,8 +8,9 @@ import sys
 import logging
 from collections import Counter
 import pandas as pd
-from virmet.common import run_child, viral_query, bact_fung_query, get_accs, download_genomes, DB_DIR, N_FILES_BACT
+from virmet.common import run_child, viral_query, bact_fung_query, get_accs, download_genomes, DB_DIR_UPDATE, N_FILES_BACT
 
+DB_DIR = DB_DIR_UPDATE
 
 def bact_fung_update(query_type=None, picked=None):
     """
@@ -73,7 +74,7 @@ def bact_fung_update(query_type=None, picked=None):
         run_child('bgzip -r fasta/fungi1.fasta.gz')
 
 
-def virupdate(viral_type, picked=None):
+def virupdate(viral_type, picked=None, update_min_date=None):
     if viral_type == 'n':
         db_type = 'nuccore'
     elif viral_type == 'p':
@@ -83,13 +84,13 @@ def virupdate(viral_type, picked=None):
     # this query downloads a new viral_seqs_info.tsv and parses the GI
     logging.info('interrogating NCBI again')
     os.chdir(viral_dir)
-    cml_search = viral_query(viral_type)
+    cml_search = viral_query(viral_type, update_min_date)
     run_child(cml_search)
     efetch_xtract = 'efetch -format docsum < ncbi_search | xtract'
-    efetch_xtract += ' -pattern DocumentSummary -element Caption TaxId Slen Organism Title > viral_seqs_info.tsv'
+    efetch_xtract += ' -pattern DocumentSummary -element Caption TaxId Slen Organism Title AccessionVersion > viral_seqs_info.tsv'
     run_child(efetch_xtract)
     info_file = os.path.join(viral_dir, 'viral_seqs_info.tsv')
-    info_seqs = pd.read_csv(info_file, sep='\t', names=['Caption', 'TaxId', 'Slen', 'Organism', 'Title'])
+    info_seqs = pd.read_csv(info_file, sep='\t', names=['Caption', 'TaxId', 'Slen', 'Organism', 'Title', 'AccessionVersion'])
     new_ids = [str(acc) for acc in info_seqs['Caption'].tolist()]
     logging.info('NCBI reports %d sequences', len(new_ids))
 
@@ -154,11 +155,12 @@ def virupdate(viral_type, picked=None):
 
 def main(args):
     logging.info('now in update_db')
+    logging.info('Database real path: %s' %os.path.realpath(DB_DIR))
     if bool(args.viral) + args.bact + args.fungal > 1:
         logging.error('update either viral or bacterial or fungal in a single call')
         sys.exit('update either viral or bacterial or fungal in a single call')
     if args.viral:
-        virupdate(args.viral, args.picked)
+        virupdate(args.viral, args.picked, args.update_min_date)
     elif args.bact:
         bact_fung_update(query_type='bacteria', picked=args.picked)
     elif args.fungal:
