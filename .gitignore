@@ -16,3 +16,4 @@ VirMet.egg-info/
 build/
 dist/
 installed_files.txt
+.venv/
