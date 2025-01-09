@@ -1,17 +1,9 @@
-#!/usr/bin/env python3
+"""Tests for ext_tools module."""
+
 import os
-import sys
 import glob
 import unittest
 import tempfile
-import subprocess
-
-virmet_dir = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-)
-os.sys.path.insert(1, virmet_dir)
-mod = __import__("virmet")
-sys.modules["virmet"] = mod
 
 from virmet.common import run_child
 
@@ -20,7 +12,8 @@ class TestToolsCallable(unittest.TestCase):
     """calls help of external tools just to check that they are installed"""
 
     def setUp(self):
-        self.genome_file = os.path.join(tempfile.gettempdir(), "HIV.fasta")
+        self.tmpdir = tempfile.gettempdir()
+        self.genome_file = os.path.join(self.tmpdir, "HIV.fasta")
 
     def test_edirect(self):
         run_child(
@@ -32,23 +25,17 @@ class TestToolsCallable(unittest.TestCase):
 
     def test_bwa_index(self):
         run_child(
-            "efetch -db nuccore -id K03455 -format fasta > %s"
-            % self.genome_file
+            f"efetch -db nuccore -id K03455 -format fasta > {self.genome_file}"
         )
-        run_child("bwa index %s &> /dev/null" % self.genome_file)
-        self.assertTrue(os.path.join(tempfile.gettempdir(), "HIV.bwt"))
+        run_child(f"bwa index {self.genome_file} &> /dev/null")
+        self.assertTrue(os.path.join(self.tmpdir, "HIV.bwt"))
         os.remove(self.genome_file)
-        for f in glob.glob("%s/HIV.*" % tempfile.gettempdir()):
+        for f in glob.glob(f"{self.tmpdir}/HIV.*"):
             os.remove(f)
 
     def test_blast(self):
-        log_file = os.path.join(tempfile.gettempdir(), "tmp.log")
-        run_child("blastn -help > %s 2>&1" % log_file)
+        log_file = os.path.join(self.tmpdir, "tmp.log")
+        run_child(f"blastn -help > {log_file} 2>&1")
         with open(log_file) as f:
-            l = sum(1 for _ in f)
-        self.assertGreater(l, 6)
+            self.assertGreater(len(f.read()), 6)
         os.remove(log_file)
-
-    # def tearDown(self):
-    #     os.remove(self.log_file)
-    #     os.remove(self.genome_file)

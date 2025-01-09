@@ -1,17 +1,9 @@
-#!/usr/bin/env python3
+"""Tests for the covplot module."""
+
 import os
-import io
-import sys
 import unittest
 import tempfile
 import pandas as pd
-
-virmet_dir = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-)
-os.sys.path.insert(1, virmet_dir)
-mod = __import__("virmet")
-sys.modules["virmet"] = mod
 
 from virmet.covplot import best_species
 
