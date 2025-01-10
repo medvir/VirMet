@@ -10,8 +10,9 @@ import subprocess
 import multiprocessing as mp
 import pandas as pd
 
-DB_DIR = "/data/virmet_databases"
-DB_DIR_UPDATE = "/data/virmet_databases_update"
+# TODO: This should be updated to a more global location rather than user based.
+DB_DIR = os.path.expandvars("$HOME/.virmet/data/virmet_databases")
+DB_DIR_UPDATE = os.path.expandvars("$HOME/.virmet/data/virmet_databases_update")
 N_FILES_BACT = 16
 MAX_TAXID = 10000  # max number of sequences belonging to the same taxid in compressed viral database
 
@@ -262,10 +263,8 @@ def viral_query(viral_db, update_min_date=None):
     elif viral_db == "p":
         target_dir = os.path.join(DB_DIR_UPDATE, "viral_protein")
         search_text = "-db protein " + query_text
-    try:
-        os.mkdir(target_dir)
-    except FileExistsError:
-        pass
+
+    os.makedirs(target_dir, exist_ok=True)
     os.chdir(target_dir)
     logging.info("Database real path: %s" % os.path.realpath(target_dir))
     return "esearch " + search_text
@@ -340,10 +339,7 @@ def download_genomes(all_urls, prefix, n_files=1):
     q, r = divmod(len(all_urls), n_files)  # quotient, remainder
     indices = [q * i + min(i, r) for i in range(n_files + 1)]
     seqs_urls = [all_urls[indices[i] : indices[i + 1]] for i in range(n_files)]
-    try:
-        os.mkdir("fasta")
-    except FileExistsError:
-        pass
+    os.makedirs("fasta", exist_ok=True)
 
     dl_pairs = []
     for i, seqs in enumerate(seqs_urls):

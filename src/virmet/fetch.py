@@ -18,7 +18,7 @@ from virmet.common import (
 DB_DIR = DB_DIR_UPDATE
 
 
-def fetch_viral(viral_mode, no_compression=False):
+def fetch_viral(viral_mode, compression=True):
     """Download nucleotide or protein database."""
     # define the search nuccore/protein
 
@@ -30,8 +30,10 @@ def fetch_viral(viral_mode, no_compression=False):
         logging.info("downloaded viral protein sequences")
         target_dir = os.path.join(DB_DIR, "viral_protein")
         cml_search = viral_query("p")
+    else:
+        raise ValueError(f"Invalid viral mode: {viral_mode}")
     # run the search and download
-    logging.info("Database real path: %s" % os.path.realpath(target_dir))
+    logging.info("Database real path: %s", os.path.realpath(target_dir))
     os.chdir(target_dir)
     run_child(cml_search)
     cml_fetch_fasta = (
@@ -56,9 +58,7 @@ def fetch_viral(viral_mode, no_compression=False):
     os.rename("viral_database.fasta", "viral_database_original.fasta")
     os.rename("viral_database_rmdup.fasta", "viral_database.fasta")
 
-    # do_compression = True # change this to a parameter
-    # print('no_compression is %s' %no_compression)
-    if no_compression == False:
+    if compression:
         logging.info("Compress the database\n")
         random_reduction(viral_mode)
 
@@ -98,10 +98,7 @@ def fetch_bacterial():
     """Download the three bacterial sequence databases."""
     target_dir = os.path.join(DB_DIR, "bacteria")
     logging.info("Database real path: %s" % os.path.realpath(target_dir))
-    try:
-        os.mkdir(target_dir)
-    except FileExistsError:
-        pass
+    os.makedirs(target_dir, exist_ok=True)
     os.chdir(target_dir)
 
     # first download summary file with all ftp paths and return urls
@@ -121,15 +118,9 @@ def fetch_human():
     """Download human genome and annotations."""
     target_dir = os.path.join(DB_DIR, "human")
     logging.info("Database real path: %s" % os.path.realpath(target_dir))
-    try:
-        os.mkdir(target_dir)
-    except FileExistsError:
-        pass
+    os.makedirs(target_dir, exist_ok=True)
     os.chdir(target_dir)
-    try:
-        os.mkdir("fasta")
-    except FileExistsError:
-        pass
+    os.makedirs("fasta", exist_ok=True)
     os.chdir("fasta")
     fasta_url = "ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_34/GRCh38.primary_assembly.genome.fa.gz"
     gtf_url = "ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_34/gencode.v34.primary_assembly.annotation.gtf.gz"
@@ -148,10 +139,7 @@ def fetch_fungal():
     """Download fungal sequences."""
     target_dir = os.path.join(DB_DIR, "fungi")
     logging.info("Database real path: %s" % os.path.realpath(target_dir))
-    try:
-        os.mkdir(target_dir)
-    except FileExistsError:
-        pass
+    os.makedirs(target_dir, exist_ok=True)
     os.chdir(target_dir)
 
     # first download summary file with all ftp paths and return urls
@@ -166,15 +154,9 @@ def fetch_bovine():
     """Download cow genome and annotations."""
     target_dir = os.path.join(DB_DIR, "bovine")
     logging.info("Database real path: %s" % os.path.realpath(target_dir))
-    try:
-        os.mkdir(target_dir)
-    except FileExistsError:
-        pass
+    os.makedirs(target_dir, exist_ok=True)
     os.chdir(target_dir)
-    try:
-        os.mkdir("fasta")
-    except FileExistsError:
-        pass
+    os.makedirs("fasta", exist_ok=True)
     os.chdir("fasta")
     chromosomes = ["chr%d" % chrom for chrom in range(1, 30)]
     chromosomes.extend(["chrX"])  # chrY is missing
@@ -214,7 +196,7 @@ def main(args):
     logging.info("now in fetch_data")
     if args.viral:
         # print(args.no_db_compression)
-        fetch_viral(args.viral, args.no_db_compression)
+        fetch_viral(args.viral, compression=not args.no_db_compression)
     if args.bact:
         fetch_bacterial()
     elif args.human:
