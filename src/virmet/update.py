@@ -6,6 +6,9 @@
 import os
 import sys
 import logging
+import glob
+import itertools
+import warnings
 from collections import Counter
 import pandas as pd
 from virmet.common import (
@@ -23,8 +26,6 @@ DB_DIR = DB_DIR_UPDATE
 
 def bact_fung_update(query_type=None, picked=None):
     """ """
-    import glob
-    import itertools
 
     cont_dir = os.path.join(DB_DIR, query_type)
     os.chdir(cont_dir)
@@ -56,8 +57,7 @@ def bact_fung_update(query_type=None, picked=None):
             download_genomes(to_add, prefix="tmp", n_files=N_FILES_BACT)
             for i in range(1, N_FILES_BACT + 1):
                 run_child(
-                    "bgzip -c fasta/tmp%d.fasta >> fasta/bact%d.fasta.gz"
-                    % (i, i)
+                    f"bgzip -c fasta/tmp{i}.fasta >> fasta/bact{i}.fasta.gz"
                 )
                 os.remove("fasta/bact%d.fasta.gz" % i)
         elif query_type == "fungi":
@@ -72,7 +72,7 @@ def bact_fung_update(query_type=None, picked=None):
     present_ids = itertools.chain.from_iterable(
         [get_accs(f) for f in glob.glob("fasta/*.fasta.gz")]
     )
-    picked_ids = [l.strip() for l in open(picked)]
+    picked_ids = [line.strip() for line in open(picked)]
     to_add = set(present_ids) - set(picked_ids)
 
     if not to_add:
@@ -84,10 +84,11 @@ def bact_fung_update(query_type=None, picked=None):
             fileout = "fasta/bact%d.fasta.gz" % ((i % N_FILES_BACT) + 1)
         elif query_type == "fungi":
             fileout = "fasta/fungi%d.fasta.gz" % ((i % 1) + 1)
+        else:
+            raise ValueError(f"Invalid query_type value: '{query_type}'")
         run_child(
             "bgzip -c <(efetch -db nuccore -id %s -format fasta) >> %s"
             % (gid, fileout),
-            exe="/bin/bash",
         )
     logging.info("added %d sequences from file %s", i, picked)
     if query_type == "bacteria":
@@ -102,7 +103,9 @@ def virupdate(viral_type, picked=None, update_min_date=None):
         db_type = "nuccore"
     elif viral_type == "p":
         db_type = "protein"
-    viral_dir = os.path.join(DB_DIR, "viral_%s" % db_type)
+    else:
+        raise ValueError(f'Invalid db_type value: "{db_type}".')
+    viral_dir = os.path.join(DB_DIR, f"viral_{db_type}")
 
     # this query downloads a new viral_seqs_info.tsv and parses the GI
     logging.info("interrogating NCBI again")
@@ -211,7 +214,7 @@ def virupdate(viral_type, picked=None, update_min_date=None):
 
 def main(args):
     logging.info("now in update_db")
-    logging.info("Database real path: %s" % os.path.realpath(DB_DIR))
+    logging.info("Database real path: %s", os.path.realpath(DB_DIR))
     if bool(args.viral) + args.bact + args.fungal > 1:
         logging.error(
             "update either viral or bacterial or fungal in a single call"

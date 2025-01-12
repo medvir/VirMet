@@ -227,7 +227,7 @@ def hunter(fq_file):
             -out_good ./good{} -out_bad ./bad{} > ./prinseq.err 2>&1"
         % (n_splitted - 1, n_splitted, prinseq_exe)
     )
-    run_child("/usr/bin/seq " + cml, exe="/bin/bash")
+    run_child("/usr/bin/seq " + cml)
 
     logging.debug("cleaning up")
     if glob.glob("good???.fastq"):

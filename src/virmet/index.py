@@ -2,12 +2,9 @@
 """index sequences with blast or bwa
 """
 
-import sys
-import glob
 import os.path
 import logging
 import datetime
-from shutil import rmtree
 import multiprocessing as mp
 from virmet.common import run_child, DB_DIR_UPDATE, N_FILES_BACT
 
@@ -22,14 +19,14 @@ def single_bwa_index(index_params):
         in_fasta,
         index_prefix,
     )
-    run_child(cml, exe="/bin/bash")
+    run_child(cml)
     return "index %s done" % index_prefix
 
 
 def main(args):
     """only function doing all the indexing"""
     logging.info("now in index")
-    logging.info("Database real path: %s" % os.path.realpath(DB_DIR))
+    logging.info("Database real path: %s", os.path.realpath(DB_DIR))
     if args.viral == "n":
         target_dir = os.path.join(DB_DIR, "viral_nuccore")
         os.chdir(target_dir)

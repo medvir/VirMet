@@ -40,8 +40,12 @@ def fetch_viral(viral_mode, compression=True):
         "efetch -format fasta < ncbi_search > viral_database.fasta"
     )
     run_child(cml_fetch_fasta)
-    cml_efetch_xtract = "efetch -format docsum < ncbi_search | xtract"
-    cml_efetch_xtract += " -pattern DocumentSummary -element Caption TaxId Slen Organism Title AccessionVersion > viral_seqs_info.tsv"
+    cml_efetch_xtract = (
+        "efetch -format docsum < ncbi_search | xtract "
+        " -pattern DocumentSummary "
+        "-element Caption TaxId Slen Organism Title AccessionVersion "
+        "> viral_seqs_info.tsv"
+    )
     run_child(cml_efetch_xtract)
     logging.info("downloaded viral seqs info in %s", target_dir)
     logging.info("saving viral taxonomy")
@@ -49,7 +53,7 @@ def fetch_viral(viral_mode, compression=True):
     cml = "cut -f 1,2 viral_seqs_info.tsv > viral_accn_taxid.dmp"
     run_child(cml)
     accs_1 = set(get_accs("viral_database.fasta"))
-    accs_2 = set([l.split()[0] for l in open("viral_accn_taxid.dmp")])
+    accs_2 = set([line.split()[0] for line in open("viral_accn_taxid.dmp")])
     assert accs_1 == accs_2, accs_1 ^ accs_2
     logging.info("taxonomy and fasta sequences match")
 
@@ -90,7 +94,7 @@ def fetch_viral(viral_mode, compression=True):
     try:
         run_child("bgzip names.dmp")
         run_child("bgzip nodes.dmp")
-    except:
+    except Exception:
         logging.debug("Could not find files names.dmp, nodes.dmp.")
 
 
@@ -111,13 +115,13 @@ def fetch_bacterial():
     print("second half starts")
     download_genomes(all_urls[mid:], prefix="bact", n_files=N_FILES_BACT)
     for j in range(1, N_FILES_BACT + 1):
-        run_child("bgzip fasta/bact%d.fasta" % j)
+        run_child(f"bgzip fasta/bact{j}.fasta")
 
 
 def fetch_human():
     """Download human genome and annotations."""
     target_dir = os.path.join(DB_DIR, "human")
-    logging.info("Database real path: %s" % os.path.realpath(target_dir))
+    logging.info("Database real path: %s", os.path.realpath(target_dir))
     os.makedirs(target_dir, exist_ok=True)
     os.chdir(target_dir)
     os.makedirs("fasta", exist_ok=True)
@@ -138,7 +142,7 @@ def fetch_human():
 def fetch_fungal():
     """Download fungal sequences."""
     target_dir = os.path.join(DB_DIR, "fungi")
-    logging.info("Database real path: %s" % os.path.realpath(target_dir))
+    logging.info("Database real path: %s", os.path.realpath(target_dir))
     os.makedirs(target_dir, exist_ok=True)
     os.chdir(target_dir)
 
@@ -153,12 +157,12 @@ def fetch_fungal():
 def fetch_bovine():
     """Download cow genome and annotations."""
     target_dir = os.path.join(DB_DIR, "bovine")
-    logging.info("Database real path: %s" % os.path.realpath(target_dir))
+    logging.info("Database real path: %s", os.path.realpath(target_dir))
     os.makedirs(target_dir, exist_ok=True)
     os.chdir(target_dir)
     os.makedirs("fasta", exist_ok=True)
     os.chdir("fasta")
-    chromosomes = ["chr%d" % chrom for chrom in range(1, 30)]
+    chromosomes = [f"chr{chrom}" for chrom in range(1, 30)]
     chromosomes.extend(["chrX"])  # chrY is missing
     logging.info("Downloading bovine genome")
     local_file_name = os.path.join(
@@ -168,10 +172,7 @@ def fetch_bovine():
         os.remove(local_file_name)
     for chrom in chromosomes:
         logging.debug("Downloading bovine chromosome %s", chrom)
-        fasta_url = (
-            "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.2_ARS-UCD1.3/GCF_002263795.2_ARS-UCD1.3_assembly_structure/Primary_Assembly/assembled_chromosomes/FASTA/%s.fna.gz"
-            % chrom
-        )
+        fasta_url = f"ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.2_ARS-UCD1.3/GCF_002263795.2_ARS-UCD1.3_assembly_structure/Primary_Assembly/assembled_chromosomes/FASTA/{chrom}.fna.gz"
         download_handle = ftp_down(fasta_url, local_file_name)
         download_handle.close()
         logging.debug("Downloaded bovine chromosome %s", chrom)
@@ -184,7 +185,7 @@ def fetch_bovine():
     download_handle.close()
     logging.debug("Downloaded bovine chromosome unplaced")
 
-    run_child("bgzip %s" % local_file_name)
+    run_child(f"bgzip {local_file_name}")
     logging.info("Downloading gff annotation file")
     gff_url = "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.2_ARS-UCD1.3/GCF_002263795.2_ARS-UCD1.3_genomic.gff.gz"
     download_handle = ftp_down(gff_url)

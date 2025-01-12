@@ -3,6 +3,7 @@
 import os
 import random
 import logging
+import gzip
 from time import sleep
 import urllib.request
 from urllib.request import urlopen, Request
@@ -39,23 +40,22 @@ def retry(tries, delay=3, backoff=2):
                 try:
                     return f(*args, **kwargs)
                 except Exception as e:
-                    if (
-                        "No such file or directory" in e.reason
-                        and "550" in e.reason
+                    if "No such file or directory" in str(e) and "550" in str(
+                        e
                     ):
-                        msg = (
-                            "No remote file found (some ffn and faa are know to be missing remotely). Aborting the download of %s. %s"
-                            % (str(args[0]), str(e))
+                        logging.warning(
+                            "No remote file found (some ffn and faa are know to be missing remotely). Aborting the download of %s. %s",
+                            str(args[0]),
+                            str(e),
                         )
-                        logging.warning(msg)
                         raise e
                     else:
-                        msg = "%s: %s, Retrying in %d seconds..." % (
+                        logging.warning(
+                            "%s: %s, Retrying in %d seconds...",
                             str(args[0]),
                             str(e),
                             mdelay,
                         )
-                        logging.warning(msg)
                 sleep(mdelay)
                 mtries -= 1  # consume an attempt
                 mdelay *= backoff  # make future wait longer
@@ -66,12 +66,16 @@ def retry(tries, delay=3, backoff=2):
     return deco_retry  # @retry(arg[, ...]) -> true decorator
 
 
-def run_child(cmd, exe="/bin/bash"):
+def run_child(cmd):
     """Use subrocess.check_output to run an external program with arguments."""
     logging.info("Running instance of %s", cmd.split()[0])
     try:
         output = subprocess.check_output(
-            cmd, universal_newlines=True, shell=True, stderr=subprocess.STDOUT
+            cmd,
+            universal_newlines=True,
+            shell=True,
+            stderr=subprocess.STDOUT,
+            executable="/bin/bash",
         )
         logging.debug("Completed")
     except subprocess.CalledProcessError as ee:
@@ -89,7 +93,6 @@ def run_child(cmd, exe="/bin/bash"):
 @retry(tries=8, delay=5, backoff=1.5)
 def ftp_down(remote_url, local_url=None):
     """Download files, correctly handling both gzipped and uncompressed files."""
-    import gzip
 
     # from io import BytesIO
 
@@ -154,18 +157,16 @@ def random_reduction(viral_mode):
     # the viral database as of begining of 2023.
     # The highest frequent virus is SARS-CoV-2 with 90% sequences of the database.
 
-    def strip(str_):
-        """Make the strip method a function"""
-        return str_.strip()
-
     if viral_mode == "n":
         logging.info("compressing viral nuccore sequences")
         target_dir = os.path.join(DB_DIR_UPDATE, "viral_nuccore")
     elif viral_mode == "p":
         logging.info("compressing viral protein sequences")
         target_dir = os.path.join(DB_DIR_UPDATE, "viral_protein")
+    else:
+        raise ValueError('Invalid viral_mode: "{viral_mode}".')
     logging.info(
-        "Database real path for compression: %s" % os.path.realpath(target_dir)
+        "Database real path for compression: %s", os.path.realpath(target_dir)
     )
     os.chdir(target_dir)
 
@@ -195,7 +196,7 @@ def random_reduction(viral_mode):
     viral_info_subsampled = viral_info.copy()
     random.seed(100)
     removed_set = set()
-    for index, row in TaxId_to_counter_filterred_df.iterrows():
+    for _, row in TaxId_to_counter_filterred_df.iterrows():
         taxid_to_subsample = int(row["TaxId_num"])
         viral_info_to_subsample_df = viral_info_subsampled[
             viral_info_subsampled["TaxId"] == taxid_to_subsample
@@ -241,15 +242,17 @@ def viral_query(viral_db, update_min_date=None):
     # Cellular organisms, Taxonomy ID: 131567 (to avoid chimeras)
     txid = "10239"  # change here for viruses or smaller taxa
     query_text = (
-        '-query "txid%s [orgn] AND (\\"complete genome\\" [Title] OR \\"complete segment\\" [Title] OR srcdb_refseq[prop])'
-        % txid
+        f'-query "txid{txid} [orgn] AND ('
+        '\\"complete genome\\" [Title] OR '
+        '\\"complete segment\\" [Title] OR '
+        "srcdb_refseq[prop])"
     )
     query_text += ' NOT \\"cellular organisms\\"[Organism] NOT AC_000001[PACC] : AC_999999[PACC]"'
 
     if update_min_date:
         logging.info(
-            "Viral Database Update is performed with sequences added to NCBI after %s .\n"
-            % update_min_date
+            "Viral Database Update is performed with sequences added to NCBI after %s .\n",
+            update_min_date,
         )
         query_text += "-datetype PDAT -mindate %s" % str(
             update_min_date
@@ -263,10 +266,12 @@ def viral_query(viral_db, update_min_date=None):
     elif viral_db == "p":
         target_dir = os.path.join(DB_DIR_UPDATE, "viral_protein")
         search_text = "-db protein " + query_text
+    else:
+        raise ValueError(f"Invalid viral_db value: '{viral_db}'.")
 
     os.makedirs(target_dir, exist_ok=True)
     os.chdir(target_dir)
-    logging.info("Database real path: %s" % os.path.realpath(target_dir))
+    logging.info("Database real path: %s", os.path.realpath(target_dir))
     return "esearch " + search_text
 
 
@@ -317,6 +322,9 @@ def bact_fung_query(query_type=None, download=True, info_file=None):
             & (querinfo.genome_rep == "Full")
             & (querinfo.release_type == "Major")
         ]
+    else:
+        raise ValueError(f"Invalid query_type value: '{query_type}'.")
+
     gb.set_index("assembly_accession", inplace=True)
     gb = gb[gb["ftp_path"] != "na"]
     x = gb["ftp_path"].apply(
@@ -343,14 +351,14 @@ def download_genomes(all_urls, prefix, n_files=1):
 
     dl_pairs = []
     for i, seqs in enumerate(seqs_urls):
-        fasta_out = "fasta/%s%d.fasta" % (prefix, i + 1)
+        fasta_out = f"fasta/{prefix}{i+1}.fasta"
         # if os.path.exists(fasta_out):
         #    os.remove(fasta_out)
         dl_pairs.append((fasta_out, seqs))
 
     # run download in parallel
-    pool = mp.Pool()
-    results = pool.map(multiple_download, dl_pairs)
+    with mp.Pool() as pool:
+        results = pool.map(multiple_download, dl_pairs)
     return results
 
 
@@ -365,19 +373,19 @@ def multiple_download(dl_pair):
 
 def get_gids(fasta_file):
     if fasta_file.endswith(".gz"):
-        cml = 'zcat %s | grep "^>" | cut -f 2 -d "|"' % fasta_file
+        cml = f'zcat {fasta_file} | grep "^>" | cut -f 2 -d "|"'
         gids = run_child(cml).strip().split("\n")
     else:
-        cml = 'grep "^>" %s | cut -f 2 -d "|"' % fasta_file
+        cml = f'grep "^>" {fasta_file} | cut -f 2 -d "|"'
         gids = run_child(cml).strip().split("\n")
     return gids
 
 
 def get_accs(fasta_file):
     if fasta_file.endswith(".gz"):
-        cml = 'zcat %s | grep "^>" | tr -d ">" | cut -f 1 -d "."' % fasta_file
+        cml = f'zcat {fasta_file} | grep "^>" | tr -d ">" | cut -f 1 -d "."'
         accs = run_child(cml).strip().split("\n")
     else:
-        cml = 'grep "^>" %s | tr -d ">" | cut -f 1 -d "."' % fasta_file
+        cml = f'grep "^>" {fasta_file} | tr -d ">" | cut -f 1 -d "."'
         accs = run_child(cml).strip().split("\n")
     return accs
