@@ -1,15 +1,15 @@
 """Tests for the common module."""
 
 import os
-import unittest
 import tempfile
+import unittest
 
 from virmet.common import (
-    run_child,
+    bact_fung_query,
     ftp_down,
     get_gids,
-    bact_fung_query,
     multiple_download,
+    run_child,
 )
 
 

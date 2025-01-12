@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 
 """Runs on all samples of a MiSeq run or on a single fastq file"""
-import os
-import re
+
 import glob
 import logging
-import warnings
+import os
+import re
 import shlex
 import subprocess
-import pandas as pd
-from virmet.common import run_child, DB_DIR  #  , single_process
+import warnings
 
-from pkg_resources import get_distribution, DistributionNotFound
+import pandas as pd
+from pkg_resources import DistributionNotFound, get_distribution
+
+from virmet.common import DB_DIR, run_child  # , single_process
 
 try:
     __version__ = get_distribution("virmet").version
@@ -280,6 +282,7 @@ def victor(input_reads, contaminant):
     reads with alignments
     """
     import gzip
+
     from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
     try:
@@ -540,6 +543,7 @@ def viral_blast(file_in, n_proc, nodes, names):
 def cleaning_up():
     """sift reads into viral/unknown, compresses and removes files"""
     import multiprocessing as mp
+
     from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
     # selects reads with coverage and identity higher than 75

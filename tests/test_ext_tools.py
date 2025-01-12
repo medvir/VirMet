@@ -1,9 +1,9 @@
 """Tests for ext_tools module."""
 
-import os
 import glob
-import unittest
+import os
 import tempfile
+import unittest
 
 from virmet.common import run_child
 

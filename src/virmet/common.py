@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 
+import gzip
+import logging
+import multiprocessing as mp
 import os
 import random
-import logging
-import gzip
-from time import sleep
-import urllib.request
-from urllib.request import urlopen, Request
 import subprocess
-import multiprocessing as mp
+import urllib.request
+from time import sleep
+from urllib.request import Request, urlopen
+
 import pandas as pd
 
 # TODO: This should be updated to a more global location rather than user based.

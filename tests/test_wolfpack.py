@@ -1,13 +1,13 @@
 """Tests for wolfpack module."""
 
 import os
-
-import unittest
 import tempfile
+import unittest
 
 import pandas as pd
-from virmet.wolfpack import hunter, viral_blast, get_nodes_names
-from virmet.common import run_child, DB_DIR
+
+from virmet.common import DB_DIR, run_child
+from virmet.wolfpack import get_nodes_names, hunter, viral_blast
 
 virmet_dir = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

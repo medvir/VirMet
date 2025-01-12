@@ -1,8 +1,9 @@
 """Tests for the covplot module."""
 
 import os
-import unittest
 import tempfile
+import unittest
+
 import pandas as pd
 
 from virmet.covplot import best_species

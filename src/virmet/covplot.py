@@ -6,18 +6,21 @@
 :param organism: string identifying the desired organism, the program will identify the best
 matching sequence among those starting with ``organism``
 """
-import os
+
 import logging
+import os
+import shlex
 import subprocess
 import sys
-import shlex
 from warnings import warn
+
 import pandas as pd
 from Bio import SeqIO
 from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
 from Bio.SeqIO.FastaIO import SimpleFastaParser
-from virmet.common import run_child, DB_DIR
+from Bio.SeqRecord import SeqRecord
+
+from virmet.common import DB_DIR, run_child
 
 covpl_exe = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),

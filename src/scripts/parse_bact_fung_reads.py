@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-import sys
 import glob
 import subprocess
+import sys
 from collections import Counter
 
 

@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 """Define all the functions that download reference sequences and other files."""
-import os
+
 import logging
+import os
 
 from virmet.common import (
-    viral_query,
-    bact_fung_query,
-    ftp_down,
-    run_child,
-    download_genomes,
-    get_accs,
     DB_DIR_UPDATE,
     N_FILES_BACT,
+    bact_fung_query,
+    download_genomes,
+    ftp_down,
+    get_accs,
     random_reduction,
+    run_child,
+    viral_query,
 )
 
 DB_DIR = DB_DIR_UPDATE

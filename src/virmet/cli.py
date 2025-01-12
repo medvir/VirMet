@@ -18,7 +18,7 @@ Why does this file exist, and why not put this in __main__?
 import os
 import sys
 
-from pkg_resources import get_distribution, DistributionNotFound
+from pkg_resources import DistributionNotFound, get_distribution
 
 try:
     __version__ = get_distribution("virmet").version
@@ -51,7 +51,8 @@ def covplot_run(args):
 
 def wolfpack_run(args):
     """Default function for command line parser."""
-    from shutil import move, Error
+    from shutil import Error, move
+
     from virmet import wolfpack
 
     od = wolfpack.main(args)

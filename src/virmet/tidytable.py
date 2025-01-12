@@ -3,9 +3,10 @@
 Read and print summary of reads category for the whole run
 """
 
+import glob
 import os
 import sys
-import glob
+
 import pandas as pd
 
 

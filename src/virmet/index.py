@@ -2,11 +2,12 @@
 """index sequences with blast or bwa
 """
 
-import os.path
-import logging
 import datetime
+import logging
 import multiprocessing as mp
-from virmet.common import run_child, DB_DIR_UPDATE, N_FILES_BACT
+import os.path
+
+from virmet.common import DB_DIR_UPDATE, N_FILES_BACT, run_child
 
 DB_DIR = DB_DIR_UPDATE
 

@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
 """Update viral and bacterial database based on a new query to ncbi and a manually added list of GIs
-
-
 """
-import os
-import sys
-import logging
+
 import glob
 import itertools
+import logging
+import os
+import sys
 import warnings
 from collections import Counter
+
 import pandas as pd
+
 from virmet.common import (
-    run_child,
-    viral_query,
-    bact_fung_query,
-    get_accs,
-    download_genomes,
     DB_DIR_UPDATE,
     N_FILES_BACT,
+    bact_fung_query,
+    download_genomes,
+    get_accs,
+    run_child,
+    viral_query,
 )
 
 DB_DIR = DB_DIR_UPDATE
