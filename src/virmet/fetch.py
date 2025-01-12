@@ -3,6 +3,9 @@
 
 import logging
 import os
+import pathlib
+import shutil
+import subprocess
 
 from virmet.common import (
     DB_DIR_UPDATE,
@@ -25,34 +28,98 @@ def fetch_viral(viral_mode, compression=True):
 
     if viral_mode == "n":
         logging.info("downloading viral nuccore sequences")
-        target_dir = os.path.join(DB_DIR, "viral_nuccore")
+        target_dir = pathlib.Path(DB_DIR) / "viral_nuccore"
         cml_search = viral_query("n")
     elif viral_mode == "p":
         logging.info("downloaded viral protein sequences")
-        target_dir = os.path.join(DB_DIR, "viral_protein")
+        target_dir = pathlib.Path(DB_DIR) / "viral_protein"
         cml_search = viral_query("p")
     else:
         raise ValueError(f"Invalid viral mode: {viral_mode}")
     # run the search and download
     logging.info("Database real path: %s", os.path.realpath(target_dir))
-    os.chdir(target_dir)
-    run_child(cml_search)
-    cml_fetch_fasta = (
-        "efetch -format fasta < ncbi_search > viral_database.fasta"
-    )
-    run_child(cml_fetch_fasta)
-    cml_efetch_xtract = (
-        "efetch -format docsum < ncbi_search | xtract "
-        " -pattern DocumentSummary "
-        "-element Caption TaxId Slen Organism Title AccessionVersion "
-        "> viral_seqs_info.tsv"
-    )
-    run_child(cml_efetch_xtract)
+    # os.chdir(target_dir)
+    search_result = target_dir / "ncbi_search"
+
+    with search_result.open("w") as stdin:
+        run_child(
+            [shutil.which("esearch")] + cml_search,
+            stdout=stdin,
+        )
+    # cml_fetch_fasta = (
+    #     "efetch -format fasta < ncbi_search > viral_database.fasta"
+    # )
+    viral_database_path = target_dir / "viral_databse.fasta"
+    with (
+        search_result.open("r") as stdin,
+        viral_database_path.open("w") as stdout,
+    ):
+        run_child(
+            [
+                shutil.which("efetch"),
+                "-format",
+                "fasta",
+            ],
+            stdin=stdin,
+            stdout=stdout,
+        )
+
+    with search_result.open("rb") as stdin:
+        docsum = run_child(
+            [
+                shutil.which("efetch"),
+                "-format",
+                "docsum",
+            ],
+            stdin=stdin,
+            stdout=subprocess.PIPE,
+        )
+
+    viral_seqs_info_path = target_dir / "viral_seqs_info.tsv"
+    with viral_seqs_info_path.open("wb") as stdout:
+        run_child(
+            [
+                shutil.which("xtract"),
+                "-pattern",
+                "DocumentSummary",
+                "-element",
+                "Caption",
+                "TaxId",
+                "Slen",
+                "Organism",
+                "Title",
+                "AccessionVersion",
+            ],
+            stdin=docsum.stdout,
+            stdout=stdout,
+        )
+
+    # cml_efetch_xtract = (
+    #     "efetch -format docsum < ncbi_search | xtract "
+    #     " -pattern DocumentSummary "
+    #     "-element Caption TaxId Slen Organism Title AccessionVersion "
+    #     "> viral_seqs_info.tsv"
+    # )
+    # run_child(cml_efetch_xtract)
     logging.info("downloaded viral seqs info in %s", target_dir)
     logging.info("saving viral taxonomy")
     # viral_seqs_info.tsv contains Accn TaxId
-    cml = "cut -f 1,2 viral_seqs_info.tsv > viral_accn_taxid.dmp"
-    run_child(cml)
+    viral_accn_taxid_file = target_dir / "viral_accn_taxid.dmp"
+    with (
+        viral_seqs_info_path.open("rb") as stdin,
+        viral_accn_taxid_file.open("wb") as stdout,
+    ):
+        run_child(
+            [
+                shutil.which("cut"),
+                "-f",
+                "1,2",
+            ],
+            stdin=stdin,
+            stdout=stdout,
+        )
+    # cml = "cut -f 1,2 viral_seqs_info.tsv > viral_accn_taxid.dmp"
+    # run_child(cml)
     accs_1 = set(get_accs("viral_database.fasta"))
     accs_2 = set([line.split()[0] for line in open("viral_accn_taxid.dmp")])
     assert accs_1 == accs_2, accs_1 ^ accs_2

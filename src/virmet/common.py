@@ -67,16 +67,17 @@ def retry(tries, delay=3, backoff=2):
     return deco_retry  # @retry(arg[, ...]) -> true decorator
 
 
-def run_child(cmd):
+def run_child(cmd, stdin=None, stdout=None):
     """Use subrocess.check_output to run an external program with arguments."""
-    logging.info("Running instance of %s", cmd.split()[0])
+    logging.info("Running instance of %s", cmd)  # .split()[0])
     try:
-        output = subprocess.check_output(
+        output = subprocess.run(
             cmd,
+            check=True,
             universal_newlines=True,
-            shell=True,
+            stdin=stdin,
+            stdout=stdout,
             stderr=subprocess.STDOUT,
-            executable="/bin/bash",
         )
         logging.debug("Completed")
     except subprocess.CalledProcessError as ee:
@@ -242,38 +243,42 @@ def viral_query(viral_db, update_min_date=None):
     # Alphatorquevirus Taxonomy ID: 687331
     # Cellular organisms, Taxonomy ID: 131567 (to avoid chimeras)
     txid = "10239"  # change here for viruses or smaller taxa
-    query_text = (
-        f'-query "txid{txid} [orgn] AND ('
-        '\\"complete genome\\" [Title] OR '
-        '\\"complete segment\\" [Title] OR '
-        "srcdb_refseq[prop])"
-    )
-    query_text += ' NOT \\"cellular organisms\\"[Organism] NOT AC_000001[PACC] : AC_999999[PACC]"'
+    query_text = [
+        "-query",
+        (
+            f"txid{txid} [orgn] AND ("
+            '\\"complete genome\\" [Title] OR '
+            '\\"complete segment\\" [Title] OR '
+            "srcdb_refseq[prop]) "
+            ' NOT \\"cellular organisms\\"[Organism] NOT AC_000001[PACC] : AC_999999[PACC]'
+        ),
+    ]
 
     if update_min_date:
         logging.info(
             "Viral Database Update is performed with sequences added to NCBI after %s .\n",
             update_min_date,
         )
-        query_text += "-datetype PDAT -mindate %s" % str(
-            update_min_date
-        )  # -datetype MDAT -mindate %s'
+        query_text.append(
+            ["-datetype", "PDAT", "-mindate", str(update_min_date)]
+        )
 
-    query_text += " > ncbi_search"
+    # query_text += " > ncbi_search"
 
     if viral_db == "n":
         target_dir = os.path.join(DB_DIR_UPDATE, "viral_nuccore")
-        search_text = "-db nuccore " + query_text
+        search_text = ["-db", "nuccore"] + query_text
     elif viral_db == "p":
         target_dir = os.path.join(DB_DIR_UPDATE, "viral_protein")
-        search_text = "-db protein " + query_text
+        search_text = ["-db", "protein"] + query_text
     else:
         raise ValueError(f"Invalid viral_db value: '{viral_db}'.")
 
     os.makedirs(target_dir, exist_ok=True)
-    os.chdir(target_dir)
+    # output_dir = os.path.join(target_dir, "ncbi_search")
     logging.info("Database real path: %s", os.path.realpath(target_dir))
-    return "esearch " + search_text
+    # return "esearch " + search_text
+    return search_text  # , output_dir
 
 
 def bact_fung_query(query_type=None, download=True, info_file=None):
