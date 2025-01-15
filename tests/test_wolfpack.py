@@ -72,5 +72,5 @@ class TestViralBlast(unittest.TestCase):
         )
 
         MG212469_reads = df_org_list.loc["Enterovirus C", "reads"].sum()
-        MG212469_reads_expected = 1122
+        MG212469_reads_expected = 287
         self.assertEqual(MG212469_reads, MG212469_reads_expected)

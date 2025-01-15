@@ -28,7 +28,7 @@ setup(
     use_scm_version=True,
     setup_requires=["setuptools_scm", "setuptools_scm_git_archive"],
     install_requires=["setuptools_scm", "pandas==2.2", "Bio==1.7.1"],
-    tests_require=["pytest", "flake8", "pep257", "black"],
+    tests_require=["pytest", "pytest-cov", "flake8", "pep257", "black"],
     cmdclass={"test": PyTest},
     name="VirMet",
     description="Viral metagenomics in clinical applications",

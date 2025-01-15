@@ -13,8 +13,8 @@ from urllib.request import Request, urlopen
 import pandas as pd
 
 # TODO: This should be updated to a more global location rather than user based.
-DB_DIR = os.path.expandvars("$HOME/.virmet/data/virmet_databases")
-DB_DIR_UPDATE = os.path.expandvars("$HOME/.virmet/data/virmet_databases_update")
+DB_DIR = os.path.expandvars("/data/virmet_databases")
+DB_DIR_UPDATE = os.path.expandvars("/data/virmet_databases_update")
 N_FILES_BACT = 16
 MAX_TAXID = 10000  # max number of sequences belonging to the same taxid in compressed viral database
 
@@ -290,7 +290,7 @@ def bact_fung_query(query_type=None, download=True, info_file=None):
         info_file = "%s_refseq_info.tsv" % query_type
     if download:
         url = (
-            "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/%s/assembly_summary.txt"
+            "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/%s/assembly_summary.txt"
             % query_type
         )
         bh = open(info_file, "w")
@@ -326,7 +326,7 @@ def bact_fung_query(query_type=None, download=True, info_file=None):
     else:
         raise ValueError(f"Invalid query_type value: '{query_type}'.")
 
-    gb.set_index("assembly_accession", inplace=True)
+    gb.set_index("#assembly_accession", inplace=True)
     gb = gb[gb["ftp_path"] != "na"]
     x = gb["ftp_path"].apply(
         lambda col: col + "/" + col.split("/")[-1] + "_genomic.fna.gz"
