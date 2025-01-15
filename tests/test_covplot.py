@@ -16,7 +16,7 @@ class TestCovplot(unittest.TestCase):
         self.orgs_file = os.path.join(self.tmpdir, "orgs_list.tsv")
         df = pd.DataFrame(
             {
-                "organism": [
+                "ssciname": [
                     "organism A",
                     "organism B",
                     "species A",

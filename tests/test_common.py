@@ -28,11 +28,11 @@ class TestFTPDown(unittest.TestCase):
     def setUp(self):
         self.tmpdir = tempfile.gettempdir()
         # big file, 39 MB
-        # self.remote_1 = 'ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_24/gencode.v24.primary_assembly.annotation.gtf.gz'
+        # self.remote_1 = 'https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_24/gencode.v24.primary_assembly.annotation.gtf.gz'
         # small file, 335 KB
-        self.remote_1 = "ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_24//gencode.v24.2wayconspseudos.gtf.gz"
+        self.remote_1 = "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_24/gencode.v24.2wayconspseudos.gtf.gz"
         # again small file
-        self.remote_2 = "ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_24/_README.TXT"
+        self.remote_2 = "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_24/_README.TXT"
 
     def test_nodecompress(self):
         out_file = os.path.join(self.tmpdir, "gtf.txt.gz")
@@ -52,12 +52,14 @@ class TestFTPDown(unittest.TestCase):
 
     def test_append(self):
         out_file = os.path.join(self.tmpdir, "README.TXT")
+        open(out_file, "w").close()
         ftp_down(self.remote_2, out_file)
         with open(out_file) as f:
             n_lines_1 = sum(1 for _ in f)
         ftp_down(self.remote_2, out_file)
         with open(out_file) as f:
             n_lines_2 = sum(1 for _ in f)
+        os.remove(out_file)
         self.assertEqual(n_lines_2, 2 * n_lines_1)
 
 
@@ -68,7 +70,7 @@ class TestMisc(unittest.TestCase):
         self.fasta = open(os.path.join(self.tmpdir, "tmp.fasta"), "w")
         self.fasta.write(">gi|1234|xyz\nAGCTAGC\n>gi|ABCD\nATCG\n")
         self.fasta.close()
-        self.remote_2 = "ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_24/_README.TXT"
+        self.remote_2 = "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_24/_README.TXT"
 
     def test_gids(self):
         ids = get_gids(self.fasta.name)
@@ -103,12 +105,14 @@ class TestMisc(unittest.TestCase):
 
     def test_multi_download(self):
         tmpf = os.path.join(self.tmpdir, "tmp_multi_down.txt")
+        open(tmpf, "w").close()
         # download same file twice
         dl_pair = tmpf, [self.remote_2, self.remote_2]
         multiple_download(dl_pair)
         self.assertTrue(os.path.exists(tmpf))
         with open(tmpf) as f:
             lines = list(f)
+        os.remove(tmpf)
         m = len(lines)
         # even number of lines
         self.assertEqual(m % 2, 0)

@@ -251,8 +251,8 @@ def hunter(fq_file):
     min_qual = 0
     with open("prinseq.log") as f:
         for l in f:
-            match_lc = re.search("lc_method\:\s(\d*)$", l)
-            match_mq = re.search("min_qual_mean\:\s(\d*)$", l)
+            match_lc = re.search(r'lc_method:\s(\d*)$', l)
+            match_mq = re.search(r'min_qual_mean:\s(\d*)$', l)
             if match_lc:
                 low_ent += int(match_lc.group(1))
             elif match_mq:
