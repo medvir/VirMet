@@ -158,12 +158,7 @@ def hunter(fq_file):
     prinseq_exe = "prinseq-lite.pl"
     prinseq_exe = "prinseq"
 
-    try:
-        n_proc = min(os.cpu_count(), 16)
-        if n_proc == 1:
-            n_proc = 2
-    except NotImplementedError:
-        n_proc = 2
+    n_proc = max(min(os.cpu_count() or 2, 16), 2)
 
     logging.debug("hunter will run on %s processors", n_proc)
     if "L001" in fq_file:
@@ -280,10 +275,7 @@ def victor(input_reads, contaminant):
     reads with alignments
     """
 
-    try:
-        n_proc = min(os.cpu_count(), 16)
-    except NotImplementedError:
-        n_proc = 2
+    n_proc = min(os.cpu_count() or 2, 16)
 
     rf_head = input_reads.split(".")[0]
     cont_name = os.path.split(contaminant)[1]
@@ -664,10 +656,7 @@ def main(args):
 
     logging.info("blasting against viral database")
     file_to_blast = cont_reads  # last output of victor is input for blast
-    try:
-        n_proc = min(os.cpu_count(), 12)
-    except NotImplementedError:
-        n_proc = 2
+    n_proc = min(os.cpu_count() or 2, 12)
     logging.info("%d cores that will be used", n_proc)
 
     logging.info("reading taxonomy files")
