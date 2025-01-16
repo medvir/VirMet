@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+import pytest
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 
@@ -18,7 +19,6 @@ class PyTest(TestCommand):
 
     def run_tests(self):
         # import here, cause outside the eggs aren't loaded
-        import pytest
 
         errno = pytest.main(self.pytest_args)
         sys.exit(errno)

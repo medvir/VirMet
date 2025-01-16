@@ -3,18 +3,21 @@
 """Runs on all samples of a MiSeq run or on a single fastq file"""
 
 import glob
+import gzip
 import logging
+import multiprocessing as mp
 import os
 import re
 import shlex
 import subprocess
+import sys
 import warnings
 
 import pandas as pd
+from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
 import virmet
 from virmet.common import DB_DIR, run_child  # , single_process
-
 
 contaminant_db = [
     "/data/virmet_databases/human/bwa/humanGRCh38",
@@ -276,9 +279,6 @@ def victor(input_reads, contaminant):
     """decontaminate reads by aligning against contaminants with bwa and removing
     reads with alignments
     """
-    import gzip
-
-    from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
     try:
         n_proc = min(os.cpu_count(), 16)
@@ -349,9 +349,6 @@ def victor(input_reads, contaminant):
 
 def viral_blast(file_in, n_proc, nodes, names):
     """runs blast against viral database, parallelise with xargs"""
-    import re
-    import sys
-    import warnings
 
     # on hot start, blast again all decontaminated reads
     if os.path.exists("viral_reads.fastq.gz") and os.path.exists(
@@ -537,9 +534,6 @@ def viral_blast(file_in, n_proc, nodes, names):
 
 def cleaning_up():
     """sift reads into viral/unknown, compresses and removes files"""
-    import multiprocessing as mp
-
-    from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
     # selects reads with coverage and identity higher than 75
     df = pd.read_csv("unique.tsv", sep="\t")
@@ -698,8 +692,6 @@ def main(args):
 
 
 if __name__ == "__main__":
-    import sys
-
     assert os.path.exists(sys.argv[1])
     all_nodes, all_names = get_nodes_names(DB_DIR)
     viral_blast(sys.argv[1], 2, all_nodes, all_names)
