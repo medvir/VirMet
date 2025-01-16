@@ -1,27 +1,5 @@
 #!/usr/bin/env python
-import sys
-import pytest
 from setuptools import setup, find_packages
-from setuptools.command.test import test as TestCommand
-
-
-class PyTest(TestCommand):
-    user_options = [("pytest-args=", "a", "Arguments to pass to py.test")]
-
-    def initialize_options(self):
-        TestCommand.initialize_options(self)
-        self.pytest_args = []
-
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        # import here, cause outside the eggs aren't loaded
-
-        errno = pytest.main(self.pytest_args)
-        sys.exit(errno)
 
 
 setup(
@@ -29,7 +7,6 @@ setup(
     setup_requires=["setuptools_scm", "setuptools_scm_git_archive"],
     install_requires=["setuptools_scm", "pandas==2.2", "Bio==1.7.1"],
     tests_require=["pytest", "pytest-cov", "flake8", "pep257", "black"],
-    cmdclass={"test": PyTest},
     name="VirMet",
     description="Viral metagenomics in clinical applications",
     url="http://github.com/medvir/VirMet",
@@ -37,8 +14,6 @@ setup(
     author_email="firstname.lastname@gmail.com",
     packages=find_packages("src"),  # include all packages under src
     package_dir={"": "src"},  # tell setuptools packages are under src
-    # package_data={'virmet': ['db/*', 'db/template.tex']},
-    # scripts=['bin/virmet'],
     data_files=[("Rscripts", ["Rscripts/covplot.R"])],
     entry_points={"console_scripts": ["virmet = virmet.cli:main"]},
     license="MIT",
