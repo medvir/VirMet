@@ -17,14 +17,7 @@ Why does this file exist, and why not put this in __main__?
 """
 import os
 import sys
-
-from pkg_resources import DistributionNotFound, get_distribution
-
-try:
-    __version__ = get_distribution("virmet").version
-except DistributionNotFound:
-    # package is not installed
-    pass
+import virmet
 
 # manipulate path to import functions
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -97,7 +90,7 @@ def main():
         epilog="Run `virmet subcommand -h` for more help",
     )
     parser.add_argument(
-        "-v", "--version", action="version", version=__version__
+        "-v", "--version", action="version", version=virmet.__version__
     )
 
     subparsers = parser.add_subparsers(help="available sub-commands")
@@ -233,11 +226,11 @@ def main():
     )
 
     logging.info(" ".join(sys.argv))
-    logging.info("VirMet version:%s", __version__)
+    logging.info("VirMet version:%s", virmet.__version__)
     # parse the args
     args = parser.parse_args()
     args.func(args)
 
 
-if __name__ == "__main__":  # and __package__ is None:
+if __name__ == "__main__":
     main()
