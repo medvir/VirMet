@@ -1,0 +1,32 @@
+name: Python Continous Integration
+on:
+  push:
+    branches: ["*"]
+  pull_request:
+    branches: ["*"]
+  release:
+    types: [created]
+  workflow_dispatch:
+
+jobs:
+  linting:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        tools: ["black", "bandit", "pylint", "flake8"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: ${{ matrix.tools }}
+        uses: microsoft/action-python@0.7.3
+        with:
+          ${{ matrix.tools }}: true
+          args: ${{ matrix.args }}
+          workdir: "."
+
+  testing:
+    runs-on: ubuntu-latest
+    steps:    
+      - name: Pytest
+        uses: microsoft/action-python@0.7.0
+        with:          
+          testing: true
