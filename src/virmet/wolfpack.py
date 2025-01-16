@@ -11,15 +11,10 @@ import subprocess
 import warnings
 
 import pandas as pd
-from pkg_resources import DistributionNotFound, get_distribution
 
+import virmet
 from virmet.common import DB_DIR, run_child  # , single_process
 
-try:
-    __version__ = get_distribution("virmet").version
-except DistributionNotFound:
-    # package is not installed
-    pass
 
 contaminant_db = [
     "/data/virmet_databases/human/bwa/humanGRCh38",
@@ -251,8 +246,8 @@ def hunter(fq_file):
     min_qual = 0
     with open("prinseq.log") as f:
         for l in f:
-            match_lc = re.search(r'lc_method:\s(\d*)$', l)
-            match_mq = re.search(r'min_qual_mean:\s(\d*)$', l)
+            match_lc = re.search(r"lc_method:\s(\d*)$", l)
+            match_mq = re.search(r"min_qual_mean:\s(\d*)$", l)
             if match_lc:
                 low_ent += int(match_lc.group(1))
             elif match_mq:
@@ -271,7 +266,7 @@ def hunter(fq_file):
     oh.close()
 
     with open("sample_info.txt", "a") as oh:
-        oh.write("VirMet version: %s\n" % __version__)
+        oh.write(f"VirMet version: {virmet.__version__}\n")
 
     os.chdir(os.pardir)
     return s_dir
