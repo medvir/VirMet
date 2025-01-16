@@ -1,9 +1,9 @@
 name: Python Continous Integration
 on:
   push:
-    branches: ["*"]
+    branches: [master]
   pull_request:
-    branches: ["*"]
+    branches: [master]
   release:
     types: [created]
   workflow_dispatch:
@@ -22,6 +22,7 @@ jobs:
           ${{ matrix.tools }}: true
           args: ${{ matrix.args }}
           workdir: "."
+          python_version: 3.12.8
 
   testing:
     runs-on: ubuntu-latest
@@ -29,4 +30,6 @@ jobs:
       - name: Pytest
         uses: microsoft/action-python@0.7.0
         with:          
-          testing: true
+          pytest: true
+          testdir: "tests"
+          python_version: 3.12.8
