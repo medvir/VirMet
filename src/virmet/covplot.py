@@ -7,6 +7,7 @@
 matching sequence among those starting with ``organism``
 """
 
+import datetime
 import logging
 import os
 import shlex
@@ -74,7 +75,6 @@ def best_species(orgs_file, org_name, best_spec_field_type="ssciname"):
 
 def main(args):
     """Extract the best species, realign reads, run ``covplot.R`` script to create the plot"""
-    import datetime
 
     outdir = args.outdir
     organism = args.organism
@@ -179,7 +179,6 @@ def main(args):
 
 
 if __name__ == "__main__":
-    import sys
 
     args_main = {"outdir": sys.argv[1], "organism": sys.argv[2]}
     main(args_main)
