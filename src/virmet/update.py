@@ -39,11 +39,15 @@ def bact_fung_update(query_type=None, picked=None):
         query_type=query_type,
         download=False,
         info_file="old_%s_refseq_info.tsv" % query_type,
+        target_folder=cont_dir 
     )
 
     logging.info("%d assemblies were present in refseq", len(old_urls))
     # download new info
-    new_urls = bact_fung_query(query_type=query_type, download=True)
+    new_urls = bact_fung_query(
+        query_type=query_type, 
+        download=True, 
+        target_folder=cont_dir)
     logging.info("%d assemblies are now in refseq", len(new_urls))
     to_add = set(new_urls) - set(old_urls)
     to_add = list(to_add)
