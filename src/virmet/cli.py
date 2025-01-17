@@ -15,81 +15,43 @@ Why does this file exist, and why not put this in __main__?
 
   Also see (1) from http://click.pocoo.org/5/setuptools/#setuptools-integration
 """
+
+import argparse
+import logging
 import os
+import shutil
 import sys
 
-from pkg_resources import DistributionNotFound, get_distribution
-
-try:
-    __version__ = get_distribution("virmet").version
-except DistributionNotFound:
-    # package is not installed
-    pass
-
-# manipulate path to import functions
-parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-os.sys.path.insert(1, parent_dir)
-mod = __import__("virmet")
-sys.modules["virmet"] = mod
-
-# each subcommand takes one of these functions as default
-
-
-def tidytable_run(args):
-    """Default function for command line parser."""
-    from virmet import tidytable
-
-    tidytable.main(args)
+from virmet import (
+    covplot,
+    fetch,
+    index,
+    tidytable,
+    update,
+    wolfpack,
+)
+from virmet.__init__ import __version__
 
 
 def covplot_run(args):
     """Default function for command line parser."""
-    from virmet import covplot
-
     covplot.main(args)
 
 
 def wolfpack_run(args):
     """Default function for command line parser."""
-    from shutil import Error, move
-
-    from virmet import wolfpack
-
     od = wolfpack.main(args)
     try:
-        om = move("virmet.log", od)
+        om = shutil.move("virmet.log", od)
         sys.exit("logging file is in %s" % om)
     except FileNotFoundError:
         sys.exit("now in %s, file not found" % os.getcwd())
-    except Error:
+    except shutil.Error:
         sys.exit("logging file not moved after hot run")
-
-
-def index_db(args):
-    """Default function for command line parser."""
-    from virmet import index
-
-    index.main(args)
-
-
-def update_db(args):
-    """Default function for command line parser."""
-    from virmet import update
-
-    update.main(args)
-
-
-def fetch_db(args):
-    """Default function for command line parser."""
-    from virmet import fetch
-
-    fetch.main(args)
 
 
 def main():
     """Parse command line, run default functions."""
-    import argparse
-
     # parse command line
     # create the top-level parser
     parser = argparse.ArgumentParser(
@@ -123,7 +85,7 @@ def main():
         action="store_true",
         default=False,
     )
-    parser_fetch.set_defaults(func=fetch_db)
+    parser_fetch.set_defaults(func=fetch.main)
 
     # create the parser for command "update"
     parser_update = subparsers.add_parser(
@@ -157,7 +119,7 @@ def main():
         help="update viral [n]ucleic/[p]rotein with sequences produced after the date YYYY/MM/DD (e.g. 2022/09/01)",
         default=None,
     )
-    parser_update.set_defaults(func=update_db)
+    parser_update.set_defaults(func=update.main)
 
     # create the parser for command "index"
     parser_index = subparsers.add_parser("index", help="index genomes")
@@ -182,7 +144,7 @@ def main():
         action="store_true",
         help="make bwa index of bovine database",
     )
-    parser_index.set_defaults(func=index_db)
+    parser_index.set_defaults(func=index.main)
 
     # create the parser for command "wolfpack"
     parser_wolf = subparsers.add_parser("wolfpack", help="analyze a Miseq run")
@@ -199,7 +161,7 @@ def main():
         type=str,
         help="path to run results directory (virmet_output_...)",
     )
-    parser_tidy.set_defaults(func=tidytable_run)
+    parser_tidy.set_defaults(func=tidytable.main)
 
     # create the parser for command "covplot"
     parser_cov = subparsers.add_parser(
@@ -222,9 +184,6 @@ def main():
         sys.exit()
 
     # logging configuration
-    import logging
-    import logging.handlers
-
     logging.basicConfig(
         filename="virmet.log",
         level=logging.DEBUG,
@@ -239,5 +198,5 @@ def main():
     args.func(args)
 
 
-if __name__ == "__main__":  # and __package__ is None:
+if __name__ == "__main__":
     main()

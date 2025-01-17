@@ -1,35 +1,12 @@
 #!/usr/bin/env python
-import sys
 from setuptools import setup, find_packages
-from setuptools.command.test import test as TestCommand
-
-
-class PyTest(TestCommand):
-    user_options = [("pytest-args=", "a", "Arguments to pass to py.test")]
-
-    def initialize_options(self):
-        TestCommand.initialize_options(self)
-        self.pytest_args = []
-
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        # import here, cause outside the eggs aren't loaded
-        import pytest
-
-        errno = pytest.main(self.pytest_args)
-        sys.exit(errno)
 
 
 setup(
     use_scm_version=True,
     setup_requires=["setuptools_scm", "setuptools_scm_git_archive"],
-    install_requires=["setuptools_scm", "pandas==2.2", "Bio==1.7.1"],
+    install_requires=["setuptools_scm", "pandas", "Bio"],
     tests_require=["pytest", "pytest-cov", "flake8", "pep257", "black"],
-    cmdclass={"test": PyTest},
     name="VirMet",
     description="Viral metagenomics in clinical applications",
     url="http://github.com/medvir/VirMet",
@@ -37,9 +14,7 @@ setup(
     author_email="firstname.lastname@gmail.com",
     packages=find_packages("src"),  # include all packages under src
     package_dir={"": "src"},  # tell setuptools packages are under src
-    # package_data={'virmet': ['db/*', 'db/template.tex']},
-    # scripts=['bin/virmet'],
-    data_files=[("Rscripts", ["Rscripts/covplot.R"])],
+    data_files=[("Rscripts", ["src/scripts/covplot.R"])],
     entry_points={"console_scripts": ["virmet = virmet.cli:main"]},
     license="MIT",
     long_description="""
@@ -58,15 +33,9 @@ setup(
         "Topic :: Scientific/Engineering :: Medical Science Apps.",
         # Pick your license as you wish (should match "license" above)
         "License :: MIT",
-        # Specify the Python versions you support here. In particular, ensure
-        # that you indicate whether you support Python 2, Python 3 or both.
-        # 'Programming Language :: Python :: 2',
-        # 'Programming Language :: Python :: 2.6',
-        # 'Programming Language :: Python :: 2.7',
-        # 'Programming Language :: Python :: 3',
-        # 'Programming Language :: Python :: 3.2',
-        # 'Programming Language :: Python :: 3.3',
+        # Specify the Python versions you support here.
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.12"
     ],
 )

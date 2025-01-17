@@ -3,23 +3,21 @@
 """Runs on all samples of a MiSeq run or on a single fastq file"""
 
 import glob
+import gzip
 import logging
+import multiprocessing as mp
 import os
 import re
 import shlex
 import subprocess
+import sys
 import warnings
 
 import pandas as pd
-from pkg_resources import DistributionNotFound, get_distribution
+from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
+from virmet.__init__ import __version__
 from virmet.common import DB_DIR, run_child  # , single_process
-
-try:
-    __version__ = get_distribution("virmet").version
-except DistributionNotFound:
-    # package is not installed
-    pass
 
 contaminant_db = [
     "/data/virmet_databases/human/bwa/humanGRCh38",
@@ -157,15 +155,10 @@ def hunter(fq_file):
     simple parallelisation with xargs, returns output directory
     """
     # from virmet.common import prinseq_exe
-    prinseq_exe = "prinseq-lite.pl"
+    # prinseq_exe = "prinseq-lite.pl"
     prinseq_exe = "prinseq"
 
-    try:
-        n_proc = min(os.cpu_count(), 16)
-        if n_proc == 1:
-            n_proc = 2
-    except NotImplementedError:
-        n_proc = 2
+    n_proc = max(min(os.cpu_count() or 2, 16), 2)
 
     logging.debug("hunter will run on %s processors", n_proc)
     if "L001" in fq_file:
@@ -251,8 +244,8 @@ def hunter(fq_file):
     min_qual = 0
     with open("prinseq.log") as f:
         for l in f:
-            match_lc = re.search(r'lc_method:\s(\d*)$', l)
-            match_mq = re.search(r'min_qual_mean:\s(\d*)$', l)
+            match_lc = re.search(r"lc_method:\s(\d*)$", l)
+            match_mq = re.search(r"min_qual_mean:\s(\d*)$", l)
             if match_lc:
                 low_ent += int(match_lc.group(1))
             elif match_mq:
@@ -271,7 +264,7 @@ def hunter(fq_file):
     oh.close()
 
     with open("sample_info.txt", "a") as oh:
-        oh.write("VirMet version: %s\n" % __version__)
+        oh.write(f"VirMet version: {__version__}\n")
 
     os.chdir(os.pardir)
     return s_dir
@@ -281,14 +274,8 @@ def victor(input_reads, contaminant):
     """decontaminate reads by aligning against contaminants with bwa and removing
     reads with alignments
     """
-    import gzip
 
-    from Bio.SeqIO.QualityIO import FastqGeneralIterator
-
-    try:
-        n_proc = min(os.cpu_count(), 16)
-    except NotImplementedError:
-        n_proc = 2
+    n_proc = min(os.cpu_count() or 2, 16)
 
     rf_head = input_reads.split(".")[0]
     cont_name = os.path.split(contaminant)[1]
@@ -354,9 +341,6 @@ def victor(input_reads, contaminant):
 
 def viral_blast(file_in, n_proc, nodes, names):
     """runs blast against viral database, parallelise with xargs"""
-    import re
-    import sys
-    import warnings
 
     # on hot start, blast again all decontaminated reads
     if os.path.exists("viral_reads.fastq.gz") and os.path.exists(
@@ -542,9 +526,6 @@ def viral_blast(file_in, n_proc, nodes, names):
 
 def cleaning_up():
     """sift reads into viral/unknown, compresses and removes files"""
-    import multiprocessing as mp
-
-    from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
     # selects reads with coverage and identity higher than 75
     df = pd.read_csv("unique.tsv", sep="\t")
@@ -675,10 +656,7 @@ def main(args):
 
     logging.info("blasting against viral database")
     file_to_blast = cont_reads  # last output of victor is input for blast
-    try:
-        n_proc = min(os.cpu_count(), 12)
-    except NotImplementedError:
-        n_proc = 2
+    n_proc = min(os.cpu_count() or 2, 12)
     logging.info("%d cores that will be used", n_proc)
 
     logging.info("reading taxonomy files")
@@ -703,8 +681,6 @@ def main(args):
 
 
 if __name__ == "__main__":
-    import sys
-
     assert os.path.exists(sys.argv[1])
     all_nodes, all_names = get_nodes_names(DB_DIR)
     viral_blast(sys.argv[1], 2, all_nodes, all_names)
