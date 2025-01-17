@@ -270,7 +270,6 @@ def viral_query(viral_db, update_min_date=None):
         raise ValueError(f"Invalid viral_db value: '{viral_db}'.")
 
     os.makedirs(target_dir, exist_ok=True)
-    os.chdir(target_dir)
     logging.info("Database real path: %s", os.path.realpath(target_dir))
     return "esearch " + search_text
 
