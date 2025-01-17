@@ -103,10 +103,9 @@ def main(args):
     logging.info("Best hit in blast results: %s accession:%s", dsc, acc)
 
     # copy single genome, index, align viral_reads
-    os.chdir(outdir)
     organism = organism.replace(" ", "_").replace("/", "_")
     try:
-        os.mkdir(organism)
+        os.mkdir(os.path.join(outdir, organism))
     except FileExistsError:
         warn(
             "directory %s exists already: delete it to run covplot from scratch"
