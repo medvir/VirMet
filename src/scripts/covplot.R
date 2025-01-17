@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+
 library(ggplot2)
 oldw <- getOption("warn")
 options(warn = -1)

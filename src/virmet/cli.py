@@ -23,7 +23,6 @@ import shutil
 import sys
 
 from virmet import (
-    __version__,
     covplot,
     fetch,
     index,
@@ -31,6 +30,7 @@ from virmet import (
     update,
     wolfpack,
 )
+from virmet.__init__ import __version__
 
 
 def covplot_run(args):
