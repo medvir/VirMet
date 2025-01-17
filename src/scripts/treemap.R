@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+
 library("treemap")
 library("grid")
 library("colorspace")

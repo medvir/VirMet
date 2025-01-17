@@ -16,7 +16,7 @@ import warnings
 import pandas as pd
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
-import virmet
+from virmet.__init__ import __version__
 from virmet.common import DB_DIR, run_child  # , single_process
 
 contaminant_db = [
@@ -155,7 +155,7 @@ def hunter(fq_file):
     simple parallelisation with xargs, returns output directory
     """
     # from virmet.common import prinseq_exe
-    prinseq_exe = "prinseq-lite.pl"
+    # prinseq_exe = "prinseq-lite.pl"
     prinseq_exe = "prinseq"
 
     n_proc = max(min(os.cpu_count() or 2, 16), 2)
@@ -264,7 +264,7 @@ def hunter(fq_file):
     oh.close()
 
     with open("sample_info.txt", "a") as oh:
-        oh.write(f"VirMet version: {virmet.__version__}\n")
+        oh.write(f"VirMet version: {__version__}\n")
 
     os.chdir(os.pardir)
     return s_dir

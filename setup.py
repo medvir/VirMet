@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 setup(
     use_scm_version=True,
     setup_requires=["setuptools_scm", "setuptools_scm_git_archive"],
-    install_requires=["setuptools_scm", "pandas==2.2", "Bio==1.7.1"],
+    install_requires=["setuptools_scm", "pandas", "Bio"],
     tests_require=["pytest", "pytest-cov", "flake8", "pep257", "black"],
     name="VirMet",
     description="Viral metagenomics in clinical applications",
@@ -14,7 +14,7 @@ setup(
     author_email="firstname.lastname@gmail.com",
     packages=find_packages("src"),  # include all packages under src
     package_dir={"": "src"},  # tell setuptools packages are under src
-    data_files=[("Rscripts", ["Rscripts/covplot.R"])],
+    data_files=[("Rscripts", ["src/scripts/covplot.R"])],
     entry_points={"console_scripts": ["virmet = virmet.cli:main"]},
     license="MIT",
     long_description="""
@@ -33,15 +33,9 @@ setup(
         "Topic :: Scientific/Engineering :: Medical Science Apps.",
         # Pick your license as you wish (should match "license" above)
         "License :: MIT",
-        # Specify the Python versions you support here. In particular, ensure
-        # that you indicate whether you support Python 2, Python 3 or both.
-        # 'Programming Language :: Python :: 2',
-        # 'Programming Language :: Python :: 2.6',
-        # 'Programming Language :: Python :: 2.7',
-        # 'Programming Language :: Python :: 3',
-        # 'Programming Language :: Python :: 3.2',
-        # 'Programming Language :: Python :: 3.3',
+        # Specify the Python versions you support here.
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.12"
     ],
 )
