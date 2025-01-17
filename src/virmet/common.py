@@ -169,7 +169,6 @@ def random_reduction(viral_mode):
     logging.info(
         "Database real path for compression: %s", os.path.realpath(target_dir)
     )
-    os.chdir(target_dir)
 
     viral_info_file = os.path.join(target_dir, "viral_seqs_info.tsv")
     viral_fasta_file = os.path.join(target_dir, "viral_database.fasta")
@@ -220,18 +219,18 @@ def random_reduction(viral_mode):
 
     viral_info_subsampled.drop_duplicates(subset=["accn_version"], inplace=True)
     viral_info_subsampled.accn_version.to_csv(
-        "outfile.csv", sep="\n", index=False, header=False
+        os.path.join(target_dir, "outfile.csv"), sep="\n", index=False, header=False
     )
     # extract the selected accession number from the fasta file using seqtk
     subsample_fasta_command = (
-        "seqtk subseq %s outfile.csv >  viral_database_subsampled.fasta"
-        % (viral_fasta_file)
+        "seqtk subseq %s/viral_database.fasta %s/outfile.csv >  %s/viral_database_subsampled.fasta"
+        % (target_dir)
     )
     run_child(subsample_fasta_command)
-    os.rename("viral_database.fasta", "viral_database_original_rmdup.fasta")
-    os.rename("viral_database_subsampled.fasta", "viral_database.fasta")
+    os.rename(viral_fasta_file, os.path.join(target_dir, "viral_database_original_rmdup.fasta"))
+    os.rename(os.path.join(target_dir, "viral_database_subsampled.fasta"), viral_fasta_file)
     TaxId_to_counter_filterred_df.to_csv(
-        "filtered_taxids.csv", sep=",", index=False
+        os.path.join(target_dir, "filtered_taxids.csv"), sep=",", index=False
     )
 
 
@@ -276,7 +275,7 @@ def viral_query(viral_db, update_min_date=None):
     return "esearch " + search_text
 
 
-def bact_fung_query(query_type=None, download=True, info_file=None):
+def bact_fung_query(query_type=None, download=True, info_file=None, target_folder="./"):
     """Download/read bacterial and fungal genomes in refseq as explained in
     FAQ 12 here http://www.ncbi.nlm.nih.gov/genome/doc/ftpfaq/#asmsumfiles.
 
@@ -288,6 +287,7 @@ def bact_fung_query(query_type=None, download=True, info_file=None):
         raise SystemExit("Choose bacteria or fungi")
     if not info_file:
         info_file = "%s_refseq_info.tsv" % query_type
+    info_file = os.path.join(target_folder, info_file)
     if download:
         url = (
             "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/%s/assembly_summary.txt"
@@ -305,7 +305,7 @@ def bact_fung_query(query_type=None, download=True, info_file=None):
         dtype={"excluded_from_refseq": str},
     )
     querinfo.rename(
-        columns={"# assembly_accession": "assembly_accession"}, inplace=True
+        columns={"#assembly_accession": "assembly_accession"}, inplace=True
     )
     if query_type == "bacteria":
         gb = querinfo[
@@ -326,7 +326,7 @@ def bact_fung_query(query_type=None, download=True, info_file=None):
     else:
         raise ValueError(f"Invalid query_type value: '{query_type}'.")
 
-    gb.set_index("#assembly_accession", inplace=True)
+    gb.set_index("assembly_accession", inplace=True)
     gb = gb[gb["ftp_path"] != "na"]
     x = gb["ftp_path"].apply(
         lambda col: col + "/" + col.split("/")[-1] + "_genomic.fna.gz"

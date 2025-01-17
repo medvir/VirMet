@@ -107,7 +107,7 @@ def fetch_bacterial():
     os.chdir(target_dir)
 
     # first download summary file with all ftp paths and return urls
-    all_urls = bact_fung_query(query_type="bacteria")
+    all_urls = bact_fung_query(query_type="bacteria", target_folder=target_dir)
     # print(all_urls)
     logging.info("%d bacterial genomes were found", len(all_urls))
     # then download genomic_fna.gz files
@@ -148,7 +148,7 @@ def fetch_fungal():
     os.chdir(target_dir)
 
     # first download summary file with all ftp paths and return urls
-    all_urls = bact_fung_query(query_type="fungi")
+    all_urls = bact_fung_query(query_type="fungi", target_folder=target_dir)
     logging.info("%d fungal genomes were found", len(all_urls))
     # then download genomic_fna.gz files
     download_genomes(all_urls, prefix="fungi", n_files=1)

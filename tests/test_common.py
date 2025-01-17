@@ -78,30 +78,30 @@ class TestMisc(unittest.TestCase):
         self.assertTrue("ABCD" in ids)
 
     def test_bact_query(self):
-        all_urls = bact_fung_query(query_type="bacteria", download=True)
+        all_urls = bact_fung_query(query_type="bacteria", download=True, target_folder=self.tmpdir)
         bac_lines = len(all_urls)
         self.assertGreater(bac_lines, 100)
-        self.assertTrue(os.path.exists("bacteria_refseq_info.tsv"))
-        os.rename("bacteria_refseq_info.tsv", "xyz.tsv")
+        self.assertTrue(os.path.exists(os.path.join(self.tmpdir,"bacteria_refseq_info.tsv")))
+        os.rename(os.path.join(self.tmpdir, "bacteria_refseq_info.tsv"), os.path.join(self.tmpdir, "xyz.tsv"))
         urls_again = bact_fung_query(
-            query_type="bacteria", download=False, info_file="xyz.tsv"
+            query_type="bacteria", download=False, info_file="xyz.tsv", target_folder=self.tmpdir
         )
         bac_lines_again = len(urls_again)
         self.assertEqual(bac_lines, bac_lines_again)
-        os.remove("xyz.tsv")
+        os.remove(os.path.join(self.tmpdir, "xyz.tsv"))
 
     def test_fung_query(self):
-        all_urls = bact_fung_query(query_type="fungi", download=True)
+        all_urls = bact_fung_query(query_type="fungi", download=True, target_folder=self.tmpdir)
         fung_lines = len(all_urls)
         self.assertGreater(fung_lines, 10)
-        self.assertTrue(os.path.exists("fungi_refseq_info.tsv"))
-        os.rename("fungi_refseq_info.tsv", "xyz.tsv")
+        self.assertTrue(os.path.exists(os.path.join(self.tmpdir, "fungi_refseq_info.tsv")))
+        os.rename(os.path.join(self.tmpdir,"fungi_refseq_info.tsv"), os.path.join(self.tmpdir, "xyz.tsv"))
         urls_again = bact_fung_query(
-            query_type="fungi", download=False, info_file="xyz.tsv"
+            query_type="fungi", download=False, info_file="xyz.tsv", target_folder=self.tmpdir
         )
         fung_lines_again = len(urls_again)
         self.assertEqual(fung_lines, fung_lines_again)
-        os.remove("xyz.tsv")
+        os.remove(os.path.join(self.tmpdir, "xyz.tsv"))
 
     def test_multi_download(self):
         tmpf = os.path.join(self.tmpdir, "tmp_multi_down.txt")
