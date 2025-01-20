@@ -1,3 +1,44 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "virmet"
+authors = [{ name = "Osvaldo Zagordi" }]
+maintainers = [{ name = "Judith Bergadà", email = "judithbergada@gmail.com" }]
+description = "Viral metagenomics in clinical applications"
+readme = "README.md"
+license = { text = "MIT" }
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "License :: MIT",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+requires-python = ">=3.11"
+dependencies = ["pandas", "Bio"]
+dynamic = ['version']
+
+[project.urls]
+Documentation = "https://virmet.readthedocs.io/"
+Source = "http://github.com/medvir/VirMet"
+Tracker = "http://github.com/medvir/VirMet/issues"
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-cov", "ruff", "flake8-pyproject", "black"]
+
+[project.scripts]
+virmet = "virmet.cli:main"
+
+[tool.setuptools_scm]
+
 [tool.black]
 line-length = 80
 fast = true
