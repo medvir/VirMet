@@ -25,10 +25,8 @@ from virmet.common import DB_DIR, run_child
 
 covpl_exe = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "scripts",
-    "covplot.R",
+    "scripts/covplot.R"
 )
-
 
 def best_species(orgs_file, org_name, best_spec_field_type="ssciname"):
     """Go through tsv file with organism | reads columns (sorted decreasingly by reads) and extract the one with
@@ -79,7 +77,7 @@ def main(args):
     outdir = args.outdir
     organism = args.organism
 
-    assert os.path.isdir(outdir), "Where is the output dir? Check the path."
+    assert os.path.isdir(outdir), "Ensure that output directory exists"
 
     org_file = os.path.join(outdir, "orgs_list.tsv")
     best_spec = best_species(org_file, organism, "ssciname")
@@ -111,15 +109,14 @@ def main(args):
             "directory %s exists already: delete it to run covplot from scratch"
             % organism
         )
-    os.chdir(organism)
 
-    if os.path.exists("single.fasta"):
+    single_fasta = os.path.join(outdir, organism, "single.fasta")
+    if os.path.exists(single_fasta):
         warn("Reusing single.fasta")
-        best_seq = SeqIO.parse("single.fasta", "fasta")
+        best_seq = SeqIO.parse(single_fasta, "fasta")
     else:
         viral_db = os.path.join(DB_DIR, "viral_nuccore/viral_database.fasta")
         time1 = datetime.datetime.now()
-        # best_seq = [s for s in SeqIO.parse(viral_db, 'fasta') if acc in s.id]
         with open(viral_db) as handle:
             best_seq = [
                 s for name, s in SimpleFastaParser(handle) if acc in name
@@ -127,20 +124,20 @@ def main(args):
         print("best_seq found", file=sys.stderr)
         print(datetime.datetime.now() - time1, file=sys.stderr)
         sr = [SeqRecord(Seq(best_seq[0]), id=acc, description="")]
-        SeqIO.write(sr, "single.fasta", "fasta")
+        SeqIO.write(sr, single_fasta, "fasta")
 
     seq_len = len(list(best_seq)[0])
 
-    bam_file = "single_sorted.bam"
+    bam_file = os.path.join(outdir, organism, "single_sorted.bam")
     if os.path.exists(bam_file):
         warn("Reusing alignment")
         logging.info("Refusing to rerun alignment")
     else:
-        run_child("bwa index single.fasta")
+        run_child("bwa index %s" % single_fasta)
         logging.info("Aligning viral reads")
         run_child(
-            "bwa mem -t 8 single.fasta ../viral_reads.fastq.gz 2> /dev/null | samtools view -@ 2 -u - | samtools sort -@ 2 -O bam -T tmp -o %s -"
-            % bam_file
+            "bwa mem -t 8 %s %s/viral_reads.fastq.gz 2> /dev/null | samtools view -@ 2 -u - | samtools sort -@ 2 -O bam -T tmp -o %s -"
+            % (single_fasta, outdir, bam_file)
         )
         run_child("samtools index %s" % bam_file)
     n_reads = int(
@@ -150,14 +147,14 @@ def main(args):
             shell=True,
         ).strip()
     )
-    depth_file = "depth.txt"
+    depth_file = os.path.join(outdir, organism, "depth.txt")
     if os.path.exists(depth_file):
         warn("Reusing depth file")
     else:
         run_child(
             "samtools depth -a -q 0 -Q 0 %s > %s" % (bam_file, depth_file)
         )
-    image_name = organism + "_coverage.pdf"
+    image_name = os.path.join(outdir, organism, organism + "_coverage.pdf")
     logging.info("Plotting coverage")
     perc_obs = subprocess.check_output(
         shlex.split(
