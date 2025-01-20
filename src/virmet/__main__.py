@@ -7,7 +7,7 @@ Why does this file exist, and why __main__? For more info, read:
 - https://docs.python.org/3/using/cmdline.html#cmdoption-m
 """
 
-from virmet.cli import main
-
 if __name__ == "__main__":
+    from virmet.cli import main
+
     main()
