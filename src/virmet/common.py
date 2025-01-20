@@ -41,7 +41,9 @@ def retry(tries, delay=3, backoff=2):
                 try:
                     return f(*args, **kwargs)
                 except Exception as e:
-                    if "No such file or directory" in str(e) and "550" in str(e):
+                    if "No such file or directory" in str(e) and "550" in str(
+                        e
+                    ):
                         logging.warning(
                             "No remote file found (some ffn and faa are know to be missing remotely). Aborting the download of %s. %s",
                             str(args[0]),
@@ -103,7 +105,9 @@ def ftp_down(remote_url, local_url=None):
     logging.debug("Downloading %s", remote_url)
     # compressing
     if not remote_url.endswith(".gz") and outname.endswith(".gz"):
-        raise NotImplementedError("compressing on the fly not implemented (yet?)")
+        raise NotImplementedError(
+            "compressing on the fly not implemented (yet?)"
+        )
 
     # decompressing
     elif remote_url.endswith(".gz") and not outname.endswith(".gz"):
@@ -116,7 +120,8 @@ def ftp_down(remote_url, local_url=None):
         logging.debug("Downloading %s", remote_url)
         with (
             urlopen(
-                Request(remote_url, headers={"Accept-Encoding": "gzip"}), timeout=30
+                Request(remote_url, headers={"Accept-Encoding": "gzip"}),
+                timeout=30,
             ) as response,
             gzip.GzipFile(fileobj=response) as f,
         ):
@@ -166,7 +171,9 @@ def random_reduction(viral_mode):
         target_dir = os.path.join(DB_DIR_UPDATE, "viral_protein")
     else:
         raise ValueError('Invalid viral_mode: "{viral_mode}".')
-    logging.info("Database real path for compression: %s", os.path.realpath(target_dir))
+    logging.info(
+        "Database real path for compression: %s", os.path.realpath(target_dir)
+    )
 
     viral_info_file = os.path.join(target_dir, "viral_seqs_info.tsv")
     viral_fasta_file = os.path.join(target_dir, "viral_database.fasta")
@@ -183,7 +190,9 @@ def random_reduction(viral_mode):
     TaxId_to_counter_df.rename(
         columns={"TaxId": "TaxId_count", "index": "TaxId_num"}, inplace=True
     )
-    TaxId_to_percentage = viral_info["TaxId"].value_counts(normalize=True).reset_index()
+    TaxId_to_percentage = (
+        viral_info["TaxId"].value_counts(normalize=True).reset_index()
+    )
     TaxId_to_counter_df["percentage"] = TaxId_to_percentage["TaxId"]
     TaxId_to_counter_filterred_df = TaxId_to_counter_df[
         TaxId_to_counter_df["TaxId_count"] > MAX_TAXID
@@ -215,7 +224,10 @@ def random_reduction(viral_mode):
 
     viral_info_subsampled.drop_duplicates(subset=["accn_version"], inplace=True)
     viral_info_subsampled.accn_version.to_csv(
-        os.path.join(target_dir, "outfile.csv"), sep="\n", index=False, header=False
+        os.path.join(target_dir, "outfile.csv"),
+        sep="\n",
+        index=False,
+        header=False,
     )
     # extract the selected accession number from the fasta file using seqtk
     subsample_fasta_command = (
@@ -228,7 +240,8 @@ def random_reduction(viral_mode):
         os.path.join(target_dir, "viral_database_original_rmdup.fasta"),
     )
     os.rename(
-        os.path.join(target_dir, "viral_database_subsampled.fasta"), viral_fasta_file
+        os.path.join(target_dir, "viral_database_subsampled.fasta"),
+        viral_fasta_file,
     )
     TaxId_to_counter_filterred_df.to_csv(
         os.path.join(target_dir, "filtered_taxids.csv"), sep=",", index=False
@@ -258,7 +271,9 @@ def viral_query(viral_db, update_min_date=None):
             "Viral Database Update is performed with sequences added to NCBI after %s .\n",
             update_min_date,
         )
-        query_text.append(["-datetype", "PDAT", "-mindate", str(update_min_date)])
+        query_text.append(
+            ["-datetype", "PDAT", "-mindate", str(update_min_date)]
+        )
 
     # query_text += " > ncbi_search"
 
@@ -277,7 +292,9 @@ def viral_query(viral_db, update_min_date=None):
     return search_text  # , output_dir
 
 
-def bact_fung_query(query_type=None, download=True, info_file=None, target_folder="./"):
+def bact_fung_query(
+    query_type=None, download=True, info_file=None, target_folder="./"
+):
     """Download/read bacterial and fungal genomes in refseq as explained in
     FAQ 12 here http://www.ncbi.nlm.nih.gov/genome/doc/ftpfaq/#asmsumfiles.
 
@@ -306,7 +323,9 @@ def bact_fung_query(query_type=None, download=True, info_file=None, target_folde
         skiprows=1,
         dtype={"excluded_from_refseq": str},
     )
-    querinfo.rename(columns={"#assembly_accession": "assembly_accession"}, inplace=True)
+    querinfo.rename(
+        columns={"#assembly_accession": "assembly_accession"}, inplace=True
+    )
     if query_type == "bacteria":
         gb = querinfo[
             (querinfo.assembly_level == "Complete Genome")

@@ -26,7 +26,6 @@ def run_child(cmd, exe="/bin/bash"):
 
 
 def extract_reads(db_type):
-
     all_reads = Counter()
     for f in glob.glob("%s/good_*%s?.cram" % (sample_dir, db_type)):
         cml = "samtools view %s | cut -f 3" % f

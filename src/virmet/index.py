@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""index sequences with blast or bwa
-"""
+"""index sequences with blast or bwa"""
 
 import datetime
 import logging

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""Update viral and bacterial database based on a new query to ncbi and a manually added list of GIs
-"""
+"""Update viral and bacterial database based on a new query to ncbi and a manually added list of GIs"""
 
 import glob
 import itertools
@@ -39,15 +38,14 @@ def bact_fung_update(query_type=None, picked=None):
         query_type=query_type,
         download=False,
         info_file="old_%s_refseq_info.tsv" % query_type,
-        target_folder=cont_dir 
+        target_folder=cont_dir,
     )
 
     logging.info("%d assemblies were present in refseq", len(old_urls))
     # download new info
     new_urls = bact_fung_query(
-        query_type=query_type, 
-        download=True, 
-        target_folder=cont_dir)
+        query_type=query_type, download=True, target_folder=cont_dir
+    )
     logging.info("%d assemblies are now in refseq", len(new_urls))
     to_add = set(new_urls) - set(old_urls)
     to_add = list(to_add)
@@ -198,9 +196,9 @@ def virupdate(viral_type, picked=None, update_min_date=None):
     # perform tests
     gids_1 = Counter(get_accs("viral_database.fasta"))
     gids_2 = Counter([l.split()[0] for l in open("viral_accn_taxid.dmp")])
-    assert set(gids_1) == set(
-        gids_2
-    ), "taxonomy/viral_seqs_info not matching with fasta"
+    assert set(gids_1) == set(gids_2), (
+        "taxonomy/viral_seqs_info not matching with fasta"
+    )
     duplicates = [k for k, v in gids_1.items() if v > 1]
     if duplicates:
         warnings.warn(
