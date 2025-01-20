@@ -117,9 +117,13 @@ def ftp_down(remote_url, local_url=None):
         else:
             outhandle = open(outname, "w")
         logging.debug("Downloading %s", remote_url)
-        with urlopen(
-            Request(remote_url, headers={"Accept-Encoding": "gzip"}), timeout=30
-        ) as response, gzip.GzipFile(fileobj=response) as f:
+        with (
+            urlopen(
+                Request(remote_url, headers={"Accept-Encoding": "gzip"}),
+                timeout=30,
+            ) as response,
+            gzip.GzipFile(fileobj=response) as f,
+        ):
             outhandle.write(f.read().decode("utf-8"))
 
     # keeping the compression status
@@ -219,7 +223,10 @@ def random_reduction(viral_mode):
 
     viral_info_subsampled.drop_duplicates(subset=["accn_version"], inplace=True)
     viral_info_subsampled.accn_version.to_csv(
-        os.path.join(target_dir, "outfile.csv"), sep="\n", index=False, header=False
+        os.path.join(target_dir, "outfile.csv"),
+        sep="\n",
+        index=False,
+        header=False,
     )
     # extract the selected accession number from the fasta file using seqtk
     subsample_fasta_command = (
@@ -227,8 +234,14 @@ def random_reduction(viral_mode):
         % (target_dir)
     )
     run_child(subsample_fasta_command)
-    os.rename(viral_fasta_file, os.path.join(target_dir, "viral_database_original_rmdup.fasta"))
-    os.rename(os.path.join(target_dir, "viral_database_subsampled.fasta"), viral_fasta_file)
+    os.rename(
+        viral_fasta_file,
+        os.path.join(target_dir, "viral_database_original_rmdup.fasta"),
+    )
+    os.rename(
+        os.path.join(target_dir, "viral_database_subsampled.fasta"),
+        viral_fasta_file,
+    )
     TaxId_to_counter_filterred_df.to_csv(
         os.path.join(target_dir, "filtered_taxids.csv"), sep=",", index=False
     )
@@ -274,7 +287,9 @@ def viral_query(viral_db, update_min_date=None):
     return "esearch " + search_text
 
 
-def bact_fung_query(query_type=None, download=True, info_file=None, target_folder="./"):
+def bact_fung_query(
+    query_type=None, download=True, info_file=None, target_folder="./"
+):
     """Download/read bacterial and fungal genomes in refseq as explained in
     FAQ 12 here http://www.ncbi.nlm.nih.gov/genome/doc/ftpfaq/#asmsumfiles.
 
@@ -351,7 +366,7 @@ def download_genomes(all_urls, prefix, n_files=1):
 
     dl_pairs = []
     for i, seqs in enumerate(seqs_urls):
-        fasta_out = f"fasta/{prefix}{i+1}.fasta"
+        fasta_out = f"fasta/{prefix}{i + 1}.fasta"
         # if os.path.exists(fasta_out):
         #    os.remove(fasta_out)
         dl_pairs.append((fasta_out, seqs))

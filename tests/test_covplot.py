@@ -10,7 +10,6 @@ from virmet.covplot import best_species
 
 
 class TestCovplot(unittest.TestCase):
-
     def setUp(self):
         self.tmpdir = tempfile.gettempdir()
         self.orgs_file = os.path.join(self.tmpdir, "orgs_list.tsv")

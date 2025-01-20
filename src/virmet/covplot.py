@@ -25,8 +25,9 @@ from virmet.common import DB_DIR, run_child
 
 covpl_exe = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "scripts/covplot.R"
+    "scripts/covplot.R",
 )
+
 
 def best_species(orgs_file, org_name, best_spec_field_type="ssciname"):
     """Go through tsv file with organism | reads columns (sorted decreasingly by reads) and extract the one with
@@ -175,6 +176,5 @@ def main(args):
 
 
 if __name__ == "__main__":
-
     args_main = {"outdir": sys.argv[1], "organism": sys.argv[2]}
     main(args_main)

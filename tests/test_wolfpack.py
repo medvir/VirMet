@@ -15,7 +15,6 @@ virmet_dir = os.path.dirname(
 
 
 class TestHunter(unittest.TestCase):
-
     def setUp(self):
         self.tmpdir = tempfile.gettempdir()
         self.reads = os.path.join(
@@ -54,7 +53,6 @@ class TestHunter(unittest.TestCase):
 
 
 class TestViralBlast(unittest.TestCase):
-
     def setUp(self):
         self.tmpdir = tempfile.gettempdir()
         self.nodes, self.names = get_nodes_names(DB_DIR)

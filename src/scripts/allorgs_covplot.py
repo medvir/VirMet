@@ -2,6 +2,7 @@
 """This script is used to run covplot on all directories ending in _S* and for all organisms
 present in orgs_list.csv (except those with parenthesis in the name, to avoid )
 """
+
 import glob
 import json
 import os

@@ -24,7 +24,6 @@ def parse_file_line(line):
 
 
 class TestFTPDown(unittest.TestCase):
-
     def setUp(self):
         self.tmpdir = tempfile.gettempdir()
         # big file, 39 MB
@@ -64,7 +63,6 @@ class TestFTPDown(unittest.TestCase):
 
 
 class TestMisc(unittest.TestCase):
-
     def setUp(self):
         self.tmpdir = tempfile.gettempdir()
         self.fasta = open(os.path.join(self.tmpdir, "tmp.fasta"), "w")
@@ -78,26 +76,48 @@ class TestMisc(unittest.TestCase):
         self.assertTrue("ABCD" in ids)
 
     def test_bact_query(self):
-        all_urls = bact_fung_query(query_type="bacteria", download=True, target_folder=self.tmpdir)
+        all_urls = bact_fung_query(
+            query_type="bacteria", download=True, target_folder=self.tmpdir
+        )
         bac_lines = len(all_urls)
         self.assertGreater(bac_lines, 100)
-        self.assertTrue(os.path.exists(os.path.join(self.tmpdir,"bacteria_refseq_info.tsv")))
-        os.rename(os.path.join(self.tmpdir, "bacteria_refseq_info.tsv"), os.path.join(self.tmpdir, "xyz.tsv"))
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(self.tmpdir, "bacteria_refseq_info.tsv")
+            )
+        )
+        os.rename(
+            os.path.join(self.tmpdir, "bacteria_refseq_info.tsv"),
+            os.path.join(self.tmpdir, "xyz.tsv"),
+        )
         urls_again = bact_fung_query(
-            query_type="bacteria", download=False, info_file="xyz.tsv", target_folder=self.tmpdir
+            query_type="bacteria",
+            download=False,
+            info_file="xyz.tsv",
+            target_folder=self.tmpdir,
         )
         bac_lines_again = len(urls_again)
         self.assertEqual(bac_lines, bac_lines_again)
         os.remove(os.path.join(self.tmpdir, "xyz.tsv"))
 
     def test_fung_query(self):
-        all_urls = bact_fung_query(query_type="fungi", download=True, target_folder=self.tmpdir)
+        all_urls = bact_fung_query(
+            query_type="fungi", download=True, target_folder=self.tmpdir
+        )
         fung_lines = len(all_urls)
         self.assertGreater(fung_lines, 10)
-        self.assertTrue(os.path.exists(os.path.join(self.tmpdir, "fungi_refseq_info.tsv")))
-        os.rename(os.path.join(self.tmpdir,"fungi_refseq_info.tsv"), os.path.join(self.tmpdir, "xyz.tsv"))
+        self.assertTrue(
+            os.path.exists(os.path.join(self.tmpdir, "fungi_refseq_info.tsv"))
+        )
+        os.rename(
+            os.path.join(self.tmpdir, "fungi_refseq_info.tsv"),
+            os.path.join(self.tmpdir, "xyz.tsv"),
+        )
         urls_again = bact_fung_query(
-            query_type="fungi", download=False, info_file="xyz.tsv", target_folder=self.tmpdir
+            query_type="fungi",
+            download=False,
+            info_file="xyz.tsv",
+            target_folder=self.tmpdir,
         )
         fung_lines_again = len(urls_again)
         self.assertEqual(fung_lines, fung_lines_again)
