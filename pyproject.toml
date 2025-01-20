@@ -37,6 +37,9 @@ dev = ["pytest", "pytest-cov", "ruff", "flake8-pyproject"]
 [project.scripts]
 virmet = "virmet.cli:main"
 
+[tool.setuptools.package-data]
+virmet = ["*.R"]
+
 [tool.setuptools_scm]
 
 [tool.isort]

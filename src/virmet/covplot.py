@@ -10,10 +10,10 @@ matching sequence among those starting with ``organism``
 import datetime
 import logging
 import os
-import shlex
 import subprocess
 import sys
 from warnings import warn
+from importlib import resources
 
 import pandas as pd
 from Bio import SeqIO
@@ -22,11 +22,6 @@ from Bio.SeqIO.FastaIO import SimpleFastaParser
 from Bio.SeqRecord import SeqRecord
 
 from virmet.common import DB_DIR, run_child
-
-covpl_exe = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "scripts/covplot.R",
-)
 
 
 def best_species(orgs_file, org_name, best_spec_field_type="ssciname"):
@@ -158,10 +153,15 @@ def main(args):
     image_name = os.path.join(outdir, organism, organism + "_coverage.pdf")
     logging.info("Plotting coverage")
     perc_obs = subprocess.check_output(
-        shlex.split(
-            "Rscript %s %s %s %s %s %d"
-            % (covpl_exe, depth_file, acc, seq_len, image_name, n_reads)
-        )
+        [
+            "Rscript",
+            resources.files("virmet").joinpath("covplot.R"),
+            depth_file,
+            acc,
+            seq_len,
+            image_name,
+            str(n_reads),
+        ]
     )
     try:
         perc_obs_string = perc_obs.decode("ascii").split()[1]
