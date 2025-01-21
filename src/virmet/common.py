@@ -6,17 +6,30 @@ import multiprocessing as mp
 import os
 import random
 import subprocess
+import sys
 import urllib.request
 from time import sleep
 from urllib.request import Request, urlopen
 
 import pandas as pd
+from Bio import Entrez
 
-# TODO: This should be updated to a more global location rather than user based.
-DB_DIR = os.path.expandvars("/data/virmet_databases")
-DB_DIR_UPDATE = os.path.expandvars("/data/virmet_databases_update")
 N_FILES_BACT = 16
 MAX_TAXID = 10000  # max number of sequences belonging to the same taxid in compressed viral database
+
+
+def data_dir() -> str:
+    """Returns the appropiate data directory for the package."""
+    if sys.platform.startswith("darwin"):
+        data_path = os.path.expandvars("$HOME/.virmet")
+    else:
+        # Assume Linux
+        data_path = "/data/virmet/"
+    return data_path
+
+
+DB_DIR = os.path.join(data_dir(), "databases")
+DB_DIR_UPDATE = os.path.join(data_dir(), "databases_update")
 
 
 # decorator for taken from RepoPhlan
@@ -95,8 +108,6 @@ def run_child(cmd, stdin=None, stdout=None):
 @retry(tries=8, delay=5, backoff=1.5)
 def ftp_down(remote_url, local_url=None):
     """Download files, correctly handling both gzipped and uncompressed files."""
-
-    # from io import BytesIO
 
     if local_url:
         outname = local_url

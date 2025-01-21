@@ -49,7 +49,7 @@ def fetch_viral(viral_mode, compression=True):
     # cml_fetch_fasta = (
     #     "efetch -format fasta < ncbi_search > viral_database.fasta"
     # )
-    viral_database_path = target_dir / "viral_databse.fasta"
+    viral_database_path = target_dir / "viral_database.fasta"
     with (
         search_result.open("r") as stdin,
         viral_database_path.open("w") as stdout,
