@@ -156,10 +156,10 @@ def main(args):
         [
             "Rscript",
             resources.files("virmet").joinpath("covplot.R"),
-            depth_file,
-            acc,
-            seq_len,
-            image_name,
+            str(depth_file),
+            str(acc),
+            str(seq_len),
+            str(image_name),
             str(n_reads),
         ]
     )
