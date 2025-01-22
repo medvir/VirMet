@@ -170,11 +170,6 @@ def main():
     parser_cov.add_argument(
         "--outdir", type=str, help="path to sample results directory"
     )
-    parser_cov.add_argument(
-        "--organism",
-        type=str,
-        help="name of the organism as reported in orgs_list.tsv file",
-    )
     parser_cov.set_defaults(func=covplot_run)
 
     # exit so that log file is not written
