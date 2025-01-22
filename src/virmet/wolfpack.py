@@ -18,6 +18,7 @@ from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
 from virmet.__init__ import __version__
 from virmet.common import DB_DIR, run_child  # , single_process
+from virmet.covplot import run_covplot
 
 contaminant_db = [
     "/data/virmet_databases/human/bwa/humanGRCh38",
@@ -150,7 +151,7 @@ def get_parent_species(inrow, nodes, names):
     return org_name
 
 
-def hunter(fq_file):
+def hunter(fq_file, out_dir):
     """runs quality filter on a fastq file with seqtk and prinseq,
     simple parallelisation with xargs, returns output directory
     """
@@ -158,31 +159,30 @@ def hunter(fq_file):
     # prinseq_exe = "prinseq-lite.pl"
     prinseq_exe = "prinseq"
 
-    n_proc = max(min(os.cpu_count() or 2, 16), 2)
+    n_proc = os.cpu_count()
 
     logging.debug("hunter will run on %s processors", n_proc)
     if "L001" in fq_file:
         s_dir = "_".join(os.path.split(fq_file)[1].split("_")[:2])
+        s_dir = os.path.join(out_dir, s_dir)
         try:
             os.mkdir(s_dir)
         except FileExistsError:
             logging.debug("entering %s already existing", s_dir)
-        os.chdir(s_dir)
-        s_dir = os.getcwd()
     else:
-        s_dir = os.getcwd()
+        s_dir = out_dir
 
     # skip if this is a hot run
-    if os.path.exists("prinseq.err") and os.path.exists("prinseq.log"):
+    if os.path.exists(os.path.join(s_dir, "prinseq.err")) and os.path.exists(os.path.join(s_dir, "prinseq.log")):
         logging.info("hunter was already run in %s, skipping", s_dir)
-        os.chdir(os.pardir)
         return s_dir
 
     # first occurrence of stats.tsv
-    oh = open("stats.tsv", "w+")
+    stats_file = os.path.join(s_dir, "stats.tsv")
+    oh = open(stats_file, "w+")
     # count raw reads
     if fq_file.endswith("gz"):
-        out1 = run_child("gunzip -c %s | wc -l" % fq_file)
+        out1 = run_child("unpigz -c %s | wc -l" % fq_file)
     else:
         out1 = run_child("wc -l %s" % fq_file)
     out1 = out1.strip().split()[0]
@@ -190,10 +190,11 @@ def hunter(fq_file):
     oh.write("raw_reads\t%d\n" % n_reads)
 
     # trim and discard short reads, count
+    intermediate_file = os.path.join(s_dir, "intermediate.fastq")
     logging.debug("trimming with seqtk")
-    cml = "trimfq %s | seqtk seq -L 75 - > intermediate.fastq" % fq_file
+    cml = "trimfq %s | seqtk seq -L 75 - > %s" % (fq_file, intermediate_file)
     out1 = run_child("seqtk " + cml)
-    out1 = run_child("wc -l intermediate.fastq")
+    out1 = run_child("wc -l %s" % intermediate_file)
     out1 = out1.strip().split()[0]
 
     long_reads = int(int(out1.strip()) / 4)
@@ -206,43 +207,43 @@ def hunter(fq_file):
     max_reads_per_file = int(n_reads / n_proc) + 1
     max_l = max_reads_per_file * 4
     # split and rename
-    run_child("split -l %d intermediate.fastq splitted" % max_l)
-    os.remove("intermediate.fastq")
-    splitted = glob.glob("splitted*")
+    run_child("split -l %d %s %s/splitted" % (max_l, intermediate_file, s_dir))
+    os.remove(intermediate_file)
+    splitted = glob.glob("%s/splitted*" % s_dir)
     n_splitted = len(splitted)
     for i, spf in enumerate(sorted(splitted)):
-        os.rename(spf, "splitted%03d.fastq" % i)  # W.O. max 1000 files/cpus
+        os.rename(spf, "%s/splitted%03d.fastq" % (s_dir, i))  # W.O. max 1000 files/cpus
 
     # filter with prinseq, parallelize with xargs
     logging.debug("filtering with prinseq")
     cml = (
         "-f %%03g 0 %d | xargs -P %d -I {} %s \
-            -fastq splitted{}.fastq -lc_method entropy -lc_threshold 70 \
+            -fastq %s/splitted{}.fastq -lc_method entropy -lc_threshold 70 \
             -log prinseq{}.log -min_qual_mean 20 \
             -out_good ./good{} -out_bad ./bad{} > ./prinseq.err 2>&1"
-        % (n_splitted - 1, n_splitted, prinseq_exe)
+        % (n_splitted - 1, n_splitted, prinseq_exe, s_dir)
     )
     run_child("/usr/bin/seq " + cml)
 
     logging.debug("cleaning up")
-    if glob.glob("good???.fastq"):
-        run_child("cat good???.fastq > good.fastq")
-        run_child("rm good???.fastq")
+    if glob.glob("%s/good???.fastq" % s_dir):
+        run_child("cat %s/good???.fastq > %s/good.fastq" % s_dir)
+        run_child("rm %s/good???.fastq" % s_dir)
 
-    if glob.glob("bad???.fastq"):
-        run_child("cat bad???.fastq > bad.fastq")
-        run_child("rm bad???.fastq")
+    if glob.glob("%s/bad???.fastq" % s_dir):
+        run_child("cat %s/bad???.fastq > %s/bad.fastq" % s_dir)
+        run_child("rm %s/bad???.fastq" % s_dir)
 
-    if glob.glob("prinseq???.log"):
-        run_child("cat prinseq???.log > prinseq.log")
-        run_child("rm prinseq???.log")
+    if glob.glob("%s/prinseq???.log" % s_dir):
+        run_child("cat %s/prinseq???.log > %s/prinseq.log" % s_dir)
+        run_child("rm %s/prinseq???.log" % s_dir)
 
-    run_child("rm splitted*fastq")
+    run_child("rm %s/splitted*fastq" % s_dir)
 
     # parsing number of reads deleted because of low entropy
     low_ent = 0
     min_qual = 0
-    with open("prinseq.log") as f:
+    with open("%s/prinseq.log" % s_dir) as f:
         for l in f:
             match_lc = re.search(r"lc_method:\s(\d*)$", l)
             match_mq = re.search(r"min_qual_mean:\s(\d*)$", l)
@@ -253,7 +254,7 @@ def hunter(fq_file):
     oh.write("low_entropy\t%d\n" % low_ent)
     oh.write("low_quality\t%d\n" % min_qual)
 
-    out1 = run_child("wc -l good.fastq")
+    out1 = run_child("wc -l %s/good.fastq" % s_dir)
     out1 = out1.strip().split()[0]
     n_reads = int(int(out1) / 4)
     lost_reads = n_reads + low_ent + min_qual - long_reads
@@ -263,10 +264,10 @@ def hunter(fq_file):
     oh.write("passing_filter\t%d\n" % n_reads)
     oh.close()
 
-    with open("sample_info.txt", "a") as oh:
+    sample_info = os.path.join(s_dir, "sample_info.txt")
+    with open(sample_info, "a") as oh:
         oh.write(f"VirMet version: {__version__}\n")
-
-    os.chdir(os.pardir)
+        
     return s_dir
 
 
@@ -675,6 +676,9 @@ def main(args):
         logging.info("now in %s", sample_dir)
         cleaning_up()
         os.chdir(os.pardir)
+    
+    for sample_dir in s_dirs:
+        run_covplot(sample_dir)
 
     os.chdir(os.pardir)
     return out_dir

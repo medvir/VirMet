@@ -111,10 +111,9 @@ def infer_species(orgs_file, read_len=151, reads_cutoff=3, covered_score_cutoff=
     return orgs_list
 
 
-def main(args):
+def run_covplot(outdir):
     """Extract the best species, realign reads, run ``covplot.R`` script to create the plot"""
 
-    outdir = args.outdir
     assert os.path.isdir(outdir), "Ensure that output directory exists"
 
     extended_org_file = os.path.join(outdir, "orgs_list.tsv")
@@ -217,8 +216,3 @@ def main(args):
             "acc:%s seq_len:%s n_reads:%d perc_obs:%s"
             % (acc, seq_len, n_reads, perc_obs_string)
         )
-
-
-if __name__ == "__main__":
-    args_main = {"outdir": sys.argv[1]}
-    main(args_main)
