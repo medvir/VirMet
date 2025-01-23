@@ -384,43 +384,24 @@ def viral_blast(file_in, n_proc, nodes, names):
         oh.close()
         return
 
-    max_n = (tot_seqs / n_proc) + 1
-
-    # We want to split in n_proc processors, so each file has at most
-    # (tot_seqs / n_proc) + 1 reads
-    cml = (
-        'awk -v "MAX_N=%d" \'BEGIN {n_seq=0;} /^>/ \
-    {if(n_seq %% %d == 0){file=sprintf("splitted_clean_%%d.fasta", n_seq/%d);} \
-    print >> file; n_seq++; next;} { print >> file; }\' %s'
-        % (max_n, max_n, max_n, fasta_file)
-    )
-    run_child(cml)
-
     # blast needs access to taxdb files to retrieve organism name
     os.environ["BLASTDB"] = DB_DIR
-    if sys.platform.startswith("linux"):
-        xargs_thread = 0  # means on all available cores, caution
-    elif sys.platform.startswith("darwin"):
-        xargs_thread = n_proc  # darwin xargs does not accept -P 0
-    else:
-        logging.info(
-            "could not detect system platform: runnning on %d cores", n_proc
-        )
-        xargs_thread = n_proc
+    logging.info("runnning on %d cores", n_proc)
     # if Darwin then xargs_thread must be n_proc
     DB_real_path = os.path.realpath(
         os.path.join(DB_DIR, "viral_nuccore/viral_db")
     )
     logging.info("Database real path: %s" % DB_real_path)
     cml = (
-        "seq 0 %s | xargs -P %d -I {} blastn -task megablast \
-           -query splitted_clean_{}.fasta -db %s \
-           -out tmp_{}.tsv \
+        "   blastn -task megablast \
+           -query %s -db %s \
+           -num_threads %s \
+           -out tmp.tsv \ # Change path to make it not dependant of a relative path
            -outfmt '6 qseqid sseqid ssciname stitle pident qcovs score length mismatch gapopen qstart qend sstart send staxid'"
         % (
-            n_proc - 1,
-            xargs_thread,
-            os.path.join(DB_DIR, "viral_nuccore/viral_db"),
+            fasta_file,
+            DB_real_path,
+            n_proc,
         )
     )
     logging.debug("running blast now")
@@ -435,16 +416,12 @@ def viral_blast(file_in, n_proc, nodes, names):
 
     logging.debug("parsing best HSP for each query sequence")
     qseqid = ""
-    # write to unique.tsv
-    for tmpf in glob.glob("tmp_*.tsv"):
-        i = tmpf.split("_")[1].split(".")[0]
-        with open(tmpf) as f:
-            for line in f:
-                if line.split("\t")[0] != qseqid:
-                    bh.write(line)
-                    qseqid = line.split("\t")[0]
-        os.remove(tmpf)
-        os.remove("splitted_clean_%s.fasta" % i)
+    with open("tmp.tsv") as f:
+        for line in f:
+            if line.split("\t")[0] != qseqid: 
+               bh.write(line)
+               qseqid = line.split("\t")[0]
+        os.remove("tmp.tsv") 
     bh.close()
 
     logging.debug("filtering and grouping by hit sequence")
