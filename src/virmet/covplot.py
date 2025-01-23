@@ -64,7 +64,9 @@ def best_species(orgs_list, org_name, best_spec_field_type="ssciname"):
         return str(matching_orgs.iloc[0].stitle)
 
 
-def infer_species(orgs_file, read_len=151, reads_cutoff=3, covered_score_cutoff=10):
+def infer_species(
+    orgs_file, read_len=151, reads_cutoff=3, covered_score_cutoff=10
+):
     """Go through orgs_file.tsv and infer the viral species
     that are worth considering.
 
@@ -74,7 +76,7 @@ def infer_species(orgs_file, read_len=151, reads_cutoff=3, covered_score_cutoff=
         - org_ssciname contains one of the blocked / excluded patterns (phage, bovine, etc.)
 
 
-    :param orgs_file: path to tab separated file with [organism | reads | seq_len | etc] columns. 
+    :param orgs_file: path to tab separated file with [organism | reads | seq_len | etc] columns.
     :param read_len: lenght of the sequencing reads that are expeced.
     :param reads_cutoff: threshold (minimum number of mapped reads) to filter out the organism.
     :param covered_score_cutoff: threshold (minimum covered score) to filter out the organism.
@@ -84,30 +86,67 @@ def infer_species(orgs_file, read_len=151, reads_cutoff=3, covered_score_cutoff=
     orgs_list = pd.read_csv(orgs_file, sep="\t", header=0)
 
     # Calculate number of reads for each organism
-    orgs_readsum = orgs_list.groupby('ssciname')["reads"].sum()
-    orgs_readsum.drop(orgs_readsum[orgs_readsum < reads_cutoff].index, inplace=True)
+    orgs_readsum = orgs_list.groupby("ssciname")["reads"].sum()
+    orgs_readsum.drop(
+        orgs_readsum[orgs_readsum < reads_cutoff].index, inplace=True
+    )
     # Filter out viruses not fulfilling the first criteria
-    orgs_list.drop(orgs_list[~orgs_list['ssciname'].isin(orgs_readsum.index)].index, inplace=True)
+    orgs_list.drop(
+        orgs_list[~orgs_list["ssciname"].isin(orgs_readsum.index)].index,
+        inplace=True,
+    )
 
     # Calculate the covered score
-    orgs_list["covered_percent"] = 100 * orgs_list["covered_region"] / orgs_list["seq_len"]
-    orgs_list["covered_percent_expected"] = 100 * (1-np.exp(-orgs_list["reads"] * read_len / orgs_list["seq_len"]))
-    orgs_list["covered_score"] = 100 * orgs_list["covered_percent"] / orgs_list["covered_percent_expected"]
+    orgs_list["covered_percent"] = (
+        100 * orgs_list["covered_region"] / orgs_list["seq_len"]
+    )
+    orgs_list["covered_percent_expected"] = 100 * (
+        1 - np.exp(-orgs_list["reads"] * read_len / orgs_list["seq_len"])
+    )
+    orgs_list["covered_score"] = (
+        100
+        * orgs_list["covered_percent"]
+        / orgs_list["covered_percent_expected"]
+    )
     # Calculate the weighted mean for each species
-    orgs_coverage = orgs_list.groupby('ssciname').apply(lambda x: np.average(x['covered_score'], weights=x['reads']), include_groups=False)
-    orgs_coverage.drop(orgs_coverage[orgs_coverage < covered_score_cutoff].index, inplace=True)
+    orgs_coverage = orgs_list.groupby("ssciname").apply(
+        lambda x: np.average(x["covered_score"], weights=x["reads"]),
+        include_groups=False,
+    )
+    orgs_coverage.drop(
+        orgs_coverage[orgs_coverage < covered_score_cutoff].index, inplace=True
+    )
     # Filter out viruses not fulfilling the second griteria
-    orgs_list.drop(orgs_list[~orgs_list['ssciname'].isin(orgs_coverage.index)].index, inplace=True)
+    orgs_list.drop(
+        orgs_list[~orgs_list["ssciname"].isin(orgs_coverage.index)].index,
+        inplace=True,
+    )
 
     # Define patterns that should be excluded or blocked
-    phages_patterns = r'emesvirus zinderi|tunavirus|phage|escherichia|streptococcus|staphylococcus|bacillus|actinomyces|ostreococcus|myoviridae|clostridium|shigella|haemophilus'
-    uninteresting_patterns = r'endogenous retrovirus|baboon|bovine|ungulate|bosavirus|betabaculovirus|porcellio scaber|sheep'
+    phages_patterns = r"emesvirus zinderi|tunavirus|phage|escherichia|streptococcus|staphylococcus|bacillus|actinomyces|ostreococcus|myoviridae|clostridium|shigella|haemophilus"
+    uninteresting_patterns = r"endogenous retrovirus|baboon|bovine|ungulate|bosavirus|betabaculovirus|porcellio scaber|sheep"
     # Drop organisms with blocked or excluded patterns in the name
-    orgs_list.drop(orgs_list[orgs_list['ssciname'].str.lower().str.contains(phages_patterns)].index, inplace = True)
-    orgs_list.drop(orgs_list[orgs_list['ssciname'].str.lower().str.contains(uninteresting_patterns)].index, inplace = True)
+    orgs_list.drop(
+        orgs_list[
+            orgs_list["ssciname"].str.lower().str.contains(phages_patterns)
+        ].index,
+        inplace=True,
+    )
+    orgs_list.drop(
+        orgs_list[
+            orgs_list["ssciname"]
+            .str.lower()
+            .str.contains(uninteresting_patterns)
+        ].index,
+        inplace=True,
+    )
 
     # Return remaining dataframe
-    orgs_list.drop(labels = ["covered_percent", "covered_percent_expected", "covered_score"], axis = 1, inplace=True)
+    orgs_list.drop(
+        labels=["covered_percent", "covered_percent_expected", "covered_score"],
+        axis=1,
+        inplace=True,
+    )
     return orgs_list
 
 
@@ -119,8 +158,7 @@ def run_covplot(outdir):
     extended_org_file = os.path.join(outdir, "orgs_list.tsv")
     orgs_list = infer_species(extended_org_file)
 
-    for organism in set(orgs_list['ssciname']):
-
+    for organism in set(orgs_list["ssciname"]):
         best_spec = best_species(orgs_list, organism, "ssciname")
 
         # parse blast results
@@ -156,7 +194,9 @@ def run_covplot(outdir):
             warn("Reusing single.fasta")
             best_seq = SeqIO.parse(single_fasta, "fasta")
         else:
-            viral_db = os.path.join(DB_DIR, "viral_nuccore/viral_database.fasta")
+            viral_db = os.path.join(
+                DB_DIR, "viral_nuccore/viral_database.fasta"
+            )
             time1 = datetime.datetime.now()
             with open(viral_db) as handle:
                 best_seq = [

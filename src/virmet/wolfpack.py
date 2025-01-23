@@ -173,7 +173,9 @@ def hunter(fq_file, out_dir):
         s_dir = out_dir
 
     # skip if this is a hot run
-    if os.path.exists(os.path.join(s_dir, "prinseq.err")) and os.path.exists(os.path.join(s_dir, "prinseq.log")):
+    if os.path.exists(os.path.join(s_dir, "prinseq.err")) and os.path.exists(
+        os.path.join(s_dir, "prinseq.log")
+    ):
         logging.info("hunter was already run in %s, skipping", s_dir)
         return s_dir
 
@@ -212,7 +214,9 @@ def hunter(fq_file, out_dir):
     splitted = glob.glob("%s/splitted*" % s_dir)
     n_splitted = len(splitted)
     for i, spf in enumerate(sorted(splitted)):
-        os.rename(spf, "%s/splitted%03d.fastq" % (s_dir, i))  # W.O. max 1000 files/cpus
+        os.rename(
+            spf, "%s/splitted%03d.fastq" % (s_dir, i)
+        )  # W.O. max 1000 files/cpus
 
     # filter with prinseq, parallelize with xargs
     logging.debug("filtering with prinseq")
@@ -267,7 +271,7 @@ def hunter(fq_file, out_dir):
     sample_info = os.path.join(s_dir, "sample_info.txt")
     with open(sample_info, "a") as oh:
         oh.write(f"VirMet version: {__version__}\n")
-        
+
     return s_dir
 
 
@@ -676,7 +680,7 @@ def main(args):
         logging.info("now in %s", sample_dir)
         cleaning_up()
         os.chdir(os.pardir)
-    
+
     for sample_dir in s_dirs:
         run_covplot(sample_dir)
 
