@@ -43,6 +43,7 @@ ref_map = {
 
 blast_cov_threshold = 75.0
 blast_ident_threshold = 75.0
+n_proc = min(os.cpu_count() or 8, 16)
 
 
 def strip(str_):
@@ -151,15 +152,10 @@ def get_parent_species(inrow, nodes, names):
     return org_name
 
 
-def hunter(fq_file, out_dir):
-    """runs quality filter on a fastq file with seqtk and prinseq,
-    simple parallelisation with xargs, returns output directory
+def hunter(fq_file, out_dir, n_proc):
+    """runs quality filter on a fastq file with fastp,
+    returns output directory
     """
-    # from virmet.common import prinseq_exe
-    # prinseq_exe = "prinseq-lite.pl"
-    prinseq_exe = "prinseq"
-
-    n_proc = os.cpu_count()
 
     logging.debug("hunter will run on %s processors", n_proc)
     if "L001" in fq_file:
@@ -173,99 +169,36 @@ def hunter(fq_file, out_dir):
         s_dir = out_dir
 
     # skip if this is a hot run
-    if os.path.exists(os.path.join(s_dir, "prinseq.err")) and os.path.exists(
-        os.path.join(s_dir, "prinseq.log")
-    ):
+    if os.path.exists(os.path.join(s_dir, "fastp.json")):
         logging.info("hunter was already run in %s, skipping", s_dir)
         return s_dir
 
-    # first occurrence of stats.tsv
+    # trim, discard short reads and filter with fastp
+    good_file = os.path.join(s_dir, "good.fastq")
+    cml = (
+        "fastp -i %s -o %s -A \
+            --cut_front --cut_tail --cut_mean_quality 20 --length_required 75 \
+            --average_qual 20 --low_complexity_filter --complexity_threshold 30 \
+            --thread  %d > fastp.err 2>&1"
+        % (fq_file, good_file, n_proc)
+    )
+    run_child(cml)
+
+    # Parsing statistics to stats.tsv file
     stats_file = os.path.join(s_dir, "stats.tsv")
     oh = open(stats_file, "w+")
-    # count raw reads
-    if fq_file.endswith("gz"):
-        out1 = run_child("unpigz -c %s | wc -l" % fq_file)
-    else:
-        out1 = run_child("wc -l %s" % fq_file)
-    out1 = out1.strip().split()[0]
-    n_reads = int(int(out1.strip()) / 4)
-    oh.write("raw_reads\t%d\n" % n_reads)
-
-    # trim and discard short reads, count
-    intermediate_file = os.path.join(s_dir, "intermediate.fastq")
-    logging.debug("trimming with seqtk")
-    cml = "trimfq %s | seqtk seq -L 75 - > %s" % (fq_file, intermediate_file)
-    out1 = run_child("seqtk " + cml)
-    out1 = run_child("wc -l %s" % intermediate_file)
-    out1 = out1.strip().split()[0]
-
-    long_reads = int(int(out1.strip()) / 4)
-    short = n_reads - long_reads
-    oh.write("trimmed_too_short\t%d\n" % short)
-
-    # We want to split in n_proc processors, so each file has at most
-    # (n_reads / n_proc) + 1 reads and 4 times as many lines
-    # this fails if there are more cpus than reads!
-    max_reads_per_file = int(n_reads / n_proc) + 1
-    max_l = max_reads_per_file * 4
-    # split and rename
-    run_child("split -l %d %s %s/splitted" % (max_l, intermediate_file, s_dir))
-    os.remove(intermediate_file)
-    splitted = glob.glob("%s/splitted*" % s_dir)
-    n_splitted = len(splitted)
-    for i, spf in enumerate(sorted(splitted)):
-        os.rename(
-            spf, "%s/splitted%03d.fastq" % (s_dir, i)
-        )  # W.O. max 1000 files/cpus
-
-    # filter with prinseq, parallelize with xargs
-    logging.debug("filtering with prinseq")
-    cml = (
-        "-f %%03g 0 %d | xargs -P %d -I {} %s \
-            -fastq %s/splitted{}.fastq -lc_method entropy -lc_threshold 70 \
-            -log prinseq{}.log -min_qual_mean 20 \
-            -out_good ./good{} -out_bad ./bad{} > ./prinseq.err 2>&1"
-        % (n_splitted - 1, n_splitted, prinseq_exe, s_dir)
-    )
-    run_child("/usr/bin/seq " + cml)
-
-    logging.debug("cleaning up")
-    if glob.glob("%s/good???.fastq" % s_dir):
-        run_child("cat %s/good???.fastq > %s/good.fastq" % s_dir)
-        run_child("rm %s/good???.fastq" % s_dir)
-
-    if glob.glob("%s/bad???.fastq" % s_dir):
-        run_child("cat %s/bad???.fastq > %s/bad.fastq" % s_dir)
-        run_child("rm %s/bad???.fastq" % s_dir)
-
-    if glob.glob("%s/prinseq???.log" % s_dir):
-        run_child("cat %s/prinseq???.log > %s/prinseq.log" % s_dir)
-        run_child("rm %s/prinseq???.log" % s_dir)
-
-    run_child("rm %s/splitted*fastq" % s_dir)
-
-    # parsing number of reads deleted because of low entropy
-    low_ent = 0
-    min_qual = 0
-    with open("%s/prinseq.log" % s_dir) as f:
-        for l in f:
-            match_lc = re.search(r"lc_method:\s(\d*)$", l)
-            match_mq = re.search(r"min_qual_mean:\s(\d*)$", l)
-            if match_lc:
-                low_ent += int(match_lc.group(1))
-            elif match_mq:
-                min_qual += int(match_mq.group(1))
-    oh.write("low_entropy\t%d\n" % low_ent)
-    oh.write("low_quality\t%d\n" % min_qual)
-
-    out1 = run_child("wc -l %s/good.fastq" % s_dir)
-    out1 = out1.strip().split()[0]
-    n_reads = int(int(out1) / 4)
-    lost_reads = n_reads + low_ent + min_qual - long_reads
-    if lost_reads > 0:
-        logging.error("%d reads were lost", lost_reads)
-        warnings.warn("%d reads were lost" % lost_reads, RuntimeWarning)
-    oh.write("passing_filter\t%d\n" % n_reads)
+    with open("%s/fastp.json" % s_dir) as f:
+        useful = [next(f) for _ in range(35)]
+        raw_reads = int(re.search(r'"total_reads": *(\d+)', str(useful)).group(1))
+        too_short = int(re.search(r'"too_short_reads": *(\d+)', str(useful)).group(1))
+        low_entropy = int(re.search(r'"low_complexity_reads": *(\d+)', str(useful)).group(1))
+        low_quality = int(re.search(r'"low_quality_reads": *(\d+)', str(useful)).group(1))
+        passed_filter = int(re.search(r'"passed_filter_reads": *(\d+)', str(useful)).group(1))
+    oh.write("raw_reads\t%d\n" % raw_reads)
+    oh.write("trimmed_too_short\t%d\n" % too_short)
+    oh.write("low_entropy\t%d\n" % low_entropy)
+    oh.write("low_quality\t%d\n" % low_quality)
+    oh.write("passing_filter\t%d\n" % passed_filter)
     oh.close()
 
     sample_info = os.path.join(s_dir, "sample_info.txt")
@@ -275,12 +208,10 @@ def hunter(fq_file, out_dir):
     return s_dir
 
 
-def victor(input_reads, contaminant):
+def victor(input_reads, contaminant, n_proc):
     """decontaminate reads by aligning against contaminants with bwa and removing
     reads with alignments
     """
-
-    n_proc = min(os.cpu_count() or 2, 16)
 
     rf_head = input_reads.split(".")[0]
     cont_name = os.path.split(contaminant)[1]
@@ -344,21 +275,22 @@ def victor(input_reads, contaminant):
     return clean_name
 
 
-def viral_blast(file_in, n_proc, nodes, names):
-    """runs blast against viral database, parallelise with xargs"""
+def viral_blast(file_in, n_proc, nodes, names, out_dir):
+    """runs blast against viral database"""
 
+    viral_reads = os.path.join(out_dir, "viral_reads.fastq.gz")
+    undet_reads = os.path.join(out_dir, "undetermined_reads.fastq.gz")
     # on hot start, blast again all decontaminated reads
-    if os.path.exists("viral_reads.fastq.gz") and os.path.exists(
-        "undetermined_reads.fastq.gz"
-    ):
+    if os.path.exists(viral_reads) and os.path.exists(undet_reads):
         run_child(
-            "zcat viral_reads.fastq.gz undetermined_reads.fastq.gz > %s"
-            % file_in
+            "gunzip -c %s %s > %s"
+            % (viral_reads, undet_reads, file_in)
         )
-        os.remove("viral_reads.fastq.gz")
-        os.remove("undetermined_reads.fastq.gz")
+        os.remove(viral_reads)
+        os.remove(undet_reads)
 
     # streams will be used during the execution
+
     oh = open("stats.tsv", "a")
     bh = open("unique.tsv", "w")
     bh.write(
@@ -393,15 +325,16 @@ def viral_blast(file_in, n_proc, nodes, names):
     )
     logging.info("Database real path: %s" % DB_real_path)
     cml = (
-        "   blastn -task megablast \
-           -query %s -db %s \
-           -num_threads %s \
-           -out tmp.tsv \ # Change path to make it not dependant of a relative path
-           -outfmt '6 qseqid sseqid ssciname stitle pident qcovs score length mismatch gapopen qstart qend sstart send staxid'"
+        "blastn -task megablast \
+            -query %s -db %s \
+            -num_threads %s \
+            -out %s/tmp.tsv \
+            -outfmt '6 qseqid sseqid ssciname stitle pident qcovs score length mismatch gapopen qstart qend sstart send staxid'"
         % (
             fasta_file,
             DB_real_path,
             n_proc,
+            out_dir
         )
     )
     logging.debug("running blast now")
@@ -611,6 +544,7 @@ def main(args):
         run_name = os.path.split(args.file)[1].split(".")[0]
 
     out_dir = "virmet_output_%s" % run_name
+    out_dir = os.path.abspath(out_dir)
 
     try:
         os.mkdir(out_dir)
@@ -638,7 +572,6 @@ def main(args):
 
     logging.info("blasting against viral database")
     file_to_blast = cont_reads  # last output of victor is input for blast
-    n_proc = min(os.cpu_count() or 2, 12)
     logging.info("%d cores that will be used", n_proc)
 
     logging.info("reading taxonomy files")
