@@ -179,8 +179,8 @@ def hunter(fq_file, out_dir, n_proc):
         "fastp -i %s -o %s -A \
             --cut_front --cut_tail --cut_mean_quality 20 --length_required 75 \
             --average_qual 20 --low_complexity_filter --complexity_threshold 30 \
-            --thread  %d > fastp.err 2>&1"
-        % (fq_file, good_file, n_proc)
+            --thread  %d --json %s/fastp.json --html %s/fastp.html > %s/fastp.err 2>&1"
+        % (fq_file, good_file, n_proc, s_dir, s_dir, s_dir)
     )
     run_child(cml)
 
@@ -245,7 +245,8 @@ def victor(input_reads, contaminant, n_proc):
     except KeyError:
         pass
 
-    oh = open("stats.tsv", "a")
+    stats_file = os.path.join(os.path.split(input_reads)[0], "stats.tsv")
+    oh = open(stats_file, "a")
     oh.write("matching_%s\t%d\n" % (cont_name, len(mapped_reads)))
     oh.close()
 
@@ -268,11 +269,12 @@ def victor(input_reads, contaminant, n_proc):
                 logging.debug("written %d clean reads", c)
     logging.info("written %d clean reads", c)
     output_handle.close()
+    cont_handle.close()
 
-    if input_reads != "good.fastq":
+    if os.path.split(input_reads)[1] != "good.fastq":
         os.remove(input_reads)
 
-    return clean_name
+    return os.path.split(clean_name)[1]
 
 
 def viral_blast(file_in, n_proc, nodes, names, out_dir):
@@ -290,17 +292,17 @@ def viral_blast(file_in, n_proc, nodes, names, out_dir):
         os.remove(undet_reads)
 
     # streams will be used during the execution
+    child_dir = os.path.split(file_in)[0]
 
-    oh = open("stats.tsv", "a")
-    bh = open("unique.tsv", "w")
-    bh.write(
-        "qseqid\tsseqid\tssciname\tstitle\tpident\tqcovs\tscore\tlength\tmismatch\tgapopen\tqstart\tqend\tsstart\tsend\tstaxid\n"
-    )
+    stats_file = os.path.join(child_dir, "stats.tsv")
+    unique_file = os.path.join(child_dir, "unique.tsv")
+    oh = open(stats_file, "a")
 
-    if not os.path.exists("hq_decont_reads.fastq"):
-        os.rename(file_in, "hq_decont_reads.fastq")
-    fasta_file = "hq_decont_reads.fasta"
-    run_child("seqtk seq -A hq_decont_reads.fastq > %s" % fasta_file)
+    decont_reads = os.path.join(child_dir, "hq_decont_reads.fastq")
+    if not os.path.exists(decont_reads):
+        os.rename(file_in, decont_reads)
+    fasta_file = os.path.join(child_dir, "hq_decont_reads.fasta")
+    run_child("seqtk seq -A %s > %s" % (decont_reads, fasta_file))
     try:
         tot_seqs = int(run_child('grep -c "^>" %s' % fasta_file).strip())
     except AttributeError:  # deals with empty file
@@ -310,7 +312,6 @@ def viral_blast(file_in, n_proc, nodes, names, out_dir):
     oh.write("reads_to_blast\t%d\n" % tot_seqs)
 
     if tot_seqs == 0:
-        bh.close()
         oh.write("viral_reads\t0\n")
         oh.write("undetermined_reads\t0\n")
         oh.close()
@@ -327,38 +328,37 @@ def viral_blast(file_in, n_proc, nodes, names, out_dir):
     cml = (
         "blastn -task megablast \
             -query %s -db %s \
-            -num_threads %s \
-            -out %s/tmp.tsv \
+            -num_threads %d \
+            -out %s/unique.tsv \
+            -max_target_seqs 1 \
+            -max_hsps 1 \
             -outfmt '6 qseqid sseqid ssciname stitle pident qcovs score length mismatch gapopen qstart qend sstart send staxid'"
         % (
             fasta_file,
             DB_real_path,
             n_proc,
-            out_dir
+            child_dir
         )
     )
     logging.debug("running blast now")
     run_child(cml)
+    cml = (
+        "sed -i \
+            '1s/^/qseqid\tsseqid\tssciname\tstitle\tpident\tqcovs\tscore\tlength\tmismatch\tgapopen\tqstart\tqend\tsstart\tsend\tstaxid\n/' \
+            %s/unique.tsv"
+        % child_dir
+    )
+    run_child(cml)
 
     logging.debug("saving blast database info")
     cml = shlex.split(
-        "blastdbcmd -db /data/virmet_databases/viral_nuccore/viral_db -info"
+        "blastdbcmd -db %s -info" % DB_real_path
     )
-    with open("blast_info.txt", "a") as boh:
+    with open("%s/blast_info.txt" % child_dir, "a") as boh:
         subprocess.call(cml, stdout=boh)
 
-    logging.debug("parsing best HSP for each query sequence")
-    qseqid = ""
-    with open("tmp.tsv") as f:
-        for line in f:
-            if line.split("\t")[0] != qseqid: 
-               bh.write(line)
-               qseqid = line.split("\t")[0]
-        os.remove("tmp.tsv") 
-    bh.close()
-
     logging.debug("filtering and grouping by hit sequence")
-    hits = pd.read_csv("unique.tsv", index_col="qseqid", delimiter="\t")
+    hits = pd.read_csv(unique_file, index_col="qseqid", delimiter="\t")
     logging.debug("found %d hits", hits.shape[0])
     # select according to identity and coverage, count occurrences
     good_hits = hits[
@@ -420,7 +420,6 @@ def viral_blast(file_in, n_proc, nodes, names, out_dir):
 
     viral_info = viral_info.drop(columns=["TaxId", "Organism", "Title"])
     ds = pd.merge(ds, viral_info)
-    # ds['covered_fraction'] = round(ds['covered_region'] / ds['seq_len'], 4)
     ds = ds.loc[
         :,
         [
@@ -436,14 +435,16 @@ def viral_blast(file_in, n_proc, nodes, names, out_dir):
     ds = ds.sort_values(
         by=["reads", "covered_region"], ascending=[False, False]
     )
-    ds.to_csv("orgs_list.tsv", header=True, sep="\t", index=False)
+    orgs_list = os.path.join(child_dir, "orgs_list.tsv")
+    ds.to_csv(orgs_list, header=True, sep="\t", index=False)
 
 
-def cleaning_up():
+def cleaning_up(cleaned_dir):
     """sift reads into viral/unknown, compresses and removes files"""
 
     # selects reads with coverage and identity higher than 75
-    df = pd.read_csv("unique.tsv", sep="\t")
+    unique_file = os.join.path(cleaned_dir, "unique.tsv")
+    df = pd.read_csv(unique_file, sep="\t")
     viral_ids = set(
         df[
             (df.qcovs > blast_cov_threshold)
@@ -452,10 +453,12 @@ def cleaning_up():
     )
     viral_c = 0
     undet_c = 0
-    all_reads = "hq_decont_reads.fastq"
+    all_reads = os.path.join(cleaned_dir, "hq_decont_reads.fastq")
     all_handle = open(all_reads)
-    undet_handle = open("undetermined_reads.fastq", "w")
-    viral_handle = open("viral_reads.fastq", "w")
+    undet_reads = os.path.join(cleaned_dir, "undetermined_reads.fastq")
+    viral_reads = os.path.join(cleaned_dir, "viral_reads.fastq")
+    undet_handle = open(undet_reads, "w")
+    viral_handle = open(viral_reads, "w")
     # Using FastqGeneralIterator allows fast performance
     for title, seq, qual in FastqGeneralIterator(all_handle):
         if title.split()[0] not in viral_ids:
@@ -473,20 +476,20 @@ def cleaning_up():
     logging.info("written %d undet reads", undet_c)
     logging.info("written %d viral reads", viral_c)
 
-    run_child("gzip -f viral_reads.fastq")
-    run_child("gzip -f undetermined_reads.fastq")
+    run_child("gzip -f %s" % viral_reads)
+    run_child("gzip -f %s" % undet_reads)
     os.remove(all_reads)
 
     cmls = []
-    for samfile in glob.glob("*.sam"):
+    for samfile in glob.glob(os.path.join(cleaned_dir, "*.sam")):
         stem = os.path.splitext(samfile)[0]
         cont = stem.split("_")[-1]
         if cont == "ref":  # hack because _ in bovine file name
             cont = "bt_ref"
         cml = (
-            "samtools sort -O bam -l 0 -T /tmp -@ 4 %s | \
+            "samtools sort -O bam -l 0 -T /tmp -@ %d %s | \
         samtools view -T %s -C -o %s.cram -@ 4 -"
-            % (samfile, ref_map[cont], stem)
+            % (n_proc, samfile, ref_map[cont], stem)
         )
         cmls.append(cml)
 
@@ -497,17 +500,17 @@ def cleaning_up():
         logging.debug(r)
 
     # removing and zipping
-    for samfile in glob.glob("*.sam"):
+    for samfile in glob.glob(os.path.join(cleaned_dir, "*.sam")):
         os.remove(samfile)
-    for rf in ["good.fastq", "bad.fastq", "hq_decont_reads.fasta"]:
+    for rf in ["%s/good.fastq" % cleaned_dir, 
+               "%s/hq_decont_reads.fasta" % cleaned_dir,
+               "%s/fastp.json" % cleaned_dir]:
         try:
             os.remove(rf)
         except FileNotFoundError:
             pass
 
-    for gf in glob.glob("good_*fastq"):
-        os.remove(gf)
-    run_child("gzip -f unique.tsv")
+    run_child("gzip -f %s/unique.tsv" % cleaned_dir)
 
 
 def main(args):
@@ -522,7 +525,7 @@ def main(args):
             and run_name.split("_")[1].startswith("M")
         ):
             try:
-                run_date, machine_name = run_name.split("_")[:2]
+                _, machine_name = run_name.split("_")[:2]
                 logging.info(
                     "running on run %s from machine %s", run_name, machine_name
                 )
@@ -550,13 +553,12 @@ def main(args):
         os.mkdir(out_dir)
     except OSError:
         logging.error("directory %s exists", out_dir)
-    os.chdir(out_dir)
 
     # run hunter on all fastq files
     s_dirs = []
     for fq in all_fastq_files:
         logging.info("running hunter on %s", fq)
-        sd = hunter(fq)
+        sd = hunter(fq, out_dir, n_proc)
         s_dirs.append(sd)
 
     # run mapping against contaminants to remove
@@ -565,9 +567,8 @@ def main(args):
         logging.info("decontamination against %s", cont)
         for sample_dir in s_dirs:
             logging.info("--- now for sample %s", sample_dir)
-            os.chdir(sample_dir)
-            decont_reads = victor(input_reads=cont_reads, contaminant=cont)
-            os.chdir(os.pardir)
+            input_vict = os.path.join(sample_dir, cont_reads)
+            decont_reads = victor(input_reads=input_vict, contaminant=cont, n_proc=n_proc)
         cont_reads = decont_reads  # decontaminated reads are input for next round (equal across samples)
 
     logging.info("blasting against viral database")
@@ -578,27 +579,22 @@ def main(args):
     nodes, names = get_nodes_names(DB_DIR)
 
     for sample_dir in s_dirs:
-        os.chdir(sample_dir)
         logging.info("now sample %s", sample_dir)
-        viral_blast(file_to_blast, n_proc, nodes, names)
+        viral_blast(os.path.join(sample_dir, file_to_blast), n_proc, nodes, names, out_dir)
         logging.info("sample %s blasted", sample_dir)
-        os.chdir(os.pardir)
 
     logging.info("summarising and cleaning up")
     for sample_dir in s_dirs:
-        os.chdir(sample_dir)
         logging.info("now in %s", sample_dir)
-        cleaning_up()
-        os.chdir(os.pardir)
+        cleaning_up(sample_dir)
 
     for sample_dir in s_dirs:
-        run_covplot(sample_dir)
+        run_covplot(sample_dir, n_proc)
 
-    os.chdir(os.pardir)
     return out_dir
 
 
 if __name__ == "__main__":
     assert os.path.exists(sys.argv[1])
     all_nodes, all_names = get_nodes_names(DB_DIR)
-    viral_blast(sys.argv[1], 2, all_nodes, all_names)
+    viral_blast(sys.argv[1], 2, all_nodes, all_names, "./")

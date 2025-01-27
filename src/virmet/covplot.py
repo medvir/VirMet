@@ -150,7 +150,7 @@ def infer_species(
     return orgs_list
 
 
-def run_covplot(outdir):
+def run_covplot(outdir, n_proc):
     """Extract the best species, realign reads, run ``covplot.R`` script to create the plot"""
 
     assert os.path.isdir(outdir), "Ensure that output directory exists"
@@ -217,14 +217,14 @@ def run_covplot(outdir):
             run_child("bwa index %s" % single_fasta)
             logging.info("Aligning viral reads")
             run_child(
-                "bwa mem -t 8 %s %s/viral_reads.fastq.gz 2> /dev/null | samtools view -@ 2 -u - | samtools sort -@ 2 -O bam -T tmp -o %s -"
-                % (single_fasta, outdir, bam_file)
+                "bwa mem -t %d %s %s/viral_reads.fastq.gz 2> /dev/null | samtools view -@ %d -u - | samtools sort -@ %d -O bam -T tmp -o %s -"
+                % (n_proc, single_fasta, outdir, n_proc, n_proc, bam_file)
             )
-            run_child("samtools index %s" % bam_file)
+            run_child("samtools index %s -@ %d" % (bam_file, n_proc))
         n_reads = int(
             subprocess.check_output(
-                'samtools stats %s | grep ^SN | grep "reads mapped:" | cut -f 3'
-                % bam_file,
+                'samtools stats %s -@ %d | grep ^SN | grep "reads mapped:" | cut -f 3'
+                % (n_proc, bam_file),
                 shell=True,
             ).strip()
         )

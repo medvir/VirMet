@@ -231,7 +231,7 @@ def random_reduction(viral_mode):
     # extract the selected accession number from the fasta file using seqtk
     subsample_fasta_command = (
         "seqtk subseq %s/viral_database.fasta %s/outfile.csv >  %s/viral_database_subsampled.fasta"
-        % (target_dir)
+        % (target_dir, target_dir, target_dir)
     )
     run_child(subsample_fasta_command)
     os.rename(
