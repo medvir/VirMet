@@ -38,7 +38,7 @@ ref_map = {
     "bact4": "/data/virmet_databases/bacteria_concise/fasta/bact4.fasta.gz",
     "bact5": "/data/virmet_databases/bacteria_concise/fasta/bact5.fasta.gz",
     "fungi1": "/data/virmet_databases/fungi/fasta/fungi1.fasta.gz",
-    "bt_ref": "/data/virmet_databases/bovine/fasta/bt_ref_Bos_taurus_UMD_3.1.1.fasta.gz",
+    "bt_ref": "/data/virmet_databases/bovine/fasta/ref_Bos_taurus_GCF_002263795.2_ARS-UCD1.3.fasta.gz",
 }
 
 blast_cov_threshold = 75.0
@@ -329,7 +329,7 @@ def viral_blast(file_in, n_proc, nodes, names, out_dir):
         "blastn -task megablast \
             -query %s -db %s \
             -num_threads %d \
-            -out %s/unique.tsv \
+            -out %s \
             -max_target_seqs 1 \
             -max_hsps 1 \
             -outfmt '6 qseqid sseqid ssciname stitle pident qcovs score length mismatch gapopen qstart qend sstart send staxid'"
@@ -337,18 +337,15 @@ def viral_blast(file_in, n_proc, nodes, names, out_dir):
             fasta_file,
             DB_real_path,
             n_proc,
-            child_dir
+            unique_file
         )
     )
     logging.debug("running blast now")
     run_child(cml)
-    cml = (
-        "sed -i \
-            '1s/^/qseqid\tsseqid\tssciname\tstitle\tpident\tqcovs\tscore\tlength\tmismatch\tgapopen\tqstart\tqend\tsstart\tsend\tstaxid\n/' \
-            %s/unique.tsv"
-        % child_dir
-    )
-    run_child(cml)
+    with open(unique_file, 'r') as original:
+        data = original.read()
+    with open(unique_file, 'w') as modified:
+        modified.write("qseqid\tsseqid\tssciname\tstitle\tpident\tqcovs\tscore\tlength\tmismatch\tgapopen\tqstart\tqend\tsstart\tsend\tstaxid\n/" + data)
 
     logging.debug("saving blast database info")
     cml = shlex.split(
@@ -377,10 +374,9 @@ def viral_blast(file_in, n_proc, nodes, names, out_dir):
         return
 
     # create a column for accession number
-    good_hits["accn"] = good_hits.apply(
-        lambda row: re.search(r"([A-Z]+_?\d*)\.?\d*", row["sseqid"]).group(1),
-        axis=1,
-    )
+    good_hits = good_hits.assign(accn = good_hits["sseqid"].apply(
+        lambda x: re.search(r"([A-Z]+_?\d*)\.?\d*", x).group(1))
+        )
     good_hits = good_hits.rename(columns={"staxid": "tax_id"})
 
     viral_info_file = os.path.join(DB_DIR, "viral_nuccore/viral_seqs_info.tsv")
@@ -443,7 +439,7 @@ def cleaning_up(cleaned_dir):
     """sift reads into viral/unknown, compresses and removes files"""
 
     # selects reads with coverage and identity higher than 75
-    unique_file = os.join.path(cleaned_dir, "unique.tsv")
+    unique_file = os.path.join(cleaned_dir, "unique.tsv")
     df = pd.read_csv(unique_file, sep="\t")
     viral_ids = set(
         df[

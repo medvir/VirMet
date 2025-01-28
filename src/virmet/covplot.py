@@ -224,7 +224,7 @@ def run_covplot(outdir, n_proc):
         n_reads = int(
             subprocess.check_output(
                 'samtools stats %s -@ %d | grep ^SN | grep "reads mapped:" | cut -f 3'
-                % (n_proc, bam_file),
+                % (bam_file, n_proc),
                 shell=True,
             ).strip()
         )
