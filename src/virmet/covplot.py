@@ -214,10 +214,10 @@ def run_covplot(outdir, n_proc):
             warn("Reusing alignment")
             logging.info("Refusing to rerun alignment")
         else:
-            run_child("bwa index %s" % single_fasta)
+            run_child("bwa-mem2 index %s" % single_fasta)
             logging.info("Aligning viral reads")
             run_child(
-                "bwa mem -t %d %s %s/viral_reads.fastq.gz 2> /dev/null | samtools view -@ %d -u - | samtools sort -@ %d -O bam -T tmp -o %s -"
+                "bwa-mem2 mem -t %d %s %s/viral_reads.fastq.gz 2> /dev/null | samtools view -@ %d -u - | samtools sort -@ %d -O bam -T tmp -o %s -"
                 % (n_proc, single_fasta, outdir, n_proc, n_proc, bam_file)
             )
             run_child("samtools index %s -@ %d" % (bam_file, n_proc))

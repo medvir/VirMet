@@ -209,7 +209,7 @@ def hunter(fq_file, out_dir, n_proc):
 
 
 def victor(input_reads, contaminant, n_proc):
-    """decontaminate reads by aligning against contaminants with bwa and removing
+    """decontaminate reads by aligning against contaminants with bwa-mem2 and removing
     reads with alignments
     """
 
@@ -228,11 +228,11 @@ def victor(input_reads, contaminant, n_proc):
     cont_real_link = os.path.realpath(contaminant)
     logging.info("Database real path: %s" % cont_real_link)
     cml = (
-        "bwa mem -t %d -R '@RG\\tID:foo\\tSM:bar\\tLB:library1' -T 75 -M %s %s 2> \
+        "bwa-mem2 mem -t %d -R '@RG\\tID:foo\\tSM:bar\\tLB:library1' -T 75 -M %s %s 2> \
     %s | samtools view -h -F 4 - > %s"
         % (n_proc, contaminant, input_reads, err_name, sam_name)
     )
-    logging.debug("running bwa %s %s on %d cores", cont_name, rf_head, n_proc)
+    logging.debug("running bwa-mem2 %s %s on %d cores", cont_name, rf_head, n_proc)
     run_child(cml)
 
     # reading sam file to remove reads with hits

@@ -12,9 +12,9 @@ DB_DIR = DB_DIR_UPDATE
 
 
 def single_bwa_index(index_params):
-    """run a single bwa indexing job"""
+    """run a single bwa-mem2 indexing job"""
     in_fasta, index_prefix = index_params
-    cml = "bwa index -p %s %s &> %s_bwa_index.log" % (
+    cml = "bwa-mem2 index -p %s %s &> %s_bwa_index.log" % (
         index_prefix,
         in_fasta,
         index_prefix,
