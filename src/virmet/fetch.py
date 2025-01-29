@@ -70,13 +70,13 @@ def fetch_viral(viral_mode, compression=True):
     os.chdir(DB_DIR)
     logging.info("downloading taxonomy databases")
     download_handle = ftp_down(
-        "ftp://ftp.ncbi.nlm.nih.gov/blast/db/taxdb.tar.gz"
+        "https://ftp.ncbi.nlm.nih.gov/blast/db/taxdb.tar.gz"
     )
     download_handle.close()
     run_child("tar xvfz taxdb.tar.gz")
     os.remove("taxdb.tar.gz")
     download_handle = ftp_down(
-        "ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz"
+        "https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz"
     )
     download_handle.close()
     run_child("tar xvfz taxdump.tar.gz")
@@ -127,8 +127,8 @@ def fetch_human():
     os.chdir(target_dir)
     os.makedirs("fasta", exist_ok=True)
     os.chdir("fasta")
-    fasta_url = "ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_34/GRCh38.primary_assembly.genome.fa.gz"
-    gtf_url = "ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_34/gencode.v34.primary_assembly.annotation.gtf.gz"
+    fasta_url = "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/latest_release/GRCh38.primary_assembly.genome.fa.gz"
+    gtf_url = "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/latest_release/gencode.v47.primary_assembly.annotation.gtf.gz"
     logging.info("Downloading human annotation")
     download_handle = ftp_down(gtf_url)
     download_handle.close()
@@ -167,28 +167,28 @@ def fetch_bovine():
     chromosomes.extend(["chrX"])  # chrY is missing
     logging.info("Downloading bovine genome")
     local_file_name = os.path.join(
-        target_dir, "fasta", "ref_Bos_taurus_GCF_002263795.2_ARS-UCD1.3.fasta"
+        target_dir, "fasta", "ref_Bos_taurus_GCF_002263795.3_ARS-UCD2.0.fasta"
     )
     if os.path.exists(local_file_name):
         os.remove(local_file_name)
     for chrom in chromosomes:
         logging.debug("Downloading bovine chromosome %s", chrom)
-        fasta_url = f"ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.2_ARS-UCD1.3/GCF_002263795.2_ARS-UCD1.3_assembly_structure/Primary_Assembly/assembled_chromosomes/FASTA/{chrom}.fna.gz"
+        fasta_url = f"https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.3_ARS-UCD2.0/GCF_002263795.3_ARS-UCD2.0_assembly_structure/Primary_Assembly/assembled_chromosomes/FASTA/{chrom}.fna.gz"
         download_handle = ftp_down(fasta_url, local_file_name)
         download_handle.close()
         logging.debug("Downloaded bovine chromosome %s", chrom)
-    fasta_url = "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.2_ARS-UCD1.3/GCF_002263795.2_ARS-UCD1.3_assembly_structure/non-nuclear/assembled_chromosomes/FASTA/chrMT.fna.gz"
+    fasta_url = "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.3_ARS-UCD2.0/GCF_002263795.3_ARS-UCD2.0_assembly_structure/non-nuclear/assembled_chromosomes/FASTA/chrMT.fna.gz"
     download_handle = ftp_down(fasta_url, local_file_name)
     download_handle.close()
     logging.debug("Downloaded bovine chromosome MT")
-    fasta_url = "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.2_ARS-UCD1.3/GCF_002263795.2_ARS-UCD1.3_assembly_structure/Primary_Assembly/unplaced_scaffolds/FASTA/unplaced.scaf.fna.gz"
+    fasta_url = "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.3_ARS-UCD2.0/GCF_002263795.3_ARS-UCD2.0_assembly_structure/Primary_Assembly/unplaced_scaffolds/FASTA/unplaced.scaf.fna.gz"
     download_handle = ftp_down(fasta_url, local_file_name)
     download_handle.close()
     logging.debug("Downloaded bovine chromosome unplaced")
 
     run_child(f"bgzip {local_file_name}")
     logging.info("Downloading gff annotation file")
-    gff_url = "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.2_ARS-UCD1.3/GCF_002263795.2_ARS-UCD1.3_genomic.gff.gz"
+    gff_url = "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.3_ARS-UCD2.0/GCF_002263795.3_ARS-UCD2.0_genomic.gff.gz"
     download_handle = ftp_down(gff_url)
     download_handle.close()
 

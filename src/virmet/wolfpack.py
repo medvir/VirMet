@@ -38,7 +38,7 @@ ref_map = {
     "bact4": "/data/virmet_databases/bacteria_concise/fasta/bact4.fasta.gz",
     "bact5": "/data/virmet_databases/bacteria_concise/fasta/bact5.fasta.gz",
     "fungi1": "/data/virmet_databases/fungi/fasta/fungi1.fasta.gz",
-    "bt_ref": "/data/virmet_databases/bovine/fasta/ref_Bos_taurus_GCF_002263795.2_ARS-UCD1.3.fasta.gz",
+    "bt_ref": "/data/virmet_databases/bovine/fasta/ref_Bos_taurus_GCF_002263795.3_ARS-UCD2.0.fasta.gz",
 }
 
 blast_cov_threshold = 75.0
