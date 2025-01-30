@@ -14,6 +14,7 @@ import pandas as pd
 from virmet.common import (
     DB_DIR_UPDATE,
     N_FILES_BACT,
+    n_proc,
     bact_fung_query,
     download_genomes,
     get_accs,
@@ -60,12 +61,12 @@ def bact_fung_update(query_type=None, picked=None):
             download_genomes(to_add, prefix="tmp", n_files=N_FILES_BACT)
             for i in range(1, N_FILES_BACT + 1):
                 run_child(
-                    f"bgzip -c fasta/tmp{i}.fasta >> fasta/bact{i}.fasta.gz"
+                    f"bgzip -@ {n_proc} -c fasta/tmp{i}.fasta >> fasta/bact{i}.fasta.gz"
                 )
                 os.remove("fasta/bact%d.fasta.gz" % i)
         elif query_type == "fungi":
             download_genomes(to_add, prefix="tmp", n_files=1)
-            run_child("bgzip -c fasta/tmp1.fasta >> fasta/fungi1.fasta.gz")
+            run_child(f"bgzip -@ {n_proc} -c fasta/tmp1.fasta >> fasta/fungi1.fasta.gz")
             os.remove("fasta/fungi1.fasta.gz")
 
     if picked is None:
@@ -90,15 +91,15 @@ def bact_fung_update(query_type=None, picked=None):
         else:
             raise ValueError(f"Invalid query_type value: '{query_type}'")
         run_child(
-            "bgzip -c <(efetch -db nuccore -id %s -format fasta) >> %s"
-            % (gid, fileout),
+            "bgzip -@ %d -c <(efetch -db nuccore -id %s -format fasta) >> %s"
+            % (n_proc, gid, fileout),
         )
     logging.info("added %d sequences from file %s", i, picked)
     if query_type == "bacteria":
         for i in (1, N_FILES_BACT + 1):
-            run_child("bgzip -r fasta/bact%d.fasta.gz")
+            run_child(f"bgzip -@ {n_proc} -r fasta/bact{i}.fasta.gz")
     elif query_type == "fungi":
-        run_child("bgzip -r fasta/fungi1.fasta.gz")
+        run_child(f"bgzip -@ {n_proc} -r fasta/fungi1.fasta.gz")
 
 
 def virupdate(viral_type, picked=None, update_min_date=None):

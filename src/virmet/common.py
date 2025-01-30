@@ -15,8 +15,9 @@ import pandas as pd
 # TODO: This should be updated to a more global location rather than user based.
 DB_DIR = os.path.expandvars("/data/virmet_databases")
 DB_DIR_UPDATE = os.path.expandvars("/data/virmet_databases_update")
-N_FILES_BACT = 16
+N_FILES_BACT = 5
 MAX_TAXID = 10000  # max number of sequences belonging to the same taxid in compressed viral database
+n_proc = min(os.cpu_count() or 8, 16)
 
 
 # decorator for taken from RepoPhlan
@@ -316,7 +317,8 @@ def bact_fung_query(
         sep="\t",
         header=0,
         skiprows=1,
-        dtype={"excluded_from_refseq": str},
+        na_values = "na",
+        dtype={"excluded_from_refseq": str, "pubmed_id": str, "refseq_category": str} 
     )
     querinfo.rename(
         columns={"#assembly_accession": "assembly_accession"}, inplace=True
@@ -332,7 +334,7 @@ def bact_fung_query(
                 (querinfo.assembly_level == "Complete Genome")
                 | (querinfo.assembly_level == "Chromosome")
             )
-            & (querinfo.refseq_category != "na")
+            & (pd.notna(querinfo.refseq_category))
             & (querinfo.version_status == "latest")
             & (querinfo.genome_rep == "Full")
             & (querinfo.release_type == "Major")
@@ -341,7 +343,7 @@ def bact_fung_query(
         raise ValueError(f"Invalid query_type value: '{query_type}'.")
 
     gb.set_index("assembly_accession", inplace=True)
-    gb = gb[gb["ftp_path"] != "na"]
+    gb = gb[gb['ftp_path'].notna()]
     x = gb["ftp_path"].apply(
         lambda col: col + "/" + col.split("/")[-1] + "_genomic.fna.gz"
     )

@@ -7,6 +7,7 @@ import os
 from virmet.common import (
     DB_DIR_UPDATE,
     N_FILES_BACT,
+    n_proc,
     bact_fung_query,
     download_genomes,
     ftp_down,
@@ -93,8 +94,8 @@ def fetch_viral(viral_mode, compression=True):
         except OSError:
             logging.warning("Could not find file %s", ftd)
     try:
-        run_child("bgzip names.dmp")
-        run_child("bgzip nodes.dmp")
+        run_child(f"bgzip -@ {n_proc} names.dmp")
+        run_child(f"bgzip -@ {n_proc} nodes.dmp")
     except Exception:
         logging.debug("Could not find files names.dmp, nodes.dmp.")
 
@@ -116,7 +117,7 @@ def fetch_bacterial():
     print("second half starts")
     download_genomes(all_urls[mid:], prefix="bact", n_files=N_FILES_BACT)
     for j in range(1, N_FILES_BACT + 1):
-        run_child(f"bgzip fasta/bact{j}.fasta")
+        run_child(f"bgzip -@ {n_proc} fasta/bact{j}.fasta")
 
 
 def fetch_human():
@@ -137,7 +138,7 @@ def fetch_human():
         os.remove("GRCh38.fasta")
     download_handle = ftp_down(fasta_url, "GRCh38.fasta")
     download_handle.close()
-    run_child("bgzip GRCh38.fasta")
+    run_child(f"bgzip -@ {n_proc} GRCh38.fasta")
 
 
 def fetch_fungal():
@@ -152,7 +153,7 @@ def fetch_fungal():
     logging.info("%d fungal genomes were found", len(all_urls))
     # then download genomic_fna.gz files
     download_genomes(all_urls, prefix="fungi", n_files=1)
-    run_child("bgzip fasta/fungi1.fasta")
+    run_child(f"bgzip -@ {n_proc} fasta/fungi1.fasta")
 
 
 def fetch_bovine():
@@ -186,7 +187,7 @@ def fetch_bovine():
     download_handle.close()
     logging.debug("Downloaded bovine chromosome unplaced")
 
-    run_child(f"bgzip {local_file_name}")
+    run_child(f"bgzip -@ {n_proc} {local_file_name}")
     logging.info("Downloading gff annotation file")
     gff_url = "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.3_ARS-UCD2.0/GCF_002263795.3_ARS-UCD2.0_genomic.gff.gz"
     download_handle = ftp_down(gff_url)

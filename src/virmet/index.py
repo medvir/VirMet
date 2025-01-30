@@ -95,7 +95,7 @@ def main(args):
             DB_DIR,
             "bovine",
             "fasta",
-            "ref_Bos_taurus_GCF_002263795.2_ARS-UCD1.3.fasta.gz",
+            "ref_Bos_taurus_GCF_002263795.3_ARS-UCD2.0.fasta.gz",
         )
         index_prefix = os.path.join(bwa_dir, "bt_ref")
         index_pairs.append((fasta_file, index_prefix))
