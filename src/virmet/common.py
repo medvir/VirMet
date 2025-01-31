@@ -318,7 +318,7 @@ def bact_fung_query(
         header=0,
         skiprows=1,
         na_values = "na",
-        dtype={"excluded_from_refseq": str, "pubmed_id": str, "refseq_category": str} 
+        dtype={"excluded_from_refseq": str, "relation_to_type_material": str, "pubmed_id": str, "refseq_category": str} 
     )
     querinfo.rename(
         columns={"#assembly_accession": "assembly_accession"}, inplace=True

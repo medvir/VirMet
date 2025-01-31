@@ -3,6 +3,7 @@
 
 import logging
 import os
+import re
 
 from virmet.common import (
     DB_DIR_UPDATE,
@@ -38,10 +39,6 @@ def fetch_viral(viral_mode, compression=True):
     logging.info("Database real path: %s", os.path.realpath(target_dir))
     os.chdir(target_dir)
     run_child(cml_search)
-    cml_fetch_fasta = (
-        "efetch -format fasta < ncbi_search > viral_database.fasta"
-    )
-    run_child(cml_fetch_fasta)
     cml_efetch_xtract = (
         "efetch -format docsum < ncbi_search | xtract "
         " -pattern DocumentSummary "
@@ -49,6 +46,20 @@ def fetch_viral(viral_mode, compression=True):
         "> viral_seqs_info.tsv"
     )
     run_child(cml_efetch_xtract)
+    # Perform the efetch of the fasta files in batches to avoid errors
+    cml_add = "sed -i '$i\ \ <RetMax>500</RetMax>' ncbi_search"
+    run_child(cml_add)
+    with open("ncbi_search", "r") as f:
+        text_ncbi = f.read()
+    tot_count = int(re.search(r'<Count>(\d+)', str(text_ncbi)).group(1))
+    for retstart in range(0, tot_count+1, 500):
+        cml_add = "cp ncbi_search ncbi_search_loop; \
+            sed -i '$i\ \ <RetStart>%s</RetStart>' ncbi_search_loop" % (retstart)
+        run_child(cml_add)
+        cml_fetch_fasta = (
+            "efetch -format fasta < ncbi_search_loop > viral_database.fasta"
+        )
+        run_child(cml_fetch_fasta)
     logging.info("downloaded viral seqs info in %s", target_dir)
     logging.info("saving viral taxonomy")
     # viral_seqs_info.tsv contains Accn TaxId
