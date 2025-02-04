@@ -7,6 +7,8 @@ import os
 import random
 import subprocess
 import urllib.request
+from Bio import Entrez
+from datetime import datetime, timedelta
 from time import sleep
 from urllib.request import Request, urlopen
 
@@ -255,13 +257,12 @@ def viral_query(viral_db, update_min_date=None):
     # Alphatorquevirus Taxonomy ID: 687331
     # Cellular organisms, Taxonomy ID: 131567 (to avoid chimeras)
     txid = "10239"  # change here for viruses or smaller taxa
-    query_text = (
-        f'-query "txid{txid} [orgn] AND ('
-        '\\"complete genome\\" [Title] OR '
-        '\\"complete segment\\" [Title] OR '
-        "srcdb_refseq[prop])"
-    )
-    query_text += ' NOT \\"cellular organisms\\"[Organism] NOT AC_000001[PACC] : AC_999999[PACC]"'
+    query_text = 'txid%s [orgn] AND \
+        (\"complete genome\" [Title] OR \
+        \"complete segment\" [Title] OR \
+        srcdb_refseq[prop])' % txid
+    query_text += ' NOT \"cellular organisms\"[Organism] NOT \
+        AC_000001[PACC] : AC_999999[PACC]'
 
     if update_min_date:
         logging.info(
@@ -272,20 +273,45 @@ def viral_query(viral_db, update_min_date=None):
             update_min_date
         )  # -datetype MDAT -mindate %s'
 
-    query_text += " > ncbi_search"
-
     if viral_db == "n":
         target_dir = os.path.join(DB_DIR_UPDATE, "viral_nuccore")
-        search_text = "-db nuccore " + query_text
+        db_text = "nuccore"
     elif viral_db == "p":
         target_dir = os.path.join(DB_DIR_UPDATE, "viral_protein")
-        search_text = "-db protein " + query_text
+        db_text = "protein"
     else:
         raise ValueError(f"Invalid viral_db value: '{viral_db}'.")
-
+    
+    # Create output folder if it doesn't exist
     os.makedirs(target_dir, exist_ok=True)
-    logging.info("Database real path: %s", os.path.realpath(target_dir))
-    return "esearch " + search_text
+    logging.info("Database real path: ", os.path.realpath(target_dir))
+    
+    # Obtain all Accession numbers until yesterday so all databases are up-to-date and match
+    Entrez.email = "virmet@uzh.ch"
+    handle = Entrez.esearch(
+        db=db_text, 
+        idtype='acc', 
+        term=query_text, 
+        maxdate = (datetime.today() - timedelta(1)).strftime('%Y/%m/%d'), 
+        retstart = 0, 
+        retmax = 1)
+    record = Entrez.read(handle)
+    tot_accs = record['Count']
+    batch_size = 500
+
+    # Retreive Accession numbers
+    ncbi_accs = []
+    for i in range(0,tot_accs, batch_size):
+        handle = Entrez.esearch(db=db_text, 
+                                idtype='acc', 
+                                term=query_text, 
+                                maxdate = (datetime.today() - timedelta(1)).strftime('%Y/%m/%d'),
+                                retstart = i, 
+                                retmax = batch_size)
+        record = Entrez.read(handle)
+        id_list = record['IdList'] 
+        ncbi_accs+=id_list
+    return ncbi_accs
 
 
 def bact_fung_query(
@@ -400,9 +426,9 @@ def get_gids(fasta_file):
 
 def get_accs(fasta_file):
     if fasta_file.endswith(".gz"):
-        cml = f'zcat {fasta_file} | grep "^>" | tr -d ">" | cut -f 1 -d "."'
+        cml = f'zcat {fasta_file} | grep "^>" | tr -d ">" | cut -f 1 -d " "'
         accs = run_child(cml).strip().split("\n")
     else:
-        cml = f'grep "^>" {fasta_file} | tr -d ">" | cut -f 1 -d "."'
+        cml = f'grep "^>" {fasta_file} | tr -d ">" | cut -f 1 -d " "'
         accs = run_child(cml).strip().split("\n")
     return accs

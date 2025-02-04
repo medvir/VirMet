@@ -24,44 +24,47 @@ DB_DIR = DB_DIR_UPDATE
 def fetch_viral(viral_mode, compression=True):
     """Download nucleotide or protein database."""
     # define the search nuccore/protein
-
     if viral_mode == "n":
         logging.info("downloading viral nuccore sequences")
         target_dir = os.path.join(DB_DIR, "viral_nuccore")
-        cml_search = viral_query("n")
+        ncbi_acc = viral_query("n")
     elif viral_mode == "p":
         logging.info("downloaded viral protein sequences")
         target_dir = os.path.join(DB_DIR, "viral_protein")
-        cml_search = viral_query("p")
+        ncbi_acc = viral_query("p")
     else:
         raise ValueError(f"Invalid viral mode: {viral_mode}")
-    # run the search and download
-    logging.info("Database real path: %s", os.path.realpath(target_dir))
+    
+    # run the download
+    logging.info("Database real path: ", os.path.realpath(target_dir))
     os.chdir(target_dir)
-    run_child(cml_search)
-    cml_efetch_xtract = (
-        "efetch -format docsum < ncbi_search | xtract "
-        " -pattern DocumentSummary "
-        "-element Caption TaxId Slen Organism Title AccessionVersion "
-        "> viral_seqs_info.tsv"
-    )
-    run_child(cml_efetch_xtract)
-    # Perform the efetch of the fasta files in batches to avoid errors
-    cml_add = "sed -i '$i\ \ <RetMax>500</RetMax>' ncbi_search"
-    run_child(cml_add)
-    with open("ncbi_search", "r") as f:
-        text_ncbi = f.read()
-    tot_count = int(re.search(r'<Count>(\d+)', str(text_ncbi)).group(1))
-    for retstart in range(0, tot_count+1, 500):
-        cml_add = "cp ncbi_search ncbi_search_loop; \
-            sed -i '$i\ \ <RetStart>%s</RetStart>' ncbi_search_loop" % (retstart)
-        run_child(cml_add)
-        cml_fetch_fasta = (
-            "efetch -format fasta < ncbi_search_loop > viral_database.fasta"
-        )
-        run_child(cml_fetch_fasta)
-    logging.info("downloaded viral seqs info in %s", target_dir)
-    logging.info("saving viral taxonomy")
+
+    ncbi_file = os.path.join(target_dir, "ncbi_batch.txt")
+    viral_database = os.path.join(target_dir, "viral_database.fasta")
+    viral_seqs_info = os.path.join(target_dir, "viral_seqs_info.tsv")
+    out_file = os.path.join(target_dir, "ncbi_dataset")
+    for i in range(0,len(ncbi_acc), 10000):
+        newfile = open(ncbi_file,'w')
+        for acc_numb in ncbi_acc[i:i+10000]:
+            newfile.write(acc_numb+"\n")
+        newfile.close()
+        cml_download = "datasets download virus genome accession --inputfile %s --api-key $NCBI_API_KEY" % ncbi_file
+        run_child(cml_download)
+        cml_extract = (
+            "unzip %s.zip; cat %s/data/genomic.fna >> %s ; \
+            dataformat tsv virus-genome --inputfile %s/data/data_report.jsonl --fields accession,virus-tax-id,virus-name >> %s" 
+            % (out_file, out_file, viral_database, out_file, viral_seqs_info)
+            )
+        run_child(cml_extract)
+    os.remove(ncbi_file)
+    os.remove(out_file)
+
+    # Report information about the download
+    with open(viral_seqs_info) as f:
+        total_acc_output = sum(1 for _ in f)
+    logging.info("downloaded viral database info in %s", target_dir)
+    logging.info("downloaded %s from a total of %s accession numbers", total_acc_output, len(ncbi_acc))
+   
     # viral_seqs_info.tsv contains Accn TaxId
     cml = "cut -f 1,2 viral_seqs_info.tsv > viral_accn_taxid.dmp"
     run_child(cml)
@@ -103,7 +106,7 @@ def fetch_viral(viral_mode, compression=True):
         try:
             os.remove(ftd)
         except OSError:
-            logging.warning("Could not find file %s", ftd)
+            logging.warning("Could not find file ", ftd)
     try:
         run_child(f"bgzip -@ {n_proc} names.dmp")
         run_child(f"bgzip -@ {n_proc} nodes.dmp")
@@ -188,7 +191,7 @@ def fetch_bovine():
         fasta_url = f"https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.3_ARS-UCD2.0/GCF_002263795.3_ARS-UCD2.0_assembly_structure/Primary_Assembly/assembled_chromosomes/FASTA/{chrom}.fna.gz"
         download_handle = ftp_down(fasta_url, local_file_name)
         download_handle.close()
-        logging.debug("Downloaded bovine chromosome %s", chrom)
+        logging.debug("Downloaded bovine chromosome ", chrom)
     fasta_url = "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.3_ARS-UCD2.0/GCF_002263795.3_ARS-UCD2.0_assembly_structure/non-nuclear/assembled_chromosomes/FASTA/chrMT.fna.gz"
     download_handle = ftp_down(fasta_url, local_file_name)
     download_handle.close()
