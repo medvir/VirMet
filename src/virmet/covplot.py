@@ -46,7 +46,7 @@ def best_species(orgs_list, org_name, best_spec_field_type="ssciname"):
 
     :returns: string of the best organism
     """
-    logging.info("Reading an orgs_list file of size %s", str(orgs_list.shape))
+    logging.info("Reading an orgs_list file of size %s" % str(orgs_list.shape))
     # assert decreasing sorted
     diff = orgs_list["reads"] - orgs_list["reads"].shift(1)
     assert (diff > 0).sum() == 0, diff
@@ -54,7 +54,7 @@ def best_species(orgs_list, org_name, best_spec_field_type="ssciname"):
         orgs_list.loc[:, "ssciname"].str.startswith(org_name).fillna(False)
     )
     matching_orgs = orgs_list[criterion]
-    logging.info("Found %d matchings", orgs_list.shape[0])
+    logging.info("Found %d matchings" % orgs_list.shape[0])
 
     # organism matching that given on command line with most reads is the first
     # W.O. this assumes descending order of reads
@@ -177,7 +177,7 @@ def run_covplot(outdir, n_proc):
         except ValueError:
             dsc = "None"
             acc = str(best_seqids.index.tolist()[0])
-        logging.info("Best hit in blast results: %s accession:%s", dsc, acc)
+        logging.info("Best hit in blast results: %s accession:%s" % (dsc, acc))
 
         # copy single genome, index, align viral_reads
         organism = organism.replace(" ", "_").replace("/", "_")

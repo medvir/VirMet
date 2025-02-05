@@ -13,6 +13,7 @@ from time import sleep
 from urllib.request import Request, urlopen
 
 import pandas as pd
+import numpy as np
 
 # TODO: This should be updated to a more global location rather than user based.
 DB_DIR = os.path.expandvars("/data/virmet_databases")
@@ -72,7 +73,7 @@ def retry(tries, delay=3, backoff=2):
 
 def run_child(cmd):
     """Use subrocess.check_output to run an external program with arguments."""
-    logging.info("Running instance of %s", cmd.split()[0])
+    logging.info("Running instance of %s" % cmd.split()[0])
     try:
         output = subprocess.check_output(
             cmd,
@@ -104,7 +105,7 @@ def ftp_down(remote_url, local_url=None):
         outname = local_url
     else:
         outname = remote_url.split("/")[-1]
-    logging.debug("Downloading %s", remote_url)
+    logging.debug("Downloading %s" % remote_url)
     # compressing
     if not remote_url.endswith(".gz") and outname.endswith(".gz"):
         raise NotImplementedError(
@@ -147,13 +148,11 @@ def ftp_down(remote_url, local_url=None):
             outhandle = open(outname, "w")
         logging.debug("Downloading %s", remote_url)
         with urllib.request.urlopen(remote_url, timeout=30) as f:
-            # print(f.read().decode('utf-8', 'replace').encode('utf-8', 'replace'), file=outhandle)
             outhandle.write(
                 f.read().decode("utf-8", "replace")
-            )  # .encode('utf-8', 'replace'), file=outhandle)
+            )
 
-    # outhandle.close()
-    return outhandle
+    outhandle.close()
 
 
 def random_reduction(viral_mode):
@@ -174,7 +173,7 @@ def random_reduction(viral_mode):
     else:
         raise ValueError('Invalid viral_mode: "{viral_mode}".')
     logging.info(
-        "Database real path for compression: %s", os.path.realpath(target_dir)
+        "Database real path for compression: %s" % os.path.realpath(target_dir)
     )
 
     viral_info_file = os.path.join(target_dir, "viral_seqs_info.tsv")
@@ -182,7 +181,7 @@ def random_reduction(viral_mode):
 
     viral_info = pd.read_table(
         viral_info_file,
-        names=["accn", "TaxId", "seq_len", "Organism", "Title", "accn_version"],
+        names=["accn_version", "TaxId", "Organism"]
     )
     viral_info.drop_duplicates(subset=["accn_version"], inplace=True)
     # Do compression at the texid ID level,
@@ -266,8 +265,8 @@ def viral_query(viral_db, update_min_date=None):
 
     if update_min_date:
         logging.info(
-            "Viral Database Update is performed with sequences added to NCBI after %s .\n",
-            update_min_date,
+            "Viral Database Update is performed with sequences added to NCBI after %s .\n"
+            % update_min_date,
         )
         query_text += "-datetype PDAT -mindate %s" % str(
             update_min_date
@@ -284,33 +283,38 @@ def viral_query(viral_db, update_min_date=None):
     
     # Create output folder if it doesn't exist
     os.makedirs(target_dir, exist_ok=True)
-    logging.info("Database real path: ", os.path.realpath(target_dir))
+    logging.info("Database real path: %s" % os.path.realpath(target_dir))
     
-    # Obtain all Accession numbers until yesterday so all databases are up-to-date and match
+    # Obtain Accessions until 5 days ago so all databases should be updated & match
     Entrez.email = "virmet@uzh.ch"
     handle = Entrez.esearch(
         db=db_text, 
-        idtype='acc', 
+        idtype='acc',
         term=query_text, 
-        maxdate = (datetime.today() - timedelta(1)).strftime('%Y/%m/%d'), 
-        retstart = 0, 
+        datetype = "pdat", 
+        mindate = "1980/01/01", 
+        maxdate = str((datetime.today() - timedelta(5)).strftime('%Y/%m/%d')), 
+        retstart = 0,
         retmax = 1)
     record = Entrez.read(handle)
     tot_accs = record['Count']
     batch_size = 500
 
     # Retreive Accession numbers
-    ncbi_accs = []
+    ncbi_accs = np.empty(tot_accs, dtype="S16")
     for i in range(0,tot_accs, batch_size):
-        handle = Entrez.esearch(db=db_text, 
-                                idtype='acc', 
-                                term=query_text, 
-                                maxdate = (datetime.today() - timedelta(1)).strftime('%Y/%m/%d'),
-                                retstart = i, 
-                                retmax = batch_size)
+        handle = Entrez.esearch(
+            db=db_text, 
+            idtype='acc', 
+            term=query_text, 
+            datetype = "pdat",
+            mindate = "1980/01/01",
+            maxdate = str((datetime.today() - timedelta(5)).strftime('%Y/%m/%d')),
+            retstart = i, 
+            retmax = batch_size)
         record = Entrez.read(handle)
-        id_list = record['IdList'] 
-        ncbi_accs+=id_list
+        id_list = np.array(record['IdList'])
+        ncbi_accs[i:i+len(id_list)] = id_list
     return ncbi_accs
 
 
@@ -379,22 +383,23 @@ def bact_fung_query(
     return all_urls
 
 
-def download_genomes(all_urls, prefix, n_files=1):
+def download_genomes(all_urls, prefix, target_dir, n_files=1):
     """Download genomes given a list of urls, randomly assigning them to one of several (n_files) fasta files.
 
     It assigns sequences randomly to (three) sets using answer here
     http://stackoverflow.com/questions/2659900/python-slicing-a-list-into-n-nearly-equal-length-partitions
     """
-    logging.info("writing %d genome assemblies to fasta files", len(all_urls))
+    logging.info("writing %d genome assemblies to fasta files" % len(all_urls))
     random.shuffle(all_urls)
     q, r = divmod(len(all_urls), n_files)  # quotient, remainder
     indices = [q * i + min(i, r) for i in range(n_files + 1)]
     seqs_urls = [all_urls[indices[i] : indices[i + 1]] for i in range(n_files)]
-    os.makedirs("fasta", exist_ok=True)
+    new_dir = os.path.join(target_dir, "fasta")
+    os.makedirs(new_dir, exist_ok=True)
 
     dl_pairs = []
     for i, seqs in enumerate(seqs_urls):
-        fasta_out = f"fasta/{prefix}{i + 1}.fasta"
+        fasta_out = f"{new_dir}/{prefix}{i + 1}.fasta"
         # if os.path.exists(fasta_out):
         #    os.remove(fasta_out)
         dl_pairs.append((fasta_out, seqs))
@@ -409,8 +414,7 @@ def multiple_download(dl_pair):
     fasta_out, urls = dl_pair
     logging.debug("About to download %d files", len(urls))
     for url in urls:
-        downloaded_handle = ftp_down(url, fasta_out)
-        downloaded_handle.close()
+        ftp_down(url, fasta_out)
     return len(urls)
 
 
@@ -425,10 +429,6 @@ def get_gids(fasta_file):
 
 
 def get_accs(fasta_file):
-    if fasta_file.endswith(".gz"):
-        cml = f'zcat {fasta_file} | grep "^>" | tr -d ">" | cut -f 1 -d " "'
-        accs = run_child(cml).strip().split("\n")
-    else:
-        cml = f'grep "^>" {fasta_file} | tr -d ">" | cut -f 1 -d " "'
-        accs = run_child(cml).strip().split("\n")
+    cml = f'seqkit seq -i -n {fasta_file} --threads {n_proc}'
+    accs = run_child(cml).strip().split("\n")
     return accs

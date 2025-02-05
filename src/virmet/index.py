@@ -26,7 +26,7 @@ def single_bwa_index(index_params):
 def main(args):
     """only function doing all the indexing"""
     logging.info("now in index")
-    logging.info("Database real path: %s", os.path.realpath(DB_DIR))
+    logging.info("Database real path: %s" % os.path.realpath(DB_DIR))
     if args.viral == "n":
         target_dir = os.path.join(DB_DIR, "viral_nuccore")
         os.chdir(target_dir)

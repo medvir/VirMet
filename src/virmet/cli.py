@@ -187,7 +187,7 @@ def main():
     )
 
     logging.info(" ".join(sys.argv))
-    logging.info("VirMet version:%s", __version__)
+    logging.info("VirMet version:%s" % __version__)
     # parse the args
     args = parser.parse_args()
     args.func(args)

@@ -30,7 +30,7 @@ def bact_fung_update(query_type=None, picked=None):
 
     cont_dir = os.path.join(DB_DIR, query_type)
     os.chdir(cont_dir)
-    logging.info("updating %s, now in %s", query_type, cont_dir)
+    logging.info("updating %s, now in %s" % (query_type, cont_dir))
     # read old info
     os.rename(
         "%s_refseq_info.tsv" % query_type, "old_%s_refseq_info.tsv" % query_type
@@ -42,21 +42,21 @@ def bact_fung_update(query_type=None, picked=None):
         target_folder=cont_dir,
     )
 
-    logging.info("%d assemblies were present in refseq", len(old_urls))
+    logging.info("%d assemblies were present in refseq" % len(old_urls))
     # download new info
     new_urls = bact_fung_query(
         query_type=query_type, download=True, target_folder=cont_dir
     )
-    logging.info("%d assemblies are now in refseq", len(new_urls))
+    logging.info("%d assemblies are now in refseq" % len(new_urls))
     to_add = set(new_urls) - set(old_urls)
     to_add = list(to_add)
 
     if not to_add:
-        logging.info("no new sequences in %s database", query_type)
+        logging.info("no new sequences in %s database" % query_type)
         print("no new sequences in %s database" % query_type, file=sys.stderr)
 
     for t in to_add:
-        logging.debug("genome from %s will be added", t)
+        logging.debug("genome from %s will be added" % t)
         if query_type == "bacteria":
             download_genomes(to_add, prefix="tmp", n_files=N_FILES_BACT)
             for i in range(1, N_FILES_BACT + 1):
@@ -94,7 +94,7 @@ def bact_fung_update(query_type=None, picked=None):
             "bgzip -@ %d -c <(efetch -db nuccore -id %s -format fasta) >> %s"
             % (n_proc, gid, fileout),
         )
-    logging.info("added %d sequences from file %s", i, picked)
+    logging.info("added %d sequences from file %s" % (i, picked))
     if query_type == "bacteria":
         for i in (1, N_FILES_BACT + 1):
             run_child(f"bgzip -@ {n_proc} -r fasta/bact{i}.fasta.gz")
@@ -133,17 +133,17 @@ def virupdate(viral_type, picked=None, update_min_date=None):
         ],
     )
     new_ids = [str(acc) for acc in info_seqs["Caption"].tolist()]
-    logging.info("NCBI reports %d sequences", len(new_ids))
+    logging.info("NCBI reports %d sequences" % len(new_ids))
 
     # read ids already present in fasta file
     fasta_db = os.path.join(viral_dir, "viral_database.fasta")
     present_ids = get_accs(fasta_db)
-    logging.info("fasta file has %d sequences", len(present_ids))
+    logging.info("fasta file has %d sequences" % len(present_ids))
 
     # sequences given manually by specifying file with GI
     if picked:
         manual_ids = [l.strip() for l in open(picked)]
-        logging.info("%d sequences specified manually", len(manual_ids))
+        logging.info("%d sequences specified manually" % len(manual_ids))
     else:
         manual_ids = []
 
@@ -154,10 +154,10 @@ def virupdate(viral_type, picked=None, update_min_date=None):
         logging.info("no sequences to add to fasta file")
         print("no sequences to add to fasta file", file=sys.stderr)
     elif len(ids_to_add) > 2000:
-        logging.error("cannot add %d sequences, exiting", len(ids_to_add))
+        logging.error("cannot add %d sequences, exiting" % len(ids_to_add))
         sys.exit("too many sequences to add: run `virmet fetch` first")
     else:
-        logging.info("adding %d sequences to fasta file", len(ids_to_add))
+        logging.info("adding %d sequences to fasta file" % len(ids_to_add))
         s_code = run_child(
             "efetch -db %s -id " % db_type
             + ",".join(ids_to_add)
@@ -173,7 +173,7 @@ def virupdate(viral_type, picked=None, update_min_date=None):
         print("no sequences to add to viral_seqs_info", file=sys.stderr)
     else:
         logging.info(
-            "adding %d line(s) to viral_seqs_info.tsv", len(ids_to_add)
+            "adding %d line(s) to viral_seqs_info.tsv" % len(ids_to_add)
         )
         # loop needed as efetch with format docsum only takes one id at a time
         # (change introduced in edirect 3.30, December 2015)
@@ -213,12 +213,12 @@ def virupdate(viral_type, picked=None, update_min_date=None):
     for l in open("viral_database.fasta"):
         if ">" in l and not l.startswith(">") or l.count(">") > 1:
             warnings.warn("Invalid line in viral_database.fasta: %s" % l)
-            logging.warning("Invalid line in viral_database.fasta: %s", l)
+            logging.warning("Invalid line in viral_database.fasta: %s" % l)
 
 
 def main(args):
     logging.info("now in update_db")
-    logging.info("Database real path: %s", os.path.realpath(DB_DIR))
+    logging.info("Database real path: %s" % os.path.realpath(DB_DIR))
     if bool(args.viral) + args.bact + args.fungal > 1:
         logging.error(
             "update either viral or bacterial or fungal in a single call"

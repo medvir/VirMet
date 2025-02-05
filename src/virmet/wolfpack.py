@@ -71,7 +71,7 @@ def get_nodes_names(dir_name):
     Some lines from https://github.com/zyxue/ncbitax2lin are used.
     """
     nodes_file = os.path.join(dir_name, "nodes.dmp.gz")
-    logging.info("reading nodes file %s", nodes_file)
+    logging.info("reading nodes file %s" % nodes_file)
     colnames = [
         "tax_id",
         "parent_tax_id",
@@ -102,7 +102,7 @@ def get_nodes_names(dir_name):
     nodes.set_index("tax_id", inplace=True)
 
     names_file = os.path.join(dir_name, "names.dmp.gz")
-    logging.info("reading names file %s", names_file)
+    logging.info("reading names file %s" % names_file)
     colnames = ["tax_id", "taxon_name", "alt_name", "class_name"]
     names = pd.read_csv(
         names_file,
@@ -157,20 +157,20 @@ def hunter(fq_file, out_dir, n_proc):
     returns output directory
     """
 
-    logging.debug("hunter will run on %s processors", n_proc)
+    logging.debug("hunter will run on %s processors" % n_proc)
     if "L001" in fq_file:
         s_dir = "_".join(os.path.split(fq_file)[1].split("_")[:2])
         s_dir = os.path.join(out_dir, s_dir)
         try:
             os.mkdir(s_dir)
         except FileExistsError:
-            logging.debug("entering %s already existing", s_dir)
+            logging.debug("entering %s already existing" % s_dir)
     else:
         s_dir = out_dir
 
     # skip if this is a hot run
     if os.path.exists(os.path.join(s_dir, "fastp.json")):
-        logging.info("hunter was already run in %s, skipping", s_dir)
+        logging.info("hunter was already run in %s, skipping" % s_dir)
         return s_dir
 
     # trim, discard short reads and filter with fastp
@@ -232,7 +232,7 @@ def victor(input_reads, contaminant, n_proc):
     %s | samtools view -h -F 4 - > %s"
         % (n_proc, contaminant, input_reads, err_name, sam_name)
     )
-    logging.debug("running bwa-mem2 %s %s on %d cores", cont_name, rf_head, n_proc)
+    logging.debug("running bwa-mem2 %s %s on %d cores" % (cont_name, rf_head, n_proc))
     run_child(cml)
 
     # reading sam file to remove reads with hits
@@ -252,9 +252,9 @@ def victor(input_reads, contaminant, n_proc):
 
     output_handle = open(clean_name, "w")
     logging.debug(
-        "Cleaning reads in %s with alignments in %s", input_reads, sam_name
+        "Cleaning reads in %s with alignments in %s" % (input_reads, sam_name)
     )
-    logging.debug("Writing to %s", clean_name)
+    logging.debug("Writing to %s" % clean_name)
     if input_reads.endswith(".gz"):
         cont_handle = gzip.open(input_reads)
     else:
@@ -266,8 +266,8 @@ def victor(input_reads, contaminant, n_proc):
             c += 1
             output_handle.write("@%s\n%s\n+\n%s\n" % (title, seq, qual))
             if c % 100000 == 0:
-                logging.debug("written %d clean reads", c)
-    logging.info("written %d clean reads", c)
+                logging.debug("written %d clean reads" % c)
+    logging.info("written %d clean reads" % c)
     output_handle.close()
     cont_handle.close()
 
@@ -319,7 +319,7 @@ def viral_blast(file_in, n_proc, nodes, names, out_dir):
 
     # blast needs access to taxdb files to retrieve organism name
     os.environ["BLASTDB"] = DB_DIR
-    logging.info("runnning on %d cores", n_proc)
+    logging.info("runnning on %d cores" % n_proc)
     # if Darwin then xargs_thread must be n_proc
     DB_real_path = os.path.realpath(
         os.path.join(DB_DIR, "viral_nuccore/viral_db")
@@ -356,14 +356,14 @@ def viral_blast(file_in, n_proc, nodes, names, out_dir):
 
     logging.debug("filtering and grouping by hit sequence")
     hits = pd.read_csv(unique_file, index_col="qseqid", delimiter="\t")
-    logging.debug("found %d hits", hits.shape[0])
+    logging.debug("found %d hits" % hits.shape[0])
     # select according to identity and coverage, count occurrences
     good_hits = hits[
         (hits.pident > blast_ident_threshold)
         & (hits.qcovs > blast_cov_threshold)
     ]
     matched_reads = good_hits.shape[0]
-    logging.debug("%d hits passing coverage and identity filter", matched_reads)
+    logging.debug("%d hits passing coverage and identity filter" % matched_reads)
     oh.write("viral_reads\t%s\n" % matched_reads)
     unknown_reads = tot_seqs - matched_reads
     oh.write("undetermined_reads\t%d\n" % unknown_reads)
@@ -461,16 +461,16 @@ def cleaning_up(cleaned_dir):
             undet_c += 1
             undet_handle.write("@%s\n%s\n+\n%s\n" % (title, seq, qual))
             if undet_c % 100000 == 0:
-                logging.debug("written %d undet reads", undet_c)
+                logging.debug("written %d undet reads" % undet_c)
         else:
             viral_c += 1
             viral_handle.write("@%s\n%s\n+\n%s\n" % (title, seq, qual))
             if viral_c % 10000 == 0:
-                logging.debug("written %d viral reads", viral_c)
+                logging.debug("written %d viral reads" % viral_c)
     undet_handle.close()
     viral_handle.close()
-    logging.info("written %d undet reads", undet_c)
-    logging.info("written %d viral reads", viral_c)
+    logging.info("written %d undet reads" % undet_c)
+    logging.info("written %d viral reads" % viral_c)
 
     run_child("gzip -f %s" % viral_reads)
     run_child("gzip -f %s" % undet_reads)
@@ -523,10 +523,10 @@ def main(args):
             try:
                 _, machine_name = run_name.split("_")[:2]
                 logging.info(
-                    "running on run %s from machine %s", run_name, machine_name
+                    "running on run %s from machine %s" % (run_name, machine_name)
                 )
             except ValueError:
-                logging.info("running on directory %s", miseq_dir)
+                logging.info("running on directory %s" % miseq_dir)
             bc_dir = os.path.join(miseq_dir, "Data/Intensities/BaseCalls/")
         else:
             bc_dir = miseq_dir
@@ -539,7 +539,7 @@ def main(args):
         all_fastq_files = [os.path.abspath(f) for f in rel_fastq_files]
     elif args.file:
         all_fastq_files = [os.path.abspath(args.file)]
-        logging.info("running on a single file %s", all_fastq_files[0])
+        logging.info("running on a single file %s" % all_fastq_files[0])
         run_name = os.path.split(args.file)[1].split(".")[0]
 
     out_dir = "virmet_output_%s" % run_name
@@ -548,40 +548,40 @@ def main(args):
     try:
         os.mkdir(out_dir)
     except OSError:
-        logging.error("directory %s exists", out_dir)
+        logging.error("directory %s exists" % out_dir)
 
     # run hunter on all fastq files
     s_dirs = []
     for fq in all_fastq_files:
-        logging.info("running hunter on %s", fq)
+        logging.info("running hunter on %s" % fq)
         sd = hunter(fq, out_dir, n_proc)
         s_dirs.append(sd)
 
     # run mapping against contaminants to remove
     cont_reads = "good.fastq"  # first run on good.fastq
     for cont in contaminant_db:
-        logging.info("decontamination against %s", cont)
+        logging.info("decontamination against %s" % cont)
         for sample_dir in s_dirs:
-            logging.info("--- now for sample %s", sample_dir)
+            logging.info("--- now for sample %s" % sample_dir)
             input_vict = os.path.join(sample_dir, cont_reads)
             decont_reads = victor(input_reads=input_vict, contaminant=cont, n_proc=n_proc)
         cont_reads = decont_reads  # decontaminated reads are input for next round (equal across samples)
 
     logging.info("blasting against viral database")
     file_to_blast = cont_reads  # last output of victor is input for blast
-    logging.info("%d cores that will be used", n_proc)
+    logging.info("%d cores that will be used" % n_proc)
 
     logging.info("reading taxonomy files")
     nodes, names = get_nodes_names(DB_DIR)
 
     for sample_dir in s_dirs:
-        logging.info("now sample %s", sample_dir)
+        logging.info("now sample %s" % sample_dir)
         viral_blast(os.path.join(sample_dir, file_to_blast), n_proc, nodes, names, out_dir)
-        logging.info("sample %s blasted", sample_dir)
+        logging.info("sample %s blasted" % sample_dir)
 
     logging.info("summarising and cleaning up")
     for sample_dir in s_dirs:
-        logging.info("now in %s", sample_dir)
+        logging.info("now in %s" % sample_dir)
         cleaning_up(sample_dir)
 
     for sample_dir in s_dirs:
