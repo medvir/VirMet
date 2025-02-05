@@ -105,7 +105,6 @@ def ftp_down(remote_url, local_url=None):
         outname = local_url
     else:
         outname = remote_url.split("/")[-1]
-    logging.debug("Downloading %s" % remote_url)
     # compressing
     if not remote_url.endswith(".gz") and outname.endswith(".gz"):
         raise NotImplementedError(

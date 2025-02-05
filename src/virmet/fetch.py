@@ -107,7 +107,7 @@ def fetch_viral(viral_mode, compression=True):
         try:
             os.remove(ftd)
         except OSError:
-            logging.warning("Could not find file ", ftd)
+            logging.warning("Could not find file %s" % ftd)
     try:
         run_child(f"bgzip -@ {n_proc} {DB_DIR}/names.dmp")
         run_child(f"bgzip -@ {n_proc} {DB_DIR}nodes.dmp")
@@ -155,7 +155,7 @@ def fetch_human():
 def fetch_fungal():
     """Download fungal sequences."""
     target_dir = os.path.join(DB_DIR, "fungi")
-    logging.info("Database real path: %s", os.path.realpath(target_dir))
+    logging.info("Database real path: %s" % os.path.realpath(target_dir))
     os.makedirs(target_dir, exist_ok=True)
 
     # first download summary file with all ftp paths and return urls
@@ -181,10 +181,10 @@ def fetch_bovine():
     if os.path.exists(local_file_name):
         os.remove(local_file_name)
     for chrom in chromosomes:
-        logging.debug("Downloading bovine chromosome %s", chrom)
+        logging.debug("Downloading bovine chromosome %s" % chrom)
         fasta_url = f"https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.3_ARS-UCD2.0/GCF_002263795.3_ARS-UCD2.0_assembly_structure/Primary_Assembly/assembled_chromosomes/FASTA/{chrom}.fna.gz"
         ftp_down(fasta_url, local_file_name)
-        logging.debug("Downloaded bovine chromosome ", chrom)
+        logging.debug("Downloaded bovine chromosome %s" % chrom)
     fasta_url = "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.3_ARS-UCD2.0/GCF_002263795.3_ARS-UCD2.0_assembly_structure/non-nuclear/assembled_chromosomes/FASTA/chrMT.fna.gz"
     ftp_down(fasta_url, local_file_name)
     logging.debug("Downloaded bovine chromosome MT")
