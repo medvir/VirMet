@@ -46,18 +46,18 @@ def fetch_viral(viral_mode, compression=True):
         n_missing = min(len(ncbi_acc)-i, 10000)
         newfile = open(ncbi_file,'w')
         for acc_numb in ncbi_acc[i:i+n_missing]:
-            newfile.write(acc_numb+"\n")
+            newfile.write(re.sub(r"[']", "", str(acc_numb))+"\n")
         newfile.close()
         cml_download = "datasets download virus genome accession --inputfile %s --api-key $NCBI_API_KEY --filename %s.zip " % (ncbi_file, out_file)
         run_child(cml_download)
         cml_extract = (
-            "unzip %s.zip -d %s/; rm %s.zip; cat %s/data/genomic.fna >> %s ; \
-            dataformat tsv virus-genome --inputfile %s/data/data_report.jsonl --fields accession,virus-tax-id,virus-name --elide-header >> %s" 
-            % (out_file, target_dir, out_file, out_file, viral_database, out_file, viral_seqs_info)
+            "unzip -o %s.zip -d %s/; rm %s.zip; cat %s/data/genomic.fna >> %s ; \
+            dataformat tsv virus-genome --inputfile %s/data/data_report.jsonl --fields accession,virus-tax-id,virus-name --elide-header >> %s; \
+            rm -r %s" 
+            % (out_file, target_dir, out_file, out_file, viral_database, out_file, viral_seqs_info, out_file)
             )
         run_child(cml_extract)
     os.remove(ncbi_file)
-    os.remove(out_file)
 
     # Report information about the download
     with open(viral_seqs_info) as f:
@@ -89,13 +89,13 @@ def fetch_viral(viral_mode, compression=True):
         "https://ftp.ncbi.nlm.nih.gov/blast/db/taxdb.tar.gz",
         os.path.join(DB_DIR, "taxdb.tar.gz")
     )
-    run_child("tar xvfz %s/taxdb.tar.gz" % DB_DIR)
+    run_child("tar xvfz %s/taxdb.tar.gz -C %s --overwrite" % (DB_DIR, DB_DIR))
     os.remove("%s/taxdb.tar.gz" % DB_DIR)
     ftp_down(
         "https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz",
         os.path.join(DB_DIR, "taxdump.tar.gz")
     )
-    run_child("tar xvfz %s/taxdump.tar.gz" % DB_DIR)
+    run_child("tar xvfz %s/taxdump.tar.gz -C %s --overwrite" % (DB_DIR, DB_DIR))
     for ftd in [
         "%s/taxdump.tar.gz" % DB_DIR,
         "%s/merged.dmp" % DB_DIR,
@@ -103,14 +103,16 @@ def fetch_viral(viral_mode, compression=True):
         "%s/division.dmp" % DB_DIR,
         "%s/delnodes.dmp" % DB_DIR,
         "%s/citations.dmp" % DB_DIR,
+        "%s/images.dmp" % DB_DIR,
+        "%s/taxonomy4blast.sqlite3" % DB_DIR,
     ]:
         try:
             os.remove(ftd)
         except OSError:
             logging.warning("Could not find file %s" % ftd)
     try:
-        run_child(f"bgzip -@ {n_proc} {DB_DIR}/names.dmp")
-        run_child(f"bgzip -@ {n_proc} {DB_DIR}nodes.dmp")
+        run_child(f"bgzip -@ {n_proc} -f {DB_DIR}/names.dmp")
+        run_child(f"bgzip -@ {n_proc} -f {DB_DIR}/nodes.dmp")
     except Exception:
         logging.debug(f"Could not find files {DB_DIR}/names.dmp, {DB_DIR}/nodes.dmp.")
 
@@ -130,7 +132,7 @@ def fetch_bacterial():
     print("second half starts")
     download_genomes(all_urls[mid:], prefix="bact", target_dir=target_dir, n_files=N_FILES_BACT)
     for j in range(1, N_FILES_BACT + 1):
-        run_child(f"bgzip -@ {n_proc} {target_dir}fasta/bact{j}.fasta")
+        run_child(f"bgzip -@ {n_proc} -f {target_dir}fasta/bact{j}.fasta")
 
 
 def fetch_human():
@@ -149,7 +151,7 @@ def fetch_human():
     if os.path.exists(fasta_path):
         os.remove(fasta_path)
     ftp_down(fasta_url, fasta_path)
-    run_child(f"bgzip -@ {n_proc} {fasta_path}")
+    run_child(f"bgzip -@ {n_proc} -f {fasta_path}")
 
 
 def fetch_fungal():
@@ -163,7 +165,7 @@ def fetch_fungal():
     logging.info("%d fungal genomes were found" % len(all_urls))
     # then download genomic_fna.gz files
     download_genomes(all_urls, prefix="fungi", target_dir=target_dir, n_files=1)
-    run_child(f"bgzip -@ {n_proc} {target_dir}/fasta/fungi1.fasta")
+    run_child(f"bgzip -@ {n_proc} -f {target_dir}/fasta/fungi1.fasta")
 
 
 def fetch_bovine():
@@ -192,7 +194,7 @@ def fetch_bovine():
     ftp_down(fasta_url, local_file_name)
     logging.debug("Downloaded bovine chromosome unplaced")
 
-    run_child(f"bgzip -@ {n_proc} {local_file_name}")
+    run_child(f"bgzip -@ {n_proc} -f {local_file_name}")
     logging.info("Downloading gff annotation file")
     gff_url = "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.3_ARS-UCD2.0/GCF_002263795.3_ARS-UCD2.0_genomic.gff.gz"
     ftp_down(gff_url, os.path.join(target_dir, "fasta", "GCF_002263795.3_ARS-UCD2.0_genomic.gff.gz"))

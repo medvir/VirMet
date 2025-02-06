@@ -113,8 +113,6 @@ def ftp_down(remote_url, local_url=None):
 
     # decompressing
     elif remote_url.endswith(".gz") and not outname.endswith(".gz"):
-        # print(remote_url)
-        # print(outname)
         if os.path.exists(outname):
             outhandle = open(outname, "a")
         else:
@@ -188,12 +186,12 @@ def random_reduction(viral_mode):
     # remove them from the main pandas table
     TaxId_to_counter_df = viral_info["TaxId"].value_counts().reset_index()
     TaxId_to_counter_df.rename(
-        columns={"TaxId": "TaxId_count", "index": "TaxId_num"}, inplace=True
+        columns={"TaxId": "TaxId_num", "count": "TaxId_count"}, inplace=True
     )
     TaxId_to_percentage = (
         viral_info["TaxId"].value_counts(normalize=True).reset_index()
     )
-    TaxId_to_counter_df["percentage"] = TaxId_to_percentage["TaxId"]
+    TaxId_to_counter_df["percentage"] = TaxId_to_percentage["proportion"]
     TaxId_to_counter_filterred_df = TaxId_to_counter_df[
         TaxId_to_counter_df["TaxId_count"] > MAX_TAXID
     ]
@@ -285,7 +283,11 @@ def viral_query(viral_db, update_min_date=None):
     logging.info("Database real path: %s" % os.path.realpath(target_dir))
     
     # Obtain Accessions until 5 days ago so all databases should be updated & match
-    Entrez.email = "virmet@uzh.ch"
+    Entrez.email = "virmet@virmet.ch"
+    try:
+        Entrez.api_key = os.environ['NCBI_API_KEY']
+    except:
+        logging.info("Please, export a NCBI_API_KEY in your .bashrc")
     handle = Entrez.esearch(
         db=db_text, 
         idtype='acc',
@@ -296,12 +298,13 @@ def viral_query(viral_db, update_min_date=None):
         retstart = 0,
         retmax = 1)
     record = Entrez.read(handle)
-    tot_accs = record['Count']
-    batch_size = 500
+    tot_accs = int(record['Count'])
+    batch_size = 6000
 
     # Retreive Accession numbers
-    ncbi_accs = np.empty(tot_accs, dtype="S16")
+    ncbi_accs = np.empty(tot_accs, dtype="U16")
     for i in range(0,tot_accs, batch_size):
+        run_child("sleep 5")
         handle = Entrez.esearch(
             db=db_text, 
             idtype='acc', 
