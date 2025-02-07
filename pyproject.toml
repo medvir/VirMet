@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "virmet"
 authors = [{ name = "Osvaldo Zagordi" }]
-maintainers = [{ name = "Judith Bergadà", email = "judithbergada@gmail.com" }]
+maintainers = [{ name = "Judith Bergadà", email = "bergada.judith@virology.uzh.ch" }]
 description = "Viral metagenomics in clinical applications"
 readme = "README.md"
 license = { text = "MIT" }

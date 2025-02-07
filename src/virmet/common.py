@@ -304,7 +304,7 @@ def viral_query(viral_db, update_min_date=None):
     # Retreive Accession numbers
     ncbi_accs = np.empty(tot_accs, dtype="U16")
     for i in range(0,tot_accs, batch_size):
-        run_child("sleep 5")
+        run_child("sleep 2")
         handle = Entrez.esearch(
             db=db_text, 
             idtype='acc', 
@@ -418,16 +418,6 @@ def multiple_download(dl_pair):
     for url in urls:
         ftp_down(url, fasta_out)
     return len(urls)
-
-
-def get_gids(fasta_file):
-    if fasta_file.endswith(".gz"):
-        cml = f'zcat {fasta_file} | grep "^>" | cut -f 2 -d "|"'
-        gids = run_child(cml).strip().split("\n")
-    else:
-        cml = f'grep "^>" {fasta_file} | cut -f 2 -d "|"'
-        gids = run_child(cml).strip().split("\n")
-    return gids
 
 
 def get_accs(fasta_file):

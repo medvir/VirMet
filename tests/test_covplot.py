@@ -27,11 +27,12 @@ class TestCovplot(unittest.TestCase):
         df.to_csv(self.orgs_file, sep="\t", header=True, index=False)
 
     def test_best_species(self):
-        bsa = best_species(self.orgs_file, "orga")
+        df = pd.read_csv(self.orgs_file, sep="\t", header=0)
+        bsa = best_species(df, "orga")
         self.assertEqual(bsa, "organism A")
 
-        bsa = best_species(self.orgs_file, "organism B")
+        bsa = best_species(df, "organism B")
         self.assertEqual(bsa, "organism B")
 
-        bsa = best_species(self.orgs_file, "species ")
+        bsa = best_species(df, "species ")
         self.assertEqual(bsa, "species A")

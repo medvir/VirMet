@@ -382,7 +382,7 @@ def viral_blast(file_in, n_proc, nodes, names, out_dir):
     viral_info_file = os.path.join(DB_DIR, "viral_nuccore/viral_seqs_info.tsv")
     viral_info = pd.read_table(
         viral_info_file,
-        names=["accn", "TaxId", "seq_len", "Organism", "Title", "accn_version"],
+        names=["accn", "TaxId", "seq_len", "Organism", "Title", "accn_version"]
     )
     viral_info.drop(columns=["accn_version"])
     good_hits = pd.merge(good_hits, viral_info, on="accn")

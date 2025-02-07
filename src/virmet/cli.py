@@ -127,7 +127,7 @@ def main():
         "--viral", choices="np", help="make blast index of viral database"
     )
     parser_index.add_argument(
-        "--human", action="store_true", help="make bwa index of human database"
+        "--human", action="store_true", help="make bwa-mem2 index of human database"
     )
     parser_index.add_argument(
         "--bact",

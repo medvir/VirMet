@@ -7,7 +7,6 @@ import unittest
 from virmet.common import (
     bact_fung_query,
     ftp_down,
-    get_gids,
     multiple_download,
     run_child,
 )
@@ -69,11 +68,6 @@ class TestMisc(unittest.TestCase):
         self.fasta.write(">gi|1234|xyz\nAGCTAGC\n>gi|ABCD\nATCG\n")
         self.fasta.close()
         self.remote_2 = "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_24/_README.TXT"
-
-    def test_gids(self):
-        ids = get_gids(self.fasta.name)
-        self.assertTrue("1234" in ids)
-        self.assertTrue("ABCD" in ids)
 
     def test_bact_query(self):
         all_urls = bact_fung_query(
