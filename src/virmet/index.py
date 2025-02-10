@@ -29,25 +29,27 @@ def main(args):
     logging.info("Database real path: %s" % os.path.realpath(DB_DIR))
     if args.viral == "n":
         target_dir = os.path.join(DB_DIR, "viral_nuccore")
-        os.chdir(target_dir)
         dt = datetime.date.today().isoformat()
-        cml = 'makeblastdb -in viral_database.fasta -dbtype nucl -hash_index \
-        -title "Viral database indexed {}" \
-        -out viral_db \
-        -logfile blast.log -parse_seqids -taxid_map viral_accn_taxid.dmp'.format(
-            dt
+        cml = 'makeblastdb -in {pth_dir}/viral_database.fasta \
+        -dbtype nucl -hash_index \
+        -title "Viral database indexed {dt_info}" \
+        -out {pth_dir}/viral_db \
+        -logfile {pth_dir}/blast.log \
+        -parse_seqids -taxid_map {pth_dir}/viral_accn_taxid.dmp'.format(
+            pth_dir = target_dir, dt_info = dt
         )
         run_child(cml)
 
     if args.viral == "p":
         target_dir = os.path.join(DB_DIR, "viral_protein")
-        os.chdir(target_dir)
         dt = datetime.date.today().isoformat()
-        cml = 'makeblastdb -in viral_database.fasta -dbtype prot -hash_index \
-        -title "Viral database indexed {}" \
-        -out viral_db \
-        -logfile blast.log -parse_seqids -taxid_map viral_accn_taxid.dmp'.format(
-            dt
+        cml = 'makeblastdb -in {pth_dir}/viral_database.fasta \
+        -dbtype prot -hash_index \
+        -title "Viral database indexed {dt_info}" \
+        -out {pth_dir}/viral_db \
+        -logfile {pth_dir}/blast.log \
+        -parse_seqids -taxid_map {pth_dir}/viral_accn_taxid.dmp'.format(
+            pth_dir = target_dir, dt_info = dt
         )
         run_child(cml)
 
@@ -108,5 +110,5 @@ def main(args):
         logging.info(r)
 
     # TODO parallelize this too
-    for fasta_file, prefix in index_pairs:
+    for fasta_file, _ in index_pairs:
         run_child("samtools faidx %s" % fasta_file)
