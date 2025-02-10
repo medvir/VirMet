@@ -375,16 +375,15 @@ def viral_blast(file_in, n_proc, nodes, names, out_dir):
 
     # create a column for accession number
     good_hits = good_hits.assign(accn = good_hits["sseqid"].apply(
-        lambda x: re.search(r"([A-Z]+_?\d*)\.?\d*", x).group(1))
+        lambda x: re.search(r"([A-Z]+_?\d*\.?\d*)", x).group(1))
         )
     good_hits = good_hits.rename(columns={"staxid": "tax_id"})
 
     viral_info_file = os.path.join(DB_DIR, "viral_nuccore/viral_seqs_info.tsv")
     viral_info = pd.read_table(
         viral_info_file,
-        names=["accn", "TaxId", "seq_len", "Organism", "Title", "accn_version"]
+        names=["accn", "TaxId", "seq_len", "Organism"]
     )
-    viral_info.drop(columns=["accn_version"])
     good_hits = pd.merge(good_hits, viral_info, on="accn")
     # if blastn gives no taxid and scientific name, fill these col from viral_seqs_info.tsv file
     good_hits.loc[:, "ssciname"] = (
@@ -414,7 +413,7 @@ def viral_blast(file_in, n_proc, nodes, names, out_dir):
     ).size()
     ds = ds.reset_index()
 
-    viral_info = viral_info.drop(columns=["TaxId", "Organism", "Title"])
+    viral_info = viral_info.drop(columns=["TaxId", "Organism"])
     ds = pd.merge(ds, viral_info)
     ds = ds.loc[
         :,

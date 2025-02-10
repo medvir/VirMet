@@ -52,7 +52,7 @@ def fetch_viral(viral_mode, compression=True):
         run_child(cml_download)
         cml_extract = (
             "unzip -o %s.zip -d %s/; rm %s.zip; cat %s/data/genomic.fna >> %s ; \
-            dataformat tsv virus-genome --inputfile %s/data/data_report.jsonl --fields accession,virus-tax-id,virus-name --elide-header >> %s; \
+            dataformat tsv virus-genome --inputfile %s/data/data_report.jsonl --fields accession,virus-tax-id,length,virus-name --elide-header >> %s; \
             rm -r %s" 
             % (out_file, target_dir, out_file, out_file, viral_database, out_file, viral_seqs_info, out_file)
             )

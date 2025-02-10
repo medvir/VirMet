@@ -178,7 +178,7 @@ def random_reduction(viral_mode):
 
     viral_info = pd.read_table(
         viral_info_file,
-        names=["accn_version", "TaxId", "Organism"]
+        names=["accn_version", "TaxId", "seq_len", "Organism"]
     )
     viral_info.drop_duplicates(subset=["accn_version"], inplace=True)
     # Do compression at the texid ID level,
@@ -206,7 +206,7 @@ def random_reduction(viral_mode):
         ]
         accn_set = set(viral_info_to_subsample_df["accn_version"])
         # subsample to make it about 1% of the database
-        selected_accn_ls = random.sample(accn_set, MAX_TAXID)
+        selected_accn_ls = random.sample(list(accn_set), MAX_TAXID)
 
         # filter out the unselected IDs from viral_info
         # (viral_info_subsampled['accn'] in selected_accn_ls)
