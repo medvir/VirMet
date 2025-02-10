@@ -355,7 +355,7 @@ def viral_blast(file_in, n_proc, nodes, names, out_dir):
         subprocess.call(cml, stdout=boh)
 
     logging.debug("filtering and grouping by hit sequence")
-    hits = pd.read_csv(unique_file, index_col="qseqid", delimiter="\t")
+    hits = pd.read_csv(unique_file, index_col="qseqid", delimiter="\t", na_filter=False)
     logging.debug("found %d hits" % hits.shape[0])
     # select according to identity and coverage, count occurrences
     good_hits = hits[

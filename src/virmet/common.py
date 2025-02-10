@@ -282,7 +282,7 @@ def viral_query(viral_db, update_min_date=None):
     os.makedirs(target_dir, exist_ok=True)
     logging.info("Database real path: %s" % os.path.realpath(target_dir))
     
-    # Obtain Accessions until 5 days ago so all databases should be updated & match
+    # Obtain Accessions until 2 days ago so all databases should be updated & match
     Entrez.email = "virmet@virmet.ch"
     try:
         Entrez.api_key = os.environ['NCBI_API_KEY']
