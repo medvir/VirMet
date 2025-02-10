@@ -132,7 +132,7 @@ def fetch_bacterial():
     print("second half starts")
     download_genomes(all_urls[mid:], prefix="bact", target_dir=target_dir, n_files=N_FILES_BACT)
     for j in range(1, N_FILES_BACT + 1):
-        run_child(f"bgzip -@ {n_proc} -f {target_dir}fasta/bact{j}.fasta")
+        run_child(f"bgzip -@ {n_proc} -f {target_dir}/fasta/bact{j}.fasta")
 
 
 def fetch_human():
