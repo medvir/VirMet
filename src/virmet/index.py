@@ -110,12 +110,12 @@ def main(args):
         index_pairs.append((fasta_file, index_prefix))
 
     # run in parallel
-    pool = mp.Pool(max_workers = n_proc)
+    pool = mp.Pool(processes = n_proc, maxtasksperchild = 1)
     results = pool.map(single_bwa_index, index_pairs)
     for r in results:
         logging.info(r)
 
-    newpool = mp.Pool(max_workers = n_proc)
+    newpool = mp.Pool(processes = n_proc, maxtasksperchild = 1)
     samtools_results = newpool.map(single_samtols, index_pairs)
     for r in samtools_results:
         logging.info(r)
