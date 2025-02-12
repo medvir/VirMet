@@ -18,8 +18,9 @@ import numpy as np
 # TODO: This should be updated to a more global location rather than user based.
 DB_DIR = os.path.expandvars("/data/virmet_databases")
 DB_DIR_UPDATE = os.path.expandvars("/data/virmet_databases_update")
-N_FILES_BACT = 5
+N_FILES_BACT = 6
 MAX_TAXID = 10000  # max number of sequences belonging to the same taxid in compressed viral database
+MAX_TAXID_BACT = 250
 n_proc = min(os.cpu_count() or 8, 16)
 
 
@@ -198,7 +199,6 @@ def random_reduction(viral_mode):
 
     viral_info_subsampled = viral_info.copy()
     random.seed(100)
-    removed_set = set()
     for _, row in TaxId_to_counter_filterred_df.iterrows():
         taxid_to_subsample = int(row["TaxId_num"])
         viral_info_to_subsample_df = viral_info_subsampled[
@@ -217,8 +217,6 @@ def random_reduction(viral_mode):
             | viral_info_subsampled["accn_version"].isin(selected_accn_ls)
             | viral_info_subsampled["accn_version"].str.contains("_")
         ]
-        # create a text file of the non_selected ACC ID as extra information
-        removed_set = removed_set | (accn_set - set(selected_accn_ls))
 
     viral_info_subsampled.drop_duplicates(subset=["accn_version"], inplace=True)
     viral_info_subsampled.accn_version.to_csv(
@@ -245,6 +243,54 @@ def random_reduction(viral_mode):
         os.path.join(target_dir, "filtered_taxids.csv"), sep=",", index=False
     )
 
+def random_reduction_bacteria(max_tax_bacteria, info_table):
+    # This code, identify sequences from the same species using their taxid.
+    # Based on the given thresholds (1,000) subsample sequences of the corresponding taxid.
+
+    logging.info("compressing bacterial sequences")
+    target_dir = os.path.join(DB_DIR_UPDATE, "bacteria")
+    info_table.reset_index(inplace=True)
+
+    info_table.drop_duplicates(subset=["assembly_accession"], inplace=True)
+    # Do compression at the texid ID level
+    TaxId_to_counter_df = info_table["species_taxid"].value_counts().reset_index()
+    TaxId_to_counter_df.rename(
+        columns={"species_taxid": "TaxId_num", "count": "TaxId_count"}, inplace=True
+    )
+    
+    TaxId_to_counter_filterred_df = TaxId_to_counter_df[
+        TaxId_to_counter_df["TaxId_count"] > max_tax_bacteria
+    ]
+
+    info_table_subsampled = info_table.copy()
+    random.seed(100)
+    for _, row in TaxId_to_counter_filterred_df.iterrows():
+        taxid_to_subsample = int(row["TaxId_num"])
+        info_table_to_subsample_df = info_table_subsampled[
+            info_table_subsampled["species_taxid"] == taxid_to_subsample
+        ]
+        accn_set = set(info_table_to_subsample_df["assembly_accession"])
+        # subsample
+        selected_accn_ls = random.sample(list(accn_set), max_tax_bacteria)
+
+        # filter out the unselected IDs from info_table
+        info_table_subsampled = info_table_subsampled.loc[
+            (info_table_subsampled["species_taxid"] != taxid_to_subsample)
+            | info_table_subsampled["assembly_accession"].isin(selected_accn_ls)
+        ]
+
+    info_table_subsampled.drop_duplicates(subset=["assembly_accession"], inplace=True)
+    info_table_subsampled.set_index("assembly_accession", inplace=True)
+    info_table_subsampled.to_csv(
+        os.path.join(target_dir, "outfile.csv"),
+        sep="\t",
+        index=True,
+        header=True,
+    )
+    TaxId_to_counter_filterred_df.to_csv(
+        os.path.join(target_dir, "filtered_taxids.csv"), sep="\t", index=False
+    )
+    return info_table_subsampled
 
 def viral_query(viral_db, update_min_date=None):
     # Viruses, Taxonomy ID: 10239
@@ -380,6 +426,8 @@ def bact_fung_query(
         lambda col: col + "/" + col.split("/")[-1] + "_genomic.fna.gz"
     )
     gb = gb.assign(ftp_genome_path=x)
+    if query_type == "bacteria":
+        gb = random_reduction_bacteria(MAX_TAXID_BACT, gb)
     all_urls = list(gb["ftp_genome_path"])
     assert len(all_urls) == len(gb)
     return all_urls

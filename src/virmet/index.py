@@ -109,13 +109,12 @@ def main(args):
         index_prefix = os.path.join(bwa_dir, "bt_ref")
         index_pairs.append((fasta_file, index_prefix))
 
-    # run in parallel
-    pool = mp.Pool(max_workers = n_proc)
-    results = pool.map(single_bwa_index, index_pairs)
+    # Indexing
+    for idx_pair in index_pairs:
+        results = single_bwa_index(idx_pair)
+        logging.info(results)
+    # Run in parallel
+    pool = mp.Pool(processes = n_proc)
+    results = pool.map(single_samtols, index_pairs)
     for r in results:
-        logging.info(r)
-
-    newpool = mp.Pool(max_workers = n_proc)
-    samtools_results = newpool.map(single_samtols, index_pairs)
-    for r in samtools_results:
         logging.info(r)
