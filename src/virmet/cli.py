@@ -127,22 +127,22 @@ def main():
         "--viral", choices="np", help="make blast index of viral database"
     )
     parser_index.add_argument(
-        "--human", action="store_true", help="make bwa-mem2 index of human database"
+        "--human", action="store_true", help="make bwa index of human database"
     )
     parser_index.add_argument(
         "--bact",
         action="store_true",
-        help="make bwa-mem2 index of bacterial database",
+        help="make bwa index of bacterial database",
     )
     parser_index.add_argument(
         "--fungal",
         action="store_true",
-        help="make bwa-mem2 index of fungal database",
+        help="make bwa index of fungal database",
     )
     parser_index.add_argument(
         "--bovine",
         action="store_true",
-        help="make bwa-mem2 index of bovine database",
+        help="make bwa index of bovine database",
     )
     parser_index.set_defaults(func=index.main)
 

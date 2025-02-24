@@ -4,7 +4,7 @@
 import datetime
 import logging
 import multiprocessing as mp
-import os.path
+import os
 
 from virmet.common import DB_DIR_UPDATE, N_FILES_BACT, run_child, n_proc
 
@@ -12,9 +12,9 @@ DB_DIR = DB_DIR_UPDATE
 
 
 def single_bwa_index(index_params):
-    """run a single bwa-mem2 indexing job"""
+    """run a single bwa indexing job"""
     in_fasta, index_prefix = index_params
-    cml = "bwa-mem2 index -p %s %s &> %s_bwa_index.log" % (
+    cml = "bwa index -p %s %s &> %s_bwa_index.log" % (
         index_prefix,
         in_fasta,
         index_prefix,

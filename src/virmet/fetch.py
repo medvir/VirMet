@@ -75,7 +75,7 @@ def fetch_viral(viral_mode, compression=True):
     assert accs_1 == accs_2, accs_1 ^ accs_2
     logging.info("taxonomy and fasta sequences match")
 
-    rmdup_cmd = f'cat {viral_database} | seqkit rmdup --threads {n_proc} -i -o {target_dir}/viral_database_rmdup.fasta -D {target_dir}/duplicated_names.txt'
+    rmdup_cmd = f'seqkit rmdup {viral_database} --threads {n_proc} -i -o {target_dir}/viral_database_rmdup.fasta -D {target_dir}/duplicated_names.txt'
     run_child(rmdup_cmd)
     os.rename(viral_database, "%s/viral_database_original.fasta" % target_dir)
     os.rename("%s/viral_database_rmdup.fasta" % target_dir, viral_database)

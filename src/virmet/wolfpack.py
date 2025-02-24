@@ -17,34 +17,17 @@ import pandas as pd
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
 from virmet.__init__ import __version__
-from virmet.common import DB_DIR, run_child  # , single_process
+from virmet.common import DB_DIR, run_child, n_proc
 from virmet.covplot import run_covplot
 
-contaminant_db = [
-    "/data/virmet_databases/human/bwa/humanGRCh38",
-    "/data/virmet_databases/bacteria_concise/bwa/bact1",
-    "/data/virmet_databases/bacteria_concise/bwa/bact2",
-    "/data/virmet_databases/bacteria_concise/bwa/bact3",
-    "/data/virmet_databases/bacteria_concise/bwa/bact4",
-    "/data/virmet_databases/bacteria_concise/bwa/bact5",
-    "/data/virmet_databases/fungi/bwa/fungi1",
-    "/data/virmet_databases/bovine/bwa/bt_ref",
-]
-ref_map = {
-    "humanGRCh38": "/data/virmet_databases/human/fasta/GRCh38.fasta.gz",
-    "bact1": "/data/virmet_databases/bacteria_concise/fasta/bact1.fasta.gz",
-    "bact2": "/data/virmet_databases/bacteria_concise/fasta/bact2.fasta.gz",
-    "bact3": "/data/virmet_databases/bacteria_concise/fasta/bact3.fasta.gz",
-    "bact4": "/data/virmet_databases/bacteria_concise/fasta/bact4.fasta.gz",
-    "bact5": "/data/virmet_databases/bacteria_concise/fasta/bact5.fasta.gz",
-    "fungi1": "/data/virmet_databases/fungi/fasta/fungi1.fasta.gz",
-    "bt_ref": "/data/virmet_databases/bovine/fasta/ref_Bos_taurus_GCF_002263795.3_ARS-UCD2.0.fasta.gz",
-}
+contaminant_db = [os.path.join(DB_DIR, "human/bwa/humanGRCh38")]
+for i in range(1, N_FILES_BACT+1):
+    contaminant_db+= [os.path.join(DB_DIR, "bacteria/bwa/bact%d" % i)]
+contaminant_db+= [os.path.join(DB_DIR, "fungi/bwa/fungi1"),
+    os.path.join(DB_DIR, "bovine/bwa/bt_ref")]
 
 blast_cov_threshold = 75.0
 blast_ident_threshold = 75.0
-n_proc = min(os.cpu_count() or 8, 16)
-
 
 def strip(str_):
     """Make the strip method a function"""
@@ -209,7 +192,7 @@ def hunter(fq_file, out_dir, n_proc):
 
 
 def victor(input_reads, contaminant, n_proc):
-    """decontaminate reads by aligning against contaminants with bwa-mem2 and removing
+    """decontaminate reads by aligning against contaminants with bwa and removing
     reads with alignments
     """
 
@@ -228,11 +211,11 @@ def victor(input_reads, contaminant, n_proc):
     cont_real_link = os.path.realpath(contaminant)
     logging.info("Database real path: %s" % cont_real_link)
     cml = (
-        "bwa-mem2 mem -t %d -R '@RG\\tID:foo\\tSM:bar\\tLB:library1' -T 75 -M %s %s 2> \
+        "bwa mem -t %d -R '@RG\\tID:foo\\tSM:bar\\tLB:library1' -T 75 -M %s %s 2> \
     %s | samtools view -h -F 4 - > %s"
         % (n_proc, contaminant, input_reads, err_name, sam_name)
     )
-    logging.debug("running bwa-mem2 %s %s on %d cores" % (cont_name, rf_head, n_proc))
+    logging.debug("running bwa %s %s on %d cores" % (cont_name, rf_head, n_proc))
     run_child(cml)
 
     # reading sam file to remove reads with hits
@@ -474,25 +457,6 @@ def cleaning_up(cleaned_dir):
     run_child("gzip -f %s" % viral_reads)
     run_child("gzip -f %s" % undet_reads)
     os.remove(all_reads)
-
-    cmls = []
-    for samfile in glob.glob(os.path.join(cleaned_dir, "*.sam")):
-        stem = os.path.splitext(samfile)[0]
-        cont = stem.split("_")[-1]
-        if cont == "ref":  # hack because _ in bovine file name
-            cont = "bt_ref"
-        cml = (
-            "samtools sort -O bam -l 0 -T /tmp -@ %d %s | \
-        samtools view -T %s -C -o %s.cram -@ 4 -"
-            % (n_proc, samfile, ref_map[cont], stem)
-        )
-        cmls.append(cml)
-
-    # run in parallel
-    pool = mp.Pool()
-    results = pool.map(run_child, cmls)
-    for r in results:
-        logging.debug(r)
 
     # removing and zipping
     for samfile in glob.glob(os.path.join(cleaned_dir, "*.sam")):
