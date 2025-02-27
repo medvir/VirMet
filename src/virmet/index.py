@@ -14,7 +14,9 @@ DB_DIR = DB_DIR_UPDATE
 def single_bwa_index(index_params):
     """run a single bwa indexing job"""
     in_fasta, index_prefix = index_params
-    cml = "bwa index -p %s %s &> %s_bwa_index.log" % (
+    size_indx = int(os.path.getsize(in_fasta)/8)
+    cml = "bwa index -b %d -p %s %s &> %s_bwa_index.log" % (
+        size_indx,
         index_prefix,
         in_fasta,
         index_prefix,
@@ -110,9 +112,10 @@ def main(args):
         index_pairs.append((fasta_file, index_prefix))
 
     # Indexing
-    for idx_pair in index_pairs:
-        results = single_bwa_index(idx_pair)
-        logging.info(results)
+    pool_idx = mp.Pool(processes = n_proc)
+    results_idx = pool_idx.map(single_bwa_index, index_pairs)
+    for r in results_idx:
+        logging.info(r)
     # Run in parallel
     pool = mp.Pool(processes = n_proc)
     results = pool.map(single_samtols, index_pairs)

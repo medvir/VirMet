@@ -17,7 +17,7 @@ import pandas as pd
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
 from virmet.__init__ import __version__
-from virmet.common import DB_DIR, run_child, n_proc
+from virmet.common import DB_DIR, run_child, n_proc, N_FILES_BACT
 from virmet.covplot import run_covplot
 
 contaminant_db = [os.path.join(DB_DIR, "human/bwa/humanGRCh38")]

@@ -18,9 +18,9 @@ import numpy as np
 # TODO: This should be updated to a more global location rather than user based.
 DB_DIR = os.path.expandvars("/data/virmet_databases")
 DB_DIR_UPDATE = os.path.expandvars("/data/virmet_databases_update")
-N_FILES_BACT = 5
+N_FILES_BACT = 1
 MAX_TAXID = 10000  # max number of sequences belonging to the same taxid in compressed viral database
-MAX_TAXID_BACT = 200
+MAX_TAXID_BACT = 200 # max number of sequences belonging to the same taxid in compressed bacterial database
 n_proc = min(os.cpu_count() or 8, 16)
 
 
