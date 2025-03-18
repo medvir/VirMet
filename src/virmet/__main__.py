@@ -1,4 +1,4 @@
-"""Entrypoint module, in case you use `python -mminvar`.
+"""Entrypoint module.
 
 Why does this file exist, and why __main__? For more info, read:
 

@@ -12,7 +12,6 @@ from collections import Counter
 import pandas as pd
 
 from virmet.common import (
-    DB_DIR_UPDATE,
     N_FILES_BACT,
     n_proc,
     bact_fung_query,
@@ -22,10 +21,8 @@ from virmet.common import (
     viral_query,
 )
 
-DB_DIR = DB_DIR_UPDATE
 
-
-def bact_fung_update(query_type=None, picked=None):
+def bact_fung_update(DB_DIR, query_type=None, picked=None):
     """ """
 
     cont_dir = os.path.join(DB_DIR, query_type)
@@ -102,7 +99,7 @@ def bact_fung_update(query_type=None, picked=None):
         run_child(f"bgzip -@ {n_proc} -r fasta/fungi1.fasta.gz")
 
 
-def virupdate(viral_type, picked=None, update_min_date=None):
+def virupdate(DB_DIR, viral_type, picked=None, update_min_date=None):
     if viral_type == "n":
         db_type = "nuccore"
     elif viral_type == "p":
@@ -217,6 +214,7 @@ def virupdate(viral_type, picked=None, update_min_date=None):
 
 
 def main(args):
+    DB_DIR = os.path.expandvars(args.dbdir)
     logging.info("now in update_db")
     logging.info("Database real path: %s" % os.path.realpath(DB_DIR))
     if bool(args.viral) + args.bact + args.fungal > 1:
@@ -225,8 +223,8 @@ def main(args):
         )
         sys.exit("update either viral or bacterial or fungal in a single call")
     if args.viral:
-        virupdate(args.viral, args.picked, args.update_min_date)
+        virupdate(DB_DIR, args.viral, args.picked, args.update_min_date)
     elif args.bact:
-        bact_fung_update(query_type="bacteria", picked=args.picked)
+        bact_fung_update(DB_DIR, query_type="bacteria", picked=args.picked)
     elif args.fungal:
-        bact_fung_update(query_type="fungi", picked=args.picked)
+        bact_fung_update(DB_DIR, query_type="fungi", picked=args.picked)

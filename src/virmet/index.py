@@ -6,10 +6,7 @@ import logging
 import multiprocessing as mp
 import os
 
-from virmet.common import DB_DIR_UPDATE, N_FILES_BACT, run_child, n_proc
-
-DB_DIR = DB_DIR_UPDATE
-
+from virmet.common import N_FILES_BACT, run_child, n_proc
 
 def single_bwa_index(index_params):
     """run a single bwa indexing job"""
@@ -34,6 +31,7 @@ def single_samtols(index_params):
 
 def main(args):
     """only function doing all the indexing"""
+    DB_DIR = os.path.expandvars(args.dbdir)
     logging.info("now in index")
     logging.info("Database real path: %s" % os.path.realpath(DB_DIR))
     if args.viral == "n":

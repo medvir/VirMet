@@ -6,7 +6,6 @@ import os
 import re
 
 from virmet.common import (
-    DB_DIR_UPDATE,
     N_FILES_BACT,
     n_proc,
     bact_fung_query,
@@ -18,10 +17,7 @@ from virmet.common import (
     viral_query,
 )
 
-DB_DIR = DB_DIR_UPDATE
-
-
-def fetch_viral(viral_mode, compression=True):
+def fetch_viral(DB_DIR, viral_mode, compression=True):
     """Download nucleotide or protein database."""
     # define the search nuccore/protein
     if viral_mode == "n":
@@ -82,7 +78,7 @@ def fetch_viral(viral_mode, compression=True):
 
     if compression:
         logging.info("Compress the database\n")
-        random_reduction(viral_mode)
+        random_reduction(viral_mode, DB_DIR)
 
     logging.info("downloading taxonomy databases")
     ftp_down(
@@ -117,14 +113,14 @@ def fetch_viral(viral_mode, compression=True):
         logging.debug(f"Could not find files {DB_DIR}/names.dmp, {DB_DIR}/nodes.dmp.")
 
 
-def fetch_bacterial():
+def fetch_bacterial(DB_DIR):
     """Download the three bacterial sequence databases."""
     target_dir = os.path.join(DB_DIR, "bacteria")
     logging.info("Database real path: %s" % os.path.realpath(target_dir))
     os.makedirs(target_dir, exist_ok=True)
 
     # first download summary file with all ftp paths and return urls
-    all_urls = bact_fung_query(query_type="bacteria", target_folder=target_dir)
+    all_urls = bact_fung_query(DB_DIR, query_type="bacteria", target_folder=target_dir)
     logging.info("%d bacterial genomes were found" % len(all_urls))
     # then download genomic_fna.gz files
     mid = len(all_urls) // 2
@@ -135,7 +131,7 @@ def fetch_bacterial():
         run_child(f"bgzip -@ {n_proc} -f {target_dir}/fasta/bact{j}.fasta")
 
 
-def fetch_human():
+def fetch_human(DB_DIR):
     """Download human genome and annotations."""
     target_dir = os.path.join(DB_DIR, "human")
     logging.info("Database real path: %s" % os.path.realpath(target_dir))
@@ -154,21 +150,21 @@ def fetch_human():
     run_child(f"bgzip -@ {n_proc} -f {fasta_path}")
 
 
-def fetch_fungal():
+def fetch_fungal(DB_DIR):
     """Download fungal sequences."""
     target_dir = os.path.join(DB_DIR, "fungi")
     logging.info("Database real path: %s" % os.path.realpath(target_dir))
     os.makedirs(target_dir, exist_ok=True)
 
     # first download summary file with all ftp paths and return urls
-    all_urls = bact_fung_query(query_type="fungi", target_folder=target_dir)
+    all_urls = bact_fung_query(DB_DIR, query_type="fungi", target_folder=target_dir)
     logging.info("%d fungal genomes were found" % len(all_urls))
     # then download genomic_fna.gz files
     download_genomes(all_urls, prefix="fungi", target_dir=target_dir, n_files=1)
     run_child(f"bgzip -@ {n_proc} -f {target_dir}/fasta/fungi1.fasta")
 
 
-def fetch_bovine():
+def fetch_bovine(DB_DIR):
     """Download cow genome and annotations."""
     target_dir = os.path.join(DB_DIR, "bovine")
     logging.info("Database real path: %s" % os.path.realpath(target_dir))
@@ -202,15 +198,16 @@ def fetch_bovine():
 
 def main(args):
     """What the main does."""
+    DB_DIR = os.path.expandvars(args.dbdir)
     logging.info("now in fetch_data")
     if args.viral:
         # print(args.no_db_compression)
-        fetch_viral(args.viral, compression=not args.no_db_compression)
+        fetch_viral(DB_DIR, args.viral, compression=not args.no_db_compression)
     if args.bact:
-        fetch_bacterial()
+        fetch_bacterial(DB_DIR)
     elif args.human:
-        fetch_human()
+        fetch_human(DB_DIR)
     elif args.fungal:
-        fetch_fungal()
+        fetch_fungal(DB_DIR)
     elif args.bovine:
-        fetch_bovine()
+        fetch_bovine(DB_DIR)

@@ -10,16 +10,13 @@ import sys
 import pandas as pd
 
 
-def main(args):
+def run_tidytable(outdir):
     """Everything is defined here"""
-    outdir = args.outdir
     run = os.path.abspath(outdir).split("/")[-1].split("virmet_output_")[1]
-    try:
-        os.chdir(outdir)
-    except FileNotFoundError:
+    if not os.path.isdir(outdir):
         sys.exit("Where is the output dir? Check the path.")
 
-    sample_dirs = glob.glob("*_S*")
+    sample_dirs = glob.glob("%s/*_S*" % outdir)
     all_reads = pd.DataFrame()
     all_orgs = pd.DataFrame()
     for sd in sample_dirs:
@@ -38,13 +35,6 @@ def main(args):
             df["sample"] = sd
             df["run"] = run
             all_orgs = all_orgs.append(df)
-        else:
-            continue
 
-    all_orgs.to_csv("orgs_species_found.tsv", sep="\t", index=False)
-    all_reads.to_csv("run_reads_summary.tsv", sep="\t", index=False)
-
-
-if __name__ == "__main__":
-    args = {"outdir": sys.argv[1]}
-    main(args)
+    all_orgs.to_csv("%s/orgs_species_found.tsv" % outdir, sep="\t", index=False)
+    all_reads.to_csv("%s/run_reads_summary.tsv" % outdir, sep="\t", index=False)

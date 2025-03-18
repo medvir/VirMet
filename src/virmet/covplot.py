@@ -22,7 +22,7 @@ from Bio.Seq import Seq
 from Bio.SeqIO.FastaIO import SimpleFastaParser
 from Bio.SeqRecord import SeqRecord
 
-from virmet.common import DB_DIR, run_child
+from virmet.common import run_child
 
 
 def best_species(orgs_list, org_name, best_spec_field_type="ssciname"):
@@ -150,7 +150,7 @@ def infer_species(
     return orgs_list
 
 
-def run_covplot(outdir, n_proc):
+def run_covplot(outdir, n_proc, DB_DIR):
     """Extract the best species, realign reads, run ``covplot.R`` script to create the plot"""
 
     assert os.path.isdir(outdir), "Ensure that output directory exists"
@@ -180,7 +180,9 @@ def run_covplot(outdir, n_proc):
         logging.info("Best hit in blast results: %s accession:%s" % (dsc, acc))
 
         # copy single genome, index, align viral_reads
-        organism = organism.replace(" ", "_").replace("/", "_")
+        to_replace = "/ ().;:%&*?!$@+|=\\<>[]`#'"
+        for char in to_replace:
+            organism = organism.replace(char, "_")
         try:
             os.mkdir(os.path.join(outdir, organism))
         except FileExistsError:
@@ -214,10 +216,10 @@ def run_covplot(outdir, n_proc):
             warn("Reusing alignment")
             logging.info("Refusing to rerun alignment")
         else:
-            run_child("bwa-mem2 index %s" % single_fasta)
+            run_child("bwa index %s" % single_fasta)
             logging.info("Aligning viral reads")
             run_child(
-                "bwa-mem2 mem -t %d %s %s/viral_reads.fastq.gz 2> /dev/null | samtools view -@ %d -u - | samtools sort -@ %d -O bam -T tmp -o %s -"
+                "bwa mem -t %d %s %s/viral_reads.fastq.gz 2> /dev/null | samtools view -@ %d -u - | samtools sort -@ %d -O bam -T tmp -o %s -"
                 % (n_proc, single_fasta, outdir, n_proc, n_proc, bam_file)
             )
             run_child("samtools index %s -@ %d" % (bam_file, n_proc))

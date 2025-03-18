@@ -23,19 +23,12 @@ import shutil
 import sys
 
 from virmet import (
-    covplot,
     fetch,
     index,
-    tidytable,
     update,
     wolfpack,
 )
 from virmet.__init__ import __version__
-
-
-def covplot_run(args):
-    """Default function for command line parser."""
-    covplot.main(args)
 
 
 def wolfpack_run(args):
@@ -85,6 +78,13 @@ def main():
         action="store_true",
         default=False,
     )
+    parser_fetch.add_argument(
+        "--dbdir",
+        type=str,
+        nargs = '?',
+        default = "/data/virmet_databases_update/",
+        help="path to store the new Virmet database",
+    )
     parser_fetch.set_defaults(func=fetch.main)
 
     # create the parser for command "update"
@@ -119,6 +119,13 @@ def main():
         help="update viral [n]ucleic/[p]rotein with sequences produced after the date YYYY/MM/DD (e.g. 2022/09/01)",
         default=None,
     )
+    parser_update.add_argument(
+        "--dbdir",
+        type=str,
+        nargs = '?',
+        default = "/data/virmet_databases_update/",
+        help="path to store the updated Virmet database",
+    )
     parser_update.set_defaults(func=update.main)
 
     # create the parser for command "index"
@@ -144,33 +151,31 @@ def main():
         action="store_true",
         help="make bwa index of bovine database",
     )
+    parser_index.add_argument(
+        "--dbdir",
+        type=str,
+        nargs = '?',
+        default = "/data/virmet_databases_update/",
+        help="path to store the indexed Virmet database",
+    )
     parser_index.set_defaults(func=index.main)
 
     # create the parser for command "wolfpack"
     parser_wolf = subparsers.add_parser("wolfpack", help="analyze a Miseq run")
     parser_wolf.add_argument("--run", type=str, help="Miseq run directory")
     parser_wolf.add_argument("--file", type=str, help="single fastq file")
-    parser_wolf.set_defaults(func=wolfpack_run)
-
-    # create the parser for command "tidytable"
-    parser_tidy = subparsers.add_parser(
-        "tidytable", help="make tables summarising the whole run"
-    )
-    parser_tidy.add_argument(
-        "--outdir",
+    parser_wolf.add_argument(
+        "--dbdir",
         type=str,
-        help="path to run results directory (virmet_output_...)",
+        nargs = '?',
+        default = "/data/virmet_databases",
+        help="path to find and use the Virmet database",
     )
-    parser_tidy.set_defaults(func=tidytable.main)
-
-    # create the parser for command "covplot"
-    parser_cov = subparsers.add_parser(
-        "covplot", help="plot coverage for a specific organism"
-    )
-    parser_cov.add_argument(
-        "--outdir", type=str, help="path to sample results directory"
-    )
-    parser_cov.set_defaults(func=covplot_run)
+    parser_wolf.add_argument(
+        "--nocovplot",
+        action="store_true",
+        help="do not make the covplots. Default: make them")
+    parser_wolf.set_defaults(func=wolfpack_run)
 
     # exit so that log file is not written
     if len(sys.argv) == 1 or sys.argv[1] == "-h" or sys.argv[1] == "--help":

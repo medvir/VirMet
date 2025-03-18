@@ -15,13 +15,10 @@ from urllib.request import Request, urlopen
 import pandas as pd
 import numpy as np
 
-# TODO: This should be updated to a more global location rather than user based.
-DB_DIR = os.path.expandvars("/data/virmet_databases")
-DB_DIR_UPDATE = os.path.expandvars("/data/virmet_databases_update")
 N_FILES_BACT = 1
 MAX_TAXID = 10000  # max number of sequences belonging to the same taxid in compressed viral database
 MAX_TAXID_BACT = 200 # max number of sequences belonging to the same taxid in compressed bacterial database
-n_proc = min(os.cpu_count() or 8, 16)
+n_proc = int((os.cpu_count() or 8)/2)
 
 
 # decorator for taken from RepoPhlan
@@ -153,7 +150,7 @@ def ftp_down(remote_url, local_url=None):
     outhandle.close()
 
 
-def random_reduction(viral_mode):
+def random_reduction(viral_mode, DB_DIR_UPDATE):
     # This code, identify sequences from the same species using their taxid.
     # Based on the given thresholds (10,000) subsample sequences of the corresponding taxid.
     # Currently this code has the absolute threshold and any taxid with above
@@ -243,7 +240,7 @@ def random_reduction(viral_mode):
         os.path.join(target_dir, "filtered_taxids.csv"), sep=",", index=False
     )
 
-def random_reduction_bacteria(max_tax_bacteria, info_table):
+def random_reduction_bacteria(max_tax_bacteria, info_table, DB_DIR_UPDATE):
     # This code, identify sequences from the same species using their taxid.
     # Based on the given thresholds (1,000) subsample sequences of the corresponding taxid.
 
@@ -292,7 +289,7 @@ def random_reduction_bacteria(max_tax_bacteria, info_table):
     )
     return info_table_subsampled
 
-def viral_query(viral_db, update_min_date=None):
+def viral_query(DB_DIR_UPDATE, viral_db, update_min_date=None):
     # Viruses, Taxonomy ID: 10239
     # Human adenovirus A, Taxonomy ID: 129875 (only for testing, 7 hits)
     # Mastadenovirus, Taxonomy ID: 10509 (only for testing, 440 hits)
@@ -367,7 +364,7 @@ def viral_query(viral_db, update_min_date=None):
 
 
 def bact_fung_query(
-    query_type=None, download=True, info_file=None, target_folder="./"
+    DB_DIR_UPDATE, query_type=None, download=True, info_file=None, target_folder="./"
 ):
     """Download/read bacterial and fungal genomes in refseq as explained in
     FAQ 12 here http://www.ncbi.nlm.nih.gov/genome/doc/ftpfaq/#asmsumfiles.
@@ -427,7 +424,7 @@ def bact_fung_query(
     )
     gb = gb.assign(ftp_genome_path=x)
     if query_type == "bacteria":
-        gb = random_reduction_bacteria(MAX_TAXID_BACT, gb)
+        gb = random_reduction_bacteria(MAX_TAXID_BACT, gb, DB_DIR_UPDATE)
     all_urls = list(gb["ftp_genome_path"])
     assert len(all_urls) == len(gb)
     return all_urls

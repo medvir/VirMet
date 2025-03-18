@@ -17,14 +17,9 @@ import pandas as pd
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
 from virmet.__init__ import __version__
-from virmet.common import DB_DIR, run_child, n_proc, N_FILES_BACT
+from virmet.common import run_child, n_proc, N_FILES_BACT
 from virmet.covplot import run_covplot
-
-contaminant_db = [os.path.join(DB_DIR, "human/bwa/humanGRCh38")]
-for i in range(1, N_FILES_BACT+1):
-    contaminant_db+= [os.path.join(DB_DIR, "bacteria/bwa/bact%d" % i)]
-contaminant_db+= [os.path.join(DB_DIR, "fungi/bwa/fungi1"),
-    os.path.join(DB_DIR, "bovine/bwa/bt_ref")]
+from virmet.tidytable import run_tidytable
 
 blast_cov_threshold = 75.0
 blast_ident_threshold = 75.0
@@ -260,7 +255,7 @@ def victor(input_reads, contaminant, n_proc):
     return os.path.split(clean_name)[1]
 
 
-def viral_blast(file_in, n_proc, nodes, names, out_dir):
+def viral_blast(file_in, n_proc, nodes, names, out_dir, DB_DIR):
     """runs blast against viral database"""
 
     viral_reads = os.path.join(out_dir, "viral_reads.fastq.gz")
@@ -475,6 +470,14 @@ def cleaning_up(cleaned_dir):
 def main(args):
     """"""
 
+    DB_DIR = os.path.expandvars(args.dbdir)
+    # Specify all databases for decontamination steps
+    contaminant_db = [os.path.join(DB_DIR, "human/bwa/humanGRCh38")]
+    for i in range(1, N_FILES_BACT+1):
+        contaminant_db+= [os.path.join(DB_DIR, "bacteria/bwa/bact%d" % i)]
+    contaminant_db+= [os.path.join(DB_DIR, "fungi/bwa/fungi1"),
+        os.path.join(DB_DIR, "bovine/bwa/bt_ref")]
+
     if args.run:
         miseq_dir = args.run.rstrip("/")
         run_name = os.path.split(miseq_dir)[1]
@@ -539,7 +542,7 @@ def main(args):
 
     for sample_dir in s_dirs:
         logging.info("now sample %s" % sample_dir)
-        viral_blast(os.path.join(sample_dir, file_to_blast), n_proc, nodes, names, out_dir)
+        viral_blast(os.path.join(sample_dir, file_to_blast), n_proc, nodes, names, out_dir, DB_DIR)
         logging.info("sample %s blasted" % sample_dir)
 
     logging.info("summarising and cleaning up")
@@ -547,8 +550,16 @@ def main(args):
         logging.info("now in %s" % sample_dir)
         cleaning_up(sample_dir)
 
-    for sample_dir in s_dirs:
-        run_covplot(sample_dir, n_proc)
+    if not args.nocovplot:
+        for sample_dir in s_dirs:
+            run_covplot(sample_dir, n_proc, DB_DIR)
+    
+    # Organise results into a tidy table
+    if len(s_dirs) > 1:
+        run_tidytable(out_dir)
+    else:
+        os.system("cp %s/orgs_list.tsv %s/orgs_species_found.tsv" % (out_dir, out_dir))
+        os.system("cp %s/stats.tsv %s/run_reads_summary.tsv" % (out_dir, out_dir)) 
 
     return out_dir
 
