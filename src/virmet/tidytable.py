@@ -27,7 +27,7 @@ def run_tidytable(outdir):
         )
         df["sample"] = sd
         df["run"] = run
-        all_reads = all_reads.append(df)
+        all_reads = all_reads.concat([all_reads, df])
         # parse and save orgs_list files
         orgs_file = os.path.join(sd, "orgs_list.tsv")
         if os.path.isfile(orgs_file):

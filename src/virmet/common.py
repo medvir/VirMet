@@ -15,10 +15,8 @@ from urllib.request import Request, urlopen
 import pandas as pd
 import numpy as np
 
-N_FILES_BACT = 1
 MAX_TAXID = 10000  # max number of sequences belonging to the same taxid in compressed viral database
-MAX_TAXID_BACT = 200 # max number of sequences belonging to the same taxid in compressed bacterial database
-n_proc = int((os.cpu_count() or 8)/2)
+n_proc = int((os.cpu_count() or 8)*0.75)
 
 
 # decorator for taken from RepoPhlan
@@ -240,55 +238,6 @@ def random_reduction(viral_mode, DB_DIR_UPDATE):
         os.path.join(target_dir, "filtered_taxids.csv"), sep=",", index=False
     )
 
-def random_reduction_bacteria(max_tax_bacteria, info_table, DB_DIR_UPDATE):
-    # This code, identify sequences from the same species using their taxid.
-    # Based on the given thresholds (1,000) subsample sequences of the corresponding taxid.
-
-    logging.info("compressing bacterial sequences")
-    target_dir = os.path.join(DB_DIR_UPDATE, "bacteria")
-    info_table.reset_index(inplace=True)
-
-    info_table.drop_duplicates(subset=["assembly_accession"], inplace=True)
-    # Do compression at the texid ID level
-    TaxId_to_counter_df = info_table["species_taxid"].value_counts().reset_index()
-    TaxId_to_counter_df.rename(
-        columns={"species_taxid": "TaxId_num", "count": "TaxId_count"}, inplace=True
-    )
-    
-    TaxId_to_counter_filterred_df = TaxId_to_counter_df[
-        TaxId_to_counter_df["TaxId_count"] > max_tax_bacteria
-    ]
-
-    info_table_subsampled = info_table.copy()
-    random.seed(100)
-    for _, row in TaxId_to_counter_filterred_df.iterrows():
-        taxid_to_subsample = int(row["TaxId_num"])
-        info_table_to_subsample_df = info_table_subsampled[
-            info_table_subsampled["species_taxid"] == taxid_to_subsample
-        ]
-        accn_set = set(info_table_to_subsample_df["assembly_accession"])
-        # subsample
-        selected_accn_ls = random.sample(list(accn_set), max_tax_bacteria)
-
-        # filter out the unselected IDs from info_table
-        info_table_subsampled = info_table_subsampled.loc[
-            (info_table_subsampled["species_taxid"] != taxid_to_subsample)
-            | info_table_subsampled["assembly_accession"].isin(selected_accn_ls)
-        ]
-
-    info_table_subsampled.drop_duplicates(subset=["assembly_accession"], inplace=True)
-    info_table_subsampled.set_index("assembly_accession", inplace=True)
-    info_table_subsampled.to_csv(
-        os.path.join(target_dir, "outfile.csv"),
-        sep="\t",
-        index=True,
-        header=True,
-    )
-    TaxId_to_counter_filterred_df.to_csv(
-        os.path.join(target_dir, "filtered_taxids.csv"), sep="\t", index=False
-    )
-    return info_table_subsampled
-
 def viral_query(DB_DIR_UPDATE, viral_db, update_min_date=None):
     # Viruses, Taxonomy ID: 10239
     # Human adenovirus A, Taxonomy ID: 129875 (only for testing, 7 hits)
@@ -361,108 +310,6 @@ def viral_query(DB_DIR_UPDATE, viral_db, update_min_date=None):
         id_list = np.array(record['IdList'])
         ncbi_accs[i:i+len(id_list)] = id_list
     return ncbi_accs
-
-
-def bact_fung_query(
-    DB_DIR_UPDATE, query_type=None, download=True, info_file=None, target_folder="./"
-):
-    """Download/read bacterial and fungal genomes in refseq as explained in
-    FAQ 12 here http://www.ncbi.nlm.nih.gov/genome/doc/ftpfaq/#asmsumfiles.
-
-    If info_file is not given, it will be inferred from query_type;
-    if download is true, it will be used to save the downloaded info;
-    if download is false, an already present file will be read.
-    """
-    if query_type not in ["bacteria", "fungi"]:
-        raise SystemExit("Choose bacteria or fungi")
-    if not info_file:
-        info_file = "%s_refseq_info.tsv" % query_type
-    info_file = os.path.join(target_folder, info_file)
-    if download:
-        url = (
-            "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/%s/assembly_summary.txt"
-            % query_type
-        )
-        bh = open(info_file, "w")
-        with urllib.request.urlopen(url) as f:
-            print(f.read().decode("utf-8"), file=bh)
-        bh.close()
-    querinfo = pd.read_csv(
-        info_file,
-        sep="\t",
-        header=0,
-        skiprows=1,
-        na_values = "na",
-        dtype={"excluded_from_refseq": str, "relation_to_type_material": str, "pubmed_id": str, "refseq_category": str} 
-    )
-    querinfo.rename(
-        columns={"#assembly_accession": "assembly_accession"}, inplace=True
-    )
-    if query_type == "bacteria":
-        gb = querinfo[
-            (querinfo.assembly_level == "Complete Genome")
-            & (querinfo.version_status == "latest")
-        ]
-    elif query_type == "fungi":
-        gb = querinfo[
-            (
-                (querinfo.assembly_level == "Complete Genome")
-                | (querinfo.assembly_level == "Chromosome")
-            )
-            & (pd.notna(querinfo.refseq_category))
-            & (querinfo.version_status == "latest")
-            & (querinfo.genome_rep == "Full")
-            & (querinfo.release_type == "Major")
-        ]
-    else:
-        raise ValueError(f"Invalid query_type value: '{query_type}'.")
-
-    gb.set_index("assembly_accession", inplace=True)
-    gb = gb[gb['ftp_path'].notna()]
-    x = gb["ftp_path"].apply(
-        lambda col: col + "/" + col.split("/")[-1] + "_genomic.fna.gz"
-    )
-    gb = gb.assign(ftp_genome_path=x)
-    if query_type == "bacteria":
-        gb = random_reduction_bacteria(MAX_TAXID_BACT, gb, DB_DIR_UPDATE)
-    all_urls = list(gb["ftp_genome_path"])
-    assert len(all_urls) == len(gb)
-    return all_urls
-
-
-def download_genomes(all_urls, prefix, target_dir, n_files=1):
-    """Download genomes given a list of urls, randomly assigning them to one of several (n_files) fasta files.
-
-    It assigns sequences randomly to (three) sets using answer here
-    http://stackoverflow.com/questions/2659900/python-slicing-a-list-into-n-nearly-equal-length-partitions
-    """
-    logging.info("writing %d genome assemblies to fasta files" % len(all_urls))
-    random.shuffle(all_urls)
-    q, r = divmod(len(all_urls), n_files)  # quotient, remainder
-    indices = [q * i + min(i, r) for i in range(n_files + 1)]
-    seqs_urls = [all_urls[indices[i] : indices[i + 1]] for i in range(n_files)]
-    new_dir = os.path.join(target_dir, "fasta")
-    os.makedirs(new_dir, exist_ok=True)
-
-    dl_pairs = []
-    for i, seqs in enumerate(seqs_urls):
-        fasta_out = f"{new_dir}/{prefix}{i + 1}.fasta"
-        # if os.path.exists(fasta_out):
-        #    os.remove(fasta_out)
-        dl_pairs.append((fasta_out, seqs))
-
-    # run download in parallel
-    with mp.Pool() as pool:
-        results = pool.map(multiple_download, dl_pairs)
-    return results
-
-
-def multiple_download(dl_pair):
-    fasta_out, urls = dl_pair
-    logging.debug("About to download %d files", len(urls))
-    for url in urls:
-        ftp_down(url, fasta_out)
-    return len(urls)
 
 
 def get_accs(fasta_file):

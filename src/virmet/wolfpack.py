@@ -17,7 +17,7 @@ import pandas as pd
 from Bio.SeqIO.QualityIO import FastqGeneralIterator
 
 from virmet.__init__ import __version__
-from virmet.common import run_child, n_proc, N_FILES_BACT
+from virmet.common import run_child, n_proc
 from virmet.covplot import run_covplot
 from virmet.tidytable import run_tidytable
 
@@ -254,6 +254,54 @@ def victor(input_reads, contaminant, n_proc):
 
     return os.path.split(clean_name)[1]
 
+def victor_bact_fungal(input_reads, decont_db, n_proc):
+    """decontaminate reads by aligning against contaminants with kraken2"""
+
+    rf_head = input_reads.split(".")[0]
+    err_name = "%s_bact_fungi.err" % rf_head
+    clean_name = "%s_bact_fungi.fastq" % rf_head
+    report_name = "%s_bact_fungi.txt" % rf_head
+
+    # skipping if hot run
+    if os.path.exists(err_name):
+        logging.info("decontamination already performed, skipping")
+        return clean_name
+
+    # alignment with kraken2
+    cont_real_link = os.path.realpath(decont_db)
+    logging.info("Database real path: %s" % cont_real_link)
+    cml = (
+        "kraken2 --db %s --threads %d --minimum-hit-groups 4 --confidence 0.75 --report %s --unclassified-out %s %s > %s 2>&1"
+        % (decont_db, n_proc, report_name, clean_name, input_reads, err_name)
+    )
+    logging.debug("running kraken2 with %s on %d cores" % (rf_head, n_proc))
+    run_child(cml)
+
+    # Calculate statistics
+    stats_kraken = pd.read_csv(
+        report_name, 
+        sep = "\t", 
+        names = ["Percentage", "Total", "Assigned", "Code", "Taxid", "Sciname"])
+    try:
+        mapped_bact = int(stats_kraken.loc[stats_kraken["Taxid"]==2 , "Total"])
+    except:
+        mapped_bact = 0
+    try:
+        mapped_fungi = int(stats_kraken.loc[stats_kraken["Taxid"]==4751, "Total"])
+    except:
+        mapped_fungi = 0
+
+    # Write statistics to output
+    stats_file = os.path.join(os.path.split(input_reads)[0], "stats.tsv")
+    oh = open(stats_file, "a")
+    oh.write("matching_bacteria\t%d\n" % mapped_bact)
+    oh.write("matching_fungi\t%d\n" % mapped_fungi)
+    oh.close()
+
+    if os.path.split(input_reads)[1] != "good.fastq":
+        os.remove(input_reads)
+
+    return os.path.split(clean_name)[1]
 
 def viral_blast(file_in, n_proc, nodes, names, out_dir, DB_DIR):
     """runs blast against viral database"""
@@ -333,6 +381,14 @@ def viral_blast(file_in, n_proc, nodes, names, out_dir, DB_DIR):
         subprocess.call(cml, stdout=boh)
 
     logging.debug("filtering and grouping by hit sequence")
+
+    with open(unique_file, "rbU") as f:
+        num_lines = sum(1 for _ in f)
+    
+    if num_lines == 1:
+        warnings.warn("No hits, unique.tsv file is empty")
+        return
+
     hits = pd.read_csv(unique_file, index_col="qseqid", delimiter="\t", na_filter=False)
     logging.debug("found %d hits" % hits.shape[0])
     # select according to identity and coverage, count occurrences
@@ -417,48 +473,58 @@ def cleaning_up(cleaned_dir):
 
     # selects reads with coverage and identity higher than 75
     unique_file = os.path.join(cleaned_dir, "unique.tsv")
-    df = pd.read_csv(unique_file, sep="\t")
-    viral_ids = set(
-        df[
-            (df.qcovs > blast_cov_threshold)
-            & (df.pident > blast_ident_threshold)
-        ].qseqid
-    )
-    viral_c = 0
-    undet_c = 0
     all_reads = os.path.join(cleaned_dir, "hq_decont_reads.fastq")
-    all_handle = open(all_reads)
     undet_reads = os.path.join(cleaned_dir, "undetermined_reads.fastq")
-    viral_reads = os.path.join(cleaned_dir, "viral_reads.fastq")
-    undet_handle = open(undet_reads, "w")
-    viral_handle = open(viral_reads, "w")
-    # Using FastqGeneralIterator allows fast performance
-    for title, seq, qual in FastqGeneralIterator(all_handle):
-        if title.split()[0] not in viral_ids:
-            undet_c += 1
-            undet_handle.write("@%s\n%s\n+\n%s\n" % (title, seq, qual))
-            if undet_c % 100000 == 0:
-                logging.debug("written %d undet reads" % undet_c)
-        else:
-            viral_c += 1
-            viral_handle.write("@%s\n%s\n+\n%s\n" % (title, seq, qual))
-            if viral_c % 10000 == 0:
-                logging.debug("written %d viral reads" % viral_c)
-    undet_handle.close()
-    viral_handle.close()
-    logging.info("written %d undet reads" % undet_c)
-    logging.info("written %d viral reads" % viral_c)
 
-    run_child("gzip -f %s" % viral_reads)
-    run_child("gzip -f %s" % undet_reads)
-    os.remove(all_reads)
+    with open(unique_file, "rbU") as f:
+        num_lines = sum(1 for _ in f)
+    
+    if num_lines != 1:
+        df = pd.read_csv(unique_file, sep="\t")
+        viral_ids = set(
+            df[
+                (df.qcovs > blast_cov_threshold)
+                & (df.pident > blast_ident_threshold)
+            ].qseqid
+        )
+        viral_c = 0
+        undet_c = 0
+        all_handle = open(all_reads)
+        viral_reads = os.path.join(cleaned_dir, "viral_reads.fastq")
+        undet_handle = open(undet_reads, "w")
+        viral_handle = open(viral_reads, "w")
+        # Using FastqGeneralIterator allows fast performance
+        for title, seq, qual in FastqGeneralIterator(all_handle):
+            if title.split()[0] not in viral_ids:
+                undet_c += 1
+                undet_handle.write("@%s\n%s\n+\n%s\n" % (title, seq, qual))
+                if undet_c % 100000 == 0:
+                    logging.debug("written %d undet reads" % undet_c)
+            else:
+                viral_c += 1
+                viral_handle.write("@%s\n%s\n+\n%s\n" % (title, seq, qual))
+                if viral_c % 10000 == 0:
+                    logging.debug("written %d viral reads" % viral_c)
+        undet_handle.close()
+        viral_handle.close()
+        logging.info("written %d undet reads" % undet_c)
+        logging.info("written %d viral reads" % viral_c)
+
+        run_child("gzip -f %s" % viral_reads)
+        run_child("gzip -f %s" % undet_reads)
+        os.remove(all_reads)
+    else:
+        os.rename(all_reads, undet_reads)
 
     # removing and zipping
     for samfile in glob.glob(os.path.join(cleaned_dir, "*.sam")):
         os.remove(samfile)
-    for rf in ["%s/good.fastq" % cleaned_dir, 
-               "%s/hq_decont_reads.fasta" % cleaned_dir,
-               "%s/fastp.json" % cleaned_dir]:
+    for rf in [
+        "%s/good.fastq" % cleaned_dir,
+        "%s/good_humanGRCh38_bt_ref_bact_fungi.txt" % cleaned_dir, 
+        "%s/good_humanGRCh38_bt_ref_bact_fungi.fastq" % cleaned_dir, 
+        "%s/hq_decont_reads.fasta" % cleaned_dir,
+        "%s/fastp.json" % cleaned_dir]:
         try:
             os.remove(rf)
         except FileNotFoundError:
@@ -472,11 +538,10 @@ def main(args):
 
     DB_DIR = os.path.expandvars(args.dbdir)
     # Specify all databases for decontamination steps
-    contaminant_db = [os.path.join(DB_DIR, "human/bwa/humanGRCh38")]
-    for i in range(1, N_FILES_BACT+1):
-        contaminant_db+= [os.path.join(DB_DIR, "bacteria/bwa/bact%d" % i)]
-    contaminant_db+= [os.path.join(DB_DIR, "fungi/bwa/fungi1"),
-        os.path.join(DB_DIR, "bovine/bwa/bt_ref")]
+    contaminant_db = [
+        os.path.join(DB_DIR, "human/bwa/humanGRCh38"),
+        os.path.join(DB_DIR, "bovine/bwa/bt_ref")
+        ]
 
     if args.run:
         miseq_dir = args.run.rstrip("/")
@@ -532,10 +597,17 @@ def main(args):
             input_vict = os.path.join(sample_dir, cont_reads)
             decont_reads = victor(input_reads=input_vict, contaminant=cont, n_proc=n_proc)
         cont_reads = decont_reads  # decontaminated reads are input for next round (equal across samples)
+    
+    # Decontamination against bacterial and fungal db
+    logging.info("decontamination against bacterial and fungal database")
+    bact_fung_db=f"{DB_DIR}/bact_fungi"
+    for sample_dir in s_dirs:
+        logging.info("--- now for sample %s" % sample_dir)
+        input_vict = os.path.join(sample_dir, cont_reads)
+        file_to_blast = victor_bact_fungal(input_reads=input_vict, decont_db=bact_fung_db, n_proc=n_proc)
 
     logging.info("blasting against viral database")
-    file_to_blast = cont_reads  # last output of victor is input for blast
-    logging.info("%d cores that will be used" % n_proc)
+    logging.info("%d cores will be used" % n_proc)
 
     logging.info("reading taxonomy files")
     nodes, names = get_nodes_names(DB_DIR)
@@ -558,7 +630,8 @@ def main(args):
     if len(s_dirs) > 1:
         run_tidytable(out_dir)
     else:
-        os.system("cp %s/orgs_list.tsv %s/orgs_species_found.tsv" % (out_dir, out_dir))
+        if os.path.exists("%s/orgs_list.tsv" % out_dir):
+            os.system("cp %s/orgs_list.tsv %s/orgs_species_found.tsv" % (out_dir, out_dir))
         os.system("cp %s/stats.tsv %s/run_reads_summary.tsv" % (out_dir, out_dir)) 
 
     return out_dir

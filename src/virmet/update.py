@@ -12,91 +12,11 @@ from collections import Counter
 import pandas as pd
 
 from virmet.common import (
-    N_FILES_BACT,
     n_proc,
-    bact_fung_query,
-    download_genomes,
     get_accs,
     run_child,
     viral_query,
 )
-
-
-def bact_fung_update(DB_DIR, query_type=None, picked=None):
-    """ """
-
-    cont_dir = os.path.join(DB_DIR, query_type)
-    os.chdir(cont_dir)
-    logging.info("updating %s, now in %s" % (query_type, cont_dir))
-    # read old info
-    os.rename(
-        "%s_refseq_info.tsv" % query_type, "old_%s_refseq_info.tsv" % query_type
-    )
-    old_urls = bact_fung_query(
-        query_type=query_type,
-        download=False,
-        info_file="old_%s_refseq_info.tsv" % query_type,
-        target_folder=cont_dir,
-    )
-
-    logging.info("%d assemblies were present in refseq" % len(old_urls))
-    # download new info
-    new_urls = bact_fung_query(
-        query_type=query_type, download=True, target_folder=cont_dir
-    )
-    logging.info("%d assemblies are now in refseq" % len(new_urls))
-    to_add = set(new_urls) - set(old_urls)
-    to_add = list(to_add)
-
-    if not to_add:
-        logging.info("no new sequences in %s database" % query_type)
-        print("no new sequences in %s database" % query_type, file=sys.stderr)
-
-    for t in to_add:
-        logging.debug("genome from %s will be added" % t)
-        if query_type == "bacteria":
-            download_genomes(to_add, prefix="tmp", n_files=N_FILES_BACT)
-            for i in range(1, N_FILES_BACT + 1):
-                run_child(
-                    f"bgzip -@ {n_proc} -c fasta/tmp{i}.fasta >> fasta/bact{i}.fasta.gz"
-                )
-                os.remove("fasta/bact%d.fasta.gz" % i)
-        elif query_type == "fungi":
-            download_genomes(to_add, prefix="tmp", n_files=1)
-            run_child(f"bgzip -@ {n_proc} -c fasta/tmp1.fasta >> fasta/fungi1.fasta.gz")
-            os.remove("fasta/fungi1.fasta.gz")
-
-    if picked is None:
-        return
-
-    # present_ids = itertools.chain.from_iterable([get_gids(f) for f in glob.glob('fasta/*.fasta.gz')])
-    present_ids = itertools.chain.from_iterable(
-        [get_accs(f) for f in glob.glob("fasta/*.fasta.gz")]
-    )
-    picked_ids = [line.strip() for line in open(picked)]
-    to_add = set(present_ids) - set(picked_ids)
-
-    if not to_add:
-        logging.info("no new sequence manually added")
-        print("no new sequence manually added", file=sys.stderr)
-
-    for i, gid in enumerate(to_add):
-        if query_type == "bacteria":
-            fileout = "fasta/bact%d.fasta.gz" % ((i % N_FILES_BACT) + 1)
-        elif query_type == "fungi":
-            fileout = "fasta/fungi%d.fasta.gz" % ((i % 1) + 1)
-        else:
-            raise ValueError(f"Invalid query_type value: '{query_type}'")
-        run_child(
-            "bgzip -@ %d -c <(efetch -db nuccore -id %s -format fasta) >> %s"
-            % (n_proc, gid, fileout),
-        )
-    logging.info("added %d sequences from file %s" % (i, picked))
-    if query_type == "bacteria":
-        for i in (1, N_FILES_BACT + 1):
-            run_child(f"bgzip -@ {n_proc} -r fasta/bact{i}.fasta.gz")
-    elif query_type == "fungi":
-        run_child(f"bgzip -@ {n_proc} -r fasta/fungi1.fasta.gz")
 
 
 def virupdate(DB_DIR, viral_type, picked=None, update_min_date=None):
@@ -224,7 +144,3 @@ def main(args):
         sys.exit("update either viral or bacterial or fungal in a single call")
     if args.viral:
         virupdate(DB_DIR, args.viral, args.picked, args.update_min_date)
-    elif args.bact:
-        bact_fung_update(DB_DIR, query_type="bacteria", picked=args.picked)
-    elif args.fungal:
-        bact_fung_update(DB_DIR, query_type="fungi", picked=args.picked)

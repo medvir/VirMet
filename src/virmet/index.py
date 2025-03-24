@@ -6,7 +6,7 @@ import logging
 import multiprocessing as mp
 import os
 
-from virmet.common import N_FILES_BACT, run_child, n_proc
+from virmet.common import run_child, n_proc
 
 def single_bwa_index(index_params):
     """run a single bwa indexing job"""
@@ -60,20 +60,11 @@ def main(args):
         )
         run_child(cml)
 
-    index_pairs = []  # holds (fasta, index) tuples to run in parallel
-    if args.bact:
-        bwa_dir = os.path.join(DB_DIR, "bacteria", "bwa")
-        try:
-            os.mkdir(bwa_dir)
-        except FileExistsError as err:
-            logging.warning("FileExistsError: %s" % err)
-        for i in range(1, N_FILES_BACT + 1):
-            fasta_file = os.path.join(
-                DB_DIR, "bacteria", "fasta", "bact%d.fasta.gz" % i
-            )
-            index_prefix = os.path.join(bwa_dir, "bact%d" % i)
-            index_pairs.append((fasta_file, index_prefix))
+    if args.bact_fungal:
+        idx_dir = os.path.join(DB_DIR, "bact_fungi")
+        run_child(f"kraken2-build --build --threads {n_proc} --db {idx_dir}")
 
+    index_pairs = []  # holds (fasta, index) tuples to run in parallel
     if args.human:
         bwa_dir = os.path.join(DB_DIR, "human", "bwa")
         try:
@@ -82,16 +73,6 @@ def main(args):
             logging.warning("FileExistsError: %s" % err)
         fasta_file = os.path.join(DB_DIR, "human", "fasta", "GRCh38.fasta.gz")
         index_prefix = os.path.join(bwa_dir, "humanGRCh38")
-        index_pairs.append((fasta_file, index_prefix))
-
-    if args.fungal:
-        bwa_dir = os.path.join(DB_DIR, "fungi", "bwa")
-        try:
-            os.mkdir(bwa_dir)
-        except FileExistsError as err:
-            logging.warning("FileExistsError: %s" % err)
-        fasta_file = os.path.join(DB_DIR, "fungi", "fasta", "fungi1.fasta.gz")
-        index_prefix = os.path.join(bwa_dir, "fungi1")
         index_pairs.append((fasta_file, index_prefix))
 
     if args.bovine:

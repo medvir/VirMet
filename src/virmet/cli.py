@@ -64,10 +64,7 @@ def main():
     )
     parser_fetch.add_argument("--human", help="human", action="store_true")
     parser_fetch.add_argument(
-        "--bact", help="bacterial (RefSeq)", action="store_true"
-    )
-    parser_fetch.add_argument(
-        "--fungal", help="fungal (RefSeq)", action="store_true"
+        "--bact_fungal", help="bacterial and fungal(RefSeq)", action="store_true"
     )
     parser_fetch.add_argument(
         "--bovine", help="bovine (Bos taurus)", action="store_true"
@@ -98,25 +95,13 @@ def main():
         default=False,
     )
     parser_update.add_argument(
-        "--bact",
-        help="update bacterial database",
-        action="store_true",
-        default=False,
-    )
-    parser_update.add_argument(
-        "--fungal",
-        help="update fungal database",
-        action="store_true",
-        default=False,
-    )
-    parser_update.add_argument(
         "--picked",
         help="file with additional sequences, one GI per line",
         default=None,
     )
     parser_update.add_argument(
         "--update_min_date",
-        help="update viral [n]ucleic/[p]rotein with sequences produced after the date YYYY/MM/DD (e.g. 2022/09/01)",
+        help="update viral [n]ucleic/[p]rotein with sequences produced after the date YYYY/MM/DD",
         default=None,
     )
     parser_update.add_argument(
@@ -137,14 +122,9 @@ def main():
         "--human", action="store_true", help="make bwa index of human database"
     )
     parser_index.add_argument(
-        "--bact",
+        "--bact_fungal",
         action="store_true",
-        help="make bwa index of bacterial database",
-    )
-    parser_index.add_argument(
-        "--fungal",
-        action="store_true",
-        help="make bwa index of fungal database",
+        help="build kraken2 bacterial and viral database",
     )
     parser_index.add_argument(
         "--bovine",
