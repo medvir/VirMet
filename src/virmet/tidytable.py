@@ -27,14 +27,14 @@ def run_tidytable(outdir):
         )
         df["sample"] = sd
         df["run"] = run
-        all_reads = all_reads.concat([all_reads, df])
+        all_reads = pd.concat([all_reads, pd.DataFrame(df)])
         # parse and save orgs_list files
         orgs_file = os.path.join(sd, "orgs_list.tsv")
         if os.path.isfile(orgs_file):
             df = pd.read_csv(orgs_file, sep="\t", header=0)
             df["sample"] = sd
             df["run"] = run
-            all_orgs = all_orgs.append(df)
+            all_orgs = pd.concat([all_orgs, pd.DataFrame(df)])
 
     all_orgs.to_csv("%s/orgs_species_found.tsv" % outdir, sep="\t", index=False)
     all_reads.to_csv("%s/run_reads_summary.tsv" % outdir, sep="\t", index=False)

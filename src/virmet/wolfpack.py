@@ -271,7 +271,7 @@ def victor_bact_fungal(input_reads, decont_db, n_proc):
     cont_real_link = os.path.realpath(decont_db)
     logging.info("Database real path: %s" % cont_real_link)
     cml = (
-        "kraken2 --db %s --threads %d --minimum-hit-groups 4 --confidence 0.75 --report %s --unclassified-out %s %s > %s 2>&1"
+        "kraken2 --db %s --threads %d --minimum-hit-groups 4 --confidence 0.6 --report %s --unclassified-out %s %s > %s 2>&1"
         % (decont_db, n_proc, report_name, clean_name, input_reads, err_name)
     )
     logging.debug("running kraken2 with %s on %d cores" % (rf_head, n_proc))
@@ -283,11 +283,11 @@ def victor_bact_fungal(input_reads, decont_db, n_proc):
         sep = "\t", 
         names = ["Percentage", "Total", "Assigned", "Code", "Taxid", "Sciname"])
     try:
-        mapped_bact = int(stats_kraken.loc[stats_kraken["Taxid"]==2 , "Total"])
+        mapped_bact = int(stats_kraken.loc[stats_kraken["Taxid"]==2 , "Total"].iloc[0])
     except:
         mapped_bact = 0
     try:
-        mapped_fungi = int(stats_kraken.loc[stats_kraken["Taxid"]==4751, "Total"])
+        mapped_fungi = int(stats_kraken.loc[stats_kraken["Taxid"]==4751, "Total"].iloc[0])
     except:
         mapped_fungi = 0
 
@@ -306,6 +306,7 @@ def victor_bact_fungal(input_reads, decont_db, n_proc):
 def viral_blast(file_in, n_proc, nodes, names, out_dir, DB_DIR):
     """runs blast against viral database"""
 
+    logging.info("now sample %s" % file_in)
     viral_reads = os.path.join(out_dir, "viral_reads.fastq.gz")
     undet_reads = os.path.join(out_dir, "undetermined_reads.fastq.gz")
     # on hot start, blast again all decontaminated reads
@@ -362,7 +363,7 @@ def viral_blast(file_in, n_proc, nodes, names, out_dir, DB_DIR):
         % (
             fasta_file,
             DB_real_path,
-            n_proc,
+            int(n_proc/2),
             unique_file
         )
     )
@@ -466,6 +467,7 @@ def viral_blast(file_in, n_proc, nodes, names, out_dir, DB_DIR):
     )
     orgs_list = os.path.join(child_dir, "orgs_list.tsv")
     ds.to_csv(orgs_list, header=True, sep="\t", index=False)
+    logging.info("sample %s blasted" % file_in)
 
 
 def cleaning_up(cleaned_dir):
@@ -612,11 +614,17 @@ def main(args):
     logging.info("reading taxonomy files")
     nodes, names = get_nodes_names(DB_DIR)
 
+    myblast = []
     for sample_dir in s_dirs:
-        logging.info("now sample %s" % sample_dir)
-        viral_blast(os.path.join(sample_dir, file_to_blast), n_proc, nodes, names, out_dir, DB_DIR)
-        logging.info("sample %s blasted" % sample_dir)
-
+        myblast.append((os.path.join(sample_dir, file_to_blast), n_proc, nodes, names, out_dir, DB_DIR))
+    # Run 2 blastn commands in parallel for faster performance
+    numb_op = int(len(myblast)/2)
+    with mp.Pool(2) as pool_blast:
+        _ = pool_blast.starmap_async(viral_blast, myblast, chunksize=numb_op)
+        # Wait to finish all the blastn before going to the next steps
+        pool_blast.close()
+        pool_blast.join()
+    
     logging.info("summarising and cleaning up")
     for sample_dir in s_dirs:
         logging.info("now in %s" % sample_dir)
@@ -640,4 +648,4 @@ def main(args):
 if __name__ == "__main__":
     assert os.path.exists(sys.argv[1])
     all_nodes, all_names = get_nodes_names(DB_DIR)
-    viral_blast(sys.argv[1], 2, all_nodes, all_names, "./")
+    viral_blast(sys.argv[1], 2, all_nodes, all_names, "./", DB_DIR)
