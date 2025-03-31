@@ -20,11 +20,11 @@ def fetch_viral(DB_DIR, viral_mode, n_proc, compression=True):
     if viral_mode == "n":
         logging.info("downloading viral nuccore sequences")
         target_dir = os.path.join(DB_DIR, "viral_nuccore")
-        ncbi_acc = viral_query("n")
+        ncbi_acc = viral_query(DB_DIR, "n")
     elif viral_mode == "p":
         logging.info("downloaded viral protein sequences")
         target_dir = os.path.join(DB_DIR, "viral_protein")
-        ncbi_acc = viral_query("p")
+        ncbi_acc = viral_query(DB_DIR, "p")
     else:
         raise ValueError(f"Invalid viral mode: {viral_mode}")
     
