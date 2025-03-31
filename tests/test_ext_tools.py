@@ -20,9 +20,12 @@ class TestToolsCallable(unittest.TestCase):
     def test_samtools(self):
         self.assertIsNotNone(which("samtools"))
 
-    def test_bwamem2(self):
-        self.assertIsNotNone(which("bwa-mem2"))
+    def test_bwa(self):
+        self.assertIsNotNone(which("bwa"))
     
+    def test_kraken(self):
+        self.assertIsNotNone(which("kraken2"))
+
     def test_fastp(self):
         self.assertIsNotNone(which("fastp"))
     

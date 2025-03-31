@@ -42,6 +42,25 @@ def merge_coverage(series):
         covered |= s
     return len(covered)
 
+def run_blast(fasta_file, Database, n_proc, unique_file, delete_fasta=False):
+    """Run blastn with task megablast"""
+    cml = (
+        "blastn -task megablast \
+            -query %s -db %s \
+            -num_threads %d \
+            -max_target_seqs 1 \
+            -max_hsps 1 \
+            -outfmt '6 qseqid sseqid ssciname stitle pident qcovs score length mismatch gapopen qstart qend sstart send staxid' >> %s"
+        % (
+            fasta_file,
+            Database,
+            n_proc,
+            unique_file
+        )
+    )
+    run_child(cml)
+    if delete_fasta:
+        os.remove(fasta_file)
 
 def get_nodes_names(dir_name):
     """Look for dmp taxonomy files in dir_name, read and return them
@@ -271,7 +290,7 @@ def victor_bact_fungal(input_reads, decont_db, n_proc):
     cont_real_link = os.path.realpath(decont_db)
     logging.info("Database real path: %s" % cont_real_link)
     cml = (
-        "kraken2 --db %s --threads %d --minimum-hit-groups 4 --confidence 0.6 --report %s --unclassified-out %s %s > %s 2>&1"
+        "kraken2 --db %s --threads %d --minimum-hit-groups 4 --confidence 0.5 --report %s --unclassified-out %s %s > %s 2>&1"
         % (decont_db, n_proc, report_name, clean_name, input_reads, err_name)
     )
     logging.debug("running kraken2 with %s on %d cores" % (rf_head, n_proc))
@@ -306,7 +325,6 @@ def victor_bact_fungal(input_reads, decont_db, n_proc):
 def viral_blast(file_in, n_proc, nodes, names, out_dir, DB_DIR):
     """runs blast against viral database"""
 
-    logging.info("now sample %s" % file_in)
     viral_reads = os.path.join(out_dir, "viral_reads.fastq.gz")
     undet_reads = os.path.join(out_dir, "undetermined_reads.fastq.gz")
     # on hot start, blast again all decontaminated reads
@@ -347,28 +365,31 @@ def viral_blast(file_in, n_proc, nodes, names, out_dir, DB_DIR):
     # blast needs access to taxdb files to retrieve organism name
     os.environ["BLASTDB"] = DB_DIR
     logging.info("runnning on %d cores" % n_proc)
-    # if Darwin then xargs_thread must be n_proc
     DB_real_path = os.path.realpath(
         os.path.join(DB_DIR, "viral_nuccore/viral_db")
     )
     logging.info("Database real path: %s" % DB_real_path)
-    cml = (
-        "blastn -task megablast \
-            -query %s -db %s \
-            -num_threads %d \
-            -out %s \
-            -max_target_seqs 1 \
-            -max_hsps 1 \
-            -outfmt '6 qseqid sseqid ssciname stitle pident qcovs score length mismatch gapopen qstart qend sstart send staxid'"
-        % (
-            fasta_file,
-            DB_real_path,
-            int(n_proc/2),
-            unique_file
-        )
-    )
-    logging.debug("running blast now")
-    run_child(cml)
+
+    if tot_seqs > 50000: #If there are less than 50000 sequences, it's not worth it
+        max_n = int((tot_seqs / n_proc / 2) + 1) * 2 # Multiply by 2 because it's a fasta
+        # We want to split in n_proc processors
+        cml = "split -l %d %s %s/splitblastn --additional-suffix=.fasta" % (max_n, fasta_file, child_dir)
+        logging.info("Splitting fasta into smaller files for faster blastn")
+        run_child(cml)
+        # Find all splitted files and run blast on them
+        splitted_files = glob.glob(os.path.join(child_dir, "splitblastn*"))
+        myblast = []
+        for split_file in splitted_files:
+            myblast.append((split_file, DB_real_path, 1, unique_file, True))
+        # Run blastn commands in parallel for faster performance
+        with mp.Pool(n_proc) as pool_blast:
+            _ = pool_blast.starmap_async(run_blast, myblast, chunksize = 2)
+            # Wait to finish all the blastn before going to the next steps
+            pool_blast.close()
+            pool_blast.join()
+    else:
+        run_blast(fasta_file, DB_real_path, n_proc, unique_file)
+
     with open(unique_file, 'r') as original:
         data = original.read()
     with open(unique_file, 'w') as modified:
@@ -467,7 +488,6 @@ def viral_blast(file_in, n_proc, nodes, names, out_dir, DB_DIR):
     )
     orgs_list = os.path.join(child_dir, "orgs_list.tsv")
     ds.to_csv(orgs_list, header=True, sep="\t", index=False)
-    logging.info("sample %s blasted" % file_in)
 
 
 def cleaning_up(cleaned_dir):
@@ -614,16 +634,10 @@ def main(args):
     logging.info("reading taxonomy files")
     nodes, names = get_nodes_names(DB_DIR)
 
-    myblast = []
     for sample_dir in s_dirs:
-        myblast.append((os.path.join(sample_dir, file_to_blast), n_proc, nodes, names, out_dir, DB_DIR))
-    # Run 2 blastn commands in parallel for faster performance
-    numb_op = int(len(myblast)/2)
-    with mp.Pool(2) as pool_blast:
-        _ = pool_blast.starmap_async(viral_blast, myblast, chunksize=numb_op)
-        # Wait to finish all the blastn before going to the next steps
-        pool_blast.close()
-        pool_blast.join()
+        logging.info("now sample %s" % sample_dir)
+        viral_blast(os.path.join(sample_dir, file_to_blast), n_proc, nodes, names, out_dir, DB_DIR)
+        logging.info("sample %s blasted" % sample_dir)
     
     logging.info("summarising and cleaning up")
     for sample_dir in s_dirs:
