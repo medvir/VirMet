@@ -124,7 +124,7 @@ def main():
     parser_index.add_argument(
         "--bact_fungal",
         action="store_true",
-        help="build kraken2 bacterial and viral database",
+        help="build kraken2 bacterial and fungal database",
     )
     parser_index.add_argument(
         "--bovine",

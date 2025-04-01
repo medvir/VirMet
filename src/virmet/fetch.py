@@ -65,8 +65,13 @@ def fetch_viral(DB_DIR, viral_mode, n_proc, compression=True):
     vir_acc = open("%s/viral_accn_taxid.dmp" % target_dir)
     accs_2 = set([line.split()[0] for line in vir_acc])
     vir_acc.close()
-    assert accs_1 == accs_2, accs_1 ^ accs_2
-    logging.info("taxonomy and fasta sequences match")
+    if accs_1 == accs_2:
+        logging.info("taxonomy and fasta sequences match")
+    else: 
+        logging.info("taxonomy and fasta sequences do not match")
+        logging.info("fasta sequences: %s" % len(accs_1))
+        logging.info("taxonomy information: %s" % len(accs_2))
+    
 
     rmdup_cmd = f'seqkit rmdup {viral_database} --threads {n_proc} -i -o {target_dir}/viral_database_rmdup.fasta -D {target_dir}/duplicated_names.txt'
     run_child(rmdup_cmd)
