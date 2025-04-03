@@ -124,7 +124,7 @@ def infer_species(
 
     # Define patterns that should be excluded or blocked
     phages_patterns = r"emesvirus zinderi|tunavirus|phage|escherichia|streptococcus|staphylococcus|bacillus|actinomyces|ostreococcus|myoviridae|clostridium|shigella|haemophilus"
-    uninteresting_patterns = r"endogenous retrovirus|baboon|bovine|ungulate|bosavirus|betabaculovirus|porcellio scaber|sheep|citrus exocorti|saccharomyces"
+    uninteresting_patterns = r"endogenous retrovirus|baboon|bovine|ungulate|bosavirus|betabaculovirus|porcellio scaber|sheep|citrus exocorti|saccharomyces|ymantria dispar"
     # Drop organisms with blocked or excluded patterns in the name
     orgs_list.drop(
         orgs_list[
