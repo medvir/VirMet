@@ -49,7 +49,6 @@ def run_blast(fasta_file, Database, n_proc, unique_file, delete_fasta=False):
             -query %s -db %s \
             -num_threads %d \
             -max_target_seqs 1 \
-            -max_hsps 1 \
             -outfmt '6 qseqid sseqid ssciname stitle pident qcovs score length mismatch gapopen qstart qend sstart send staxid' >> %s"
         % (
             fasta_file,
@@ -390,6 +389,8 @@ def viral_blast(file_in, n_proc, nodes, names, out_dir, DB_DIR):
     else:
         run_blast(fasta_file, DB_real_path, n_proc, unique_file)
 
+    # Take only the best hit, aka hsps
+    run_child("awk '$1!=last {last=$1; print}' %s > tmp && mv tmp %s" % (unique_file, unique_file))
     with open(unique_file, 'r') as original:
         data = original.read()
     with open(unique_file, 'w') as modified:
