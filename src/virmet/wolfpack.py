@@ -49,8 +49,8 @@ def run_blast(fasta_file, Database, n_proc, unique_file, delete_fasta=False):
             -query %s -db %s \
             -num_threads %d \
             -max_target_seqs 1 \
-            -max_hsps 1 \
-            -outfmt '6 qseqid sseqid ssciname stitle pident qcovs score length mismatch gapopen qstart qend sstart send staxid' >> %s"
+            -outfmt '6 qseqid sseqid ssciname stitle pident qcovs score length mismatch gapopen qstart qend sstart send staxid' | \
+            awk '$1!=last {last=$1; print}' >> %s"
         % (
             fasta_file,
             Database,
