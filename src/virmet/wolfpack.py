@@ -42,19 +42,19 @@ def merge_coverage(series):
         covered |= s
     return len(covered)
 
-def run_blast(fasta_file, Database, n_proc, unique_file, delete_fasta=False):
+def run_blast(fasta_file, Database, n_proc, out_file, delete_fasta=False):
     """Run blastn with task megablast"""
     cml = (
         "blastn -task megablast \
             -query %s -db %s \
             -num_threads %d \
-            -max_target_seqs 1 \
-            -outfmt '6 qseqid sseqid ssciname stitle pident qcovs score length mismatch gapopen qstart qend sstart send staxid' >> %s"
+            -out %s \
+            -outfmt '6 qseqid sseqid ssciname stitle pident qcovs score length mismatch gapopen qstart qend sstart send staxid'"
         % (
             fasta_file,
             Database,
             n_proc,
-            unique_file
+            out_file
         )
     )
     run_child(cml)
@@ -378,24 +378,33 @@ def viral_blast(file_in, n_proc, nodes, names, out_dir, DB_DIR):
         # Find all splitted files and run blast on them
         splitted_files = glob.glob(os.path.join(child_dir, "splitblastn*"))
         myblast = []
+        n_out = 1
         for split_file in splitted_files:
-            myblast.append((split_file, DB_real_path, 1, unique_file, True))
+            tmp_output = os.path.join(child_dir, "tmp_blastn_%d.tsv" % n_out)
+            myblast.append((split_file, DB_real_path, 1, tmp_output, True))
+            n_out += 1
         # Run blastn commands in parallel for faster performance
         with mp.Pool(n_proc) as pool_blast:
             _ = pool_blast.starmap_async(run_blast, myblast, chunksize = 2)
             # Wait to finish all the blastn before going to the next steps
             pool_blast.close()
             pool_blast.join()
+        tmp_outputs = glob.glob(os.path.join(child_dir, "tmp_blastn_*"))
+        with open(unique_file, 'w') as outfile:
+            outfile.write("qseqid\tsseqid\tssciname\tstitle\tpident\tqcovs\tscore\tlength\tmismatch\tgapopen\tqstart\tqend\tsstart\tsend\tstaxid\n")
+            for fname in tmp_outputs:
+                with open(fname) as infile:
+                    outfile.write(infile.read())
+                os.remove(fname)
     else:
         run_blast(fasta_file, DB_real_path, n_proc, unique_file)
+        with open(unique_file, 'r') as original:
+            data = original.read()
+        with open(unique_file, 'w') as modified:
+            modified.write("qseqid\tsseqid\tssciname\tstitle\tpident\tqcovs\tscore\tlength\tmismatch\tgapopen\tqstart\tqend\tsstart\tsend\tstaxid\n" + data)
 
     # Take only the best hit, aka hsps
-    run_child("awk '$1!=last {last=$1; print}' %s > tmp && mv tmp %s" % (unique_file, unique_file))
-    with open(unique_file, 'r') as original:
-        data = original.read()
-    with open(unique_file, 'w') as modified:
-        modified.write("qseqid\tsseqid\tssciname\tstitle\tpident\tqcovs\tscore\tlength\tmismatch\tgapopen\tqstart\tqend\tsstart\tsend\tstaxid\n/" + data)
-
+    run_child("awk '!a[$1]++' %s >> %s/mtmp; mv %s/mtmp %s" % (unique_file, child_dir, child_dir, unique_file))
     logging.debug("saving blast database info")
     cml = shlex.split(
         "blastdbcmd -db %s -info" % DB_real_path
