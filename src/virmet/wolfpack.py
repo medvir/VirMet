@@ -308,12 +308,17 @@ def victor_bact_fungal(input_reads, decont_db, n_proc):
         mapped_fungi = int(stats_kraken.loc[stats_kraken["Taxid"]==4751, "Total"].iloc[0])
     except:
         mapped_fungi = 0
+    try:
+        mapped_cellorg = int(stats_kraken.loc[stats_kraken["Taxid"]==131567 , "Total"].iloc[0]) - mapped_bact - mapped_fungi
+    except:
+        mapped_cellorg = 0
 
     # Write statistics to output
     stats_file = os.path.join(os.path.split(input_reads)[0], "stats.tsv")
     oh = open(stats_file, "a")
     oh.write("matching_bacteria\t%d\n" % mapped_bact)
     oh.write("matching_fungi\t%d\n" % mapped_fungi)
+    oh.write("matching_other_cellular_organisms\t%d\n" % mapped_cellorg)
     oh.close()
 
     if os.path.split(input_reads)[1] != "good.fastq":
