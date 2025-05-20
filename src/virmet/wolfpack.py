@@ -9,6 +9,7 @@ import multiprocessing as mp
 import os
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 import warnings
@@ -610,13 +611,21 @@ def main(args):
         logging.info("running on a single file %s" % all_fastq_files[0])
         run_name = os.path.split(args.file)[1].split(".")[0]
 
-    out_dir = "virmet_output_%s" % run_name
+    out_dir_final = "virmet_output_%s" % run_name
+    out_dir_final = os.path.abspath(out_dir_final)
+
+    if os.path.isdir(out_dir_final):
+        logging.error("directory %s already exists" % out_dir_final)
+        raise ValueError("directory %s already exists" % out_dir_final)
+    
+    out_dir = "/tmp/virmet_output_%s" % run_name
     out_dir = os.path.abspath(out_dir)
 
     try:
         os.mkdir(out_dir)
     except OSError:
-        logging.error("directory %s exists" % out_dir)
+        shutil.rmtree(out_dir)
+        os.mkdir(out_dir)
 
     # run hunter on all fastq files
     s_dirs = []
@@ -671,7 +680,9 @@ def main(args):
             os.system("cp %s/orgs_list.tsv %s/orgs_species_found.tsv" % (out_dir, out_dir))
         os.system("cp %s/stats.tsv %s/run_reads_summary.tsv" % (out_dir, out_dir)) 
 
-    return out_dir
+    # Move results to final directory
+    shutil.move(out_dir, out_dir_final)
+    return out_dir_final
 
 
 if __name__ == "__main__":
