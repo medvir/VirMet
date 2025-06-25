@@ -605,7 +605,14 @@ def main(args):
             os.path.split(fq)[1].split("_")[1] for fq in rel_fastq_files
         ]
         logging.info("samples to run: %s", " ".join(samples_to_run))
-        all_fastq_files = [os.path.abspath(f) for f in rel_fastq_files]
+        if not args.noctrls:
+            all_fastq_files = [os.path.abspath(f) for f in rel_fastq_files]
+        else:
+            all_fastq_files = [
+                os.path.abspath(f) 
+                for f in rel_fastq_files 
+                if not re.search(r'ntc-|Undetermin', f)
+            ]
     elif args.file:
         all_fastq_files = [os.path.abspath(args.file)]
         logging.info("running on a single file %s" % all_fastq_files[0])

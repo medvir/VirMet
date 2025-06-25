@@ -155,6 +155,11 @@ def main():
         "--nocovplot",
         action="store_true",
         help="do not make the covplots. Default: make them")
+    parser_wolf.add_argument(
+        "--noctrls",
+        action="store_true",
+        help="do not analyse ntc- or Undetermined samples. Default: analyse them"
+    )
     parser_wolf.set_defaults(func=wolfpack_run)
 
     # exit so that log file is not written
