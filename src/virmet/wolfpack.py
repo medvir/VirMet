@@ -420,7 +420,7 @@ def viral_blast(file_in, n_proc, nodes, names, out_dir, DB_DIR):
 
     logging.debug("filtering and grouping by hit sequence")
 
-    with open(unique_file, "rbU") as f:
+    with open(unique_file, "r") as f:
         num_lines = sum(1 for _ in f)
     
     if num_lines == 1:
@@ -514,7 +514,7 @@ def cleaning_up(cleaned_dir):
     all_reads = os.path.join(cleaned_dir, "hq_decont_reads.fastq")
     undet_reads = os.path.join(cleaned_dir, "undetermined_reads.fastq")
 
-    with open(unique_file, "rbU") as f:
+    with open(unique_file, "r") as f:
         num_lines = sum(1 for _ in f)
     
     if num_lines != 1:
