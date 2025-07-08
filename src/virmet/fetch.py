@@ -140,9 +140,9 @@ def fetch_human(DB_DIR, n_proc):
     out_dir = os.path.join(target_dir, "fasta")
     os.makedirs(out_dir, exist_ok=True)
     fasta_url = "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/latest_release/GRCh38.primary_assembly.genome.fa.gz"
-    gtf_url = "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/latest_release/gencode.v47.primary_assembly.annotation.gtf.gz"
+    gtf_url = "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/latest_release/gencode.v48.primary_assembly.annotation.gtf.gz"
     logging.info("Downloading human annotation")
-    ftp_down(gtf_url, os.path.join(out_dir, "gencode.v47.primary_assembly.annotation.gtf.gz"))
+    ftp_down(gtf_url, os.path.join(out_dir, "gencode.v48.primary_assembly.annotation.gtf.gz"))
     logging.info("Downloading human genome and bgzip compressing")
     fasta_path = os.path.join(out_dir, "GRCh38.fasta")
     if os.path.exists(fasta_path):
