@@ -12,6 +12,7 @@ from virmet.common import (
     random_reduction,
     run_child,
     viral_query,
+    find_file
 )
 
 def fetch_viral(DB_DIR, viral_mode, n_proc, compression=True):
@@ -139,10 +140,14 @@ def fetch_human(DB_DIR, n_proc):
     os.makedirs(target_dir, exist_ok=True)
     out_dir = os.path.join(target_dir, "fasta")
     os.makedirs(out_dir, exist_ok=True)
-    fasta_url = "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/latest_release/GRCh38.primary_assembly.genome.fa.gz"
-    gtf_url = "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/latest_release/gencode.v48.primary_assembly.annotation.gtf.gz"
+    base_name = "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/latest_release/"
+    fasta_url = base_name + "GRCh38.primary_assembly.genome.fa.gz"
+    version_name = find_file(
+        base_name, 
+        r'gencode\.v[\d]+\.primary_assembly\.annotation\.gtf\.gz')
+    gtf_url = base_name + version_name
     logging.info("Downloading human annotation")
-    ftp_down(gtf_url, os.path.join(out_dir, "gencode.v48.primary_assembly.annotation.gtf.gz"))
+    ftp_down(gtf_url, os.path.join(out_dir, version_name))
     logging.info("Downloading human genome and bgzip compressing")
     fasta_path = os.path.join(out_dir, "GRCh38.fasta")
     if os.path.exists(fasta_path):
@@ -160,27 +165,35 @@ def fetch_bovine(DB_DIR, n_proc):
     chromosomes = [f"chr{chrom}" for chrom in range(1, 30)]
     chromosomes.extend(["chrX"])  # chrY is missing
     logging.info("Downloading bovine genome")
+
+    base_name = "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/"
+    version_name = find_file(
+        base_name,
+        r'href="([^"/]+/)"')
+    new_base = base_name + version_name + version_name.split("/")[0] + "_assembly_structure/"
     local_file_name = os.path.join(
-        target_dir, "fasta", "ref_Bos_taurus_GCF_002263795.3_ARS-UCD2.0.fasta"
+        target_dir, "fasta", "ref_Bos_taurus.fasta"
     )
     if os.path.exists(local_file_name):
         os.remove(local_file_name)
     for chrom in chromosomes:
         logging.debug("Downloading bovine chromosome %s" % chrom)
-        fasta_url = f"https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.3_ARS-UCD2.0/GCF_002263795.3_ARS-UCD2.0_assembly_structure/Primary_Assembly/assembled_chromosomes/FASTA/{chrom}.fna.gz"
+        fasta_url = new_base + f"Primary_Assembly/assembled_chromosomes/FASTA/{chrom}.fna.gz"
         ftp_down(fasta_url, local_file_name)
         logging.debug("Downloaded bovine chromosome %s" % chrom)
-    fasta_url = "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.3_ARS-UCD2.0/GCF_002263795.3_ARS-UCD2.0_assembly_structure/non-nuclear/assembled_chromosomes/FASTA/chrMT.fna.gz"
+
+    fasta_url = new_base + "non-nuclear/assembled_chromosomes/FASTA/chrMT.fna.gz"
     ftp_down(fasta_url, local_file_name)
     logging.debug("Downloaded bovine chromosome MT")
-    fasta_url = "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.3_ARS-UCD2.0/GCF_002263795.3_ARS-UCD2.0_assembly_structure/Primary_Assembly/unplaced_scaffolds/FASTA/unplaced.scaf.fna.gz"
+
+    fasta_url = new_base + "Primary_Assembly/unplaced_scaffolds/FASTA/unplaced.scaf.fna.gz"
     ftp_down(fasta_url, local_file_name)
     logging.debug("Downloaded bovine chromosome unplaced")
 
     run_child(f"bgzip -@ {n_proc} -f {local_file_name}")
     logging.info("Downloading gff annotation file")
-    gff_url = "https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Bos_taurus/latest_assembly_versions/GCF_002263795.3_ARS-UCD2.0/GCF_002263795.3_ARS-UCD2.0_genomic.gff.gz"
-    ftp_down(gff_url, os.path.join(target_dir, "fasta", "GCF_002263795.3_ARS-UCD2.0_genomic.gff.gz"))
+    gff_url = base_name + version_name + version_name.split("/")[0] + "_genomic.gff.gz"
+    ftp_down(gff_url, os.path.join(target_dir, "fasta", version_name.split("/")[0] + "_genomic.gff.gz"))
 
 
 def main(args):

@@ -5,6 +5,8 @@ import logging
 import multiprocessing as mp
 import os
 import random
+import re
+import requests
 import subprocess
 import urllib.request
 from Bio import Entrez
@@ -66,6 +68,18 @@ def retry(tries, delay=3, backoff=2):
 
     return deco_retry  # @retry(arg[, ...]) -> true decorator
 
+def safe_entrez_read(**kwargs):
+    retries = 5
+    for attempt in range(retries):
+        try:
+            with Entrez.esearch(**kwargs) as handle:
+                return Entrez.read(handle)
+        except RuntimeError as e:
+            logging.warning(f"Entrez failed: {e}")
+            if attempt < retries - 1:
+                sleep(3)
+            else:
+                raise
 
 def run_child(cmd):
     """Use subrocess.check_output to run an external program with arguments."""
@@ -147,6 +161,26 @@ def ftp_down(remote_url, local_url=None):
 
     outhandle.close()
 
+def find_file(base_url, file_regex):
+    """
+    Given a base directory URL, find the file matching the regex pattern.
+
+    Parameters:
+    - base_url: str, the URL to the directory to scan.
+    - file_regex: regex pattern to match file names
+    """
+    logging.info(f"Scanning {base_url}")
+    response = requests.get(base_url)
+    response.raise_for_status()
+
+    # Look for file matches
+    match = list(set(re.findall(file_regex, response.text)))[0]
+    if not match:
+        raise ValueError(f"No matching files found at {base_url} with pattern {file_regex}")
+
+    logging.info(f"Found file: {match}.")
+
+    return match
 
 def random_reduction(viral_mode, DB_DIR_UPDATE):
     # This code, identify sequences from the same species using their taxid.
@@ -296,7 +330,7 @@ def viral_query(DB_DIR_UPDATE, viral_db, update_min_date=None):
     # Retreive Accession numbers
     ncbi_accs = np.empty(tot_accs, dtype="U16")
     for i in range(0,tot_accs, batch_size):
-        run_child("sleep 2")
+        sleep(2)
         handle = Entrez.esearch(
             db=db_text, 
             idtype='acc', 
@@ -306,7 +340,16 @@ def viral_query(DB_DIR_UPDATE, viral_db, update_min_date=None):
             maxdate = str((datetime.today() - timedelta(2)).strftime('%Y/%m/%d')),
             retstart = i, 
             retmax = batch_size)
-        record = Entrez.read(handle)
+        record = safe_entrez_read(
+            db=db_text,
+            idtype='acc',
+            term=query_text,
+            datetype="pdat",
+            mindate="1980/01/01",
+            maxdate=str((datetime.today() - timedelta(2)).strftime('%Y/%m/%d')),
+            retstart=i,
+            retmax=batch_size
+        )
         id_list = np.array(record['IdList'])
         ncbi_accs[i:i+len(id_list)] = id_list
     return ncbi_accs
