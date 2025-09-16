@@ -2,6 +2,7 @@ taxo_files.zip
 human_chromosome_size.*
 viral_dates.txt
 docs/_build/
+documentation/site/
 */__pycache__
 */*/__pycache__
 .dropbox.attr
@@ -16,3 +17,4 @@ VirMet.egg-info/
 build/
 dist/
 installed_files.txt
+virmet.log
