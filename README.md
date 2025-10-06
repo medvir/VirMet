@@ -2,13 +2,10 @@ VirMet
 ------
 
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat-square)](http://bioconda.github.io/recipes/virmet/README.html)
-[![Build Status](https://travis-ci.org/ozagordi/VirMet.svg?branch=master)](https://travis-ci.org/ozagordi/VirMet)
-[![codecov.io](https://codecov.io/github/ozagordi/VirMet/coverage.svg?branch=master)](https://codecov.io/github/ozagordi/VirMet?branch=master)
-[![codebeat badge](https://codebeat.co/badges/bf360427-6915-4432-b43e-054716e8139f)](https://codebeat.co/projects/github-com-ozagordi-virmet-master)
 
 Watch out: only a few files are counted in coverage statistics.
 
-Full documentation on [Read the Docs](http://virmet.rtfd.org/en/latest/).
+Full documentation on [Read the Docs](https://medvir.github.io/VirMet/).
 
 A set of tools for viral metagenomics.
 
