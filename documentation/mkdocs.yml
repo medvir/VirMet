@@ -12,7 +12,6 @@ nav:
   - Preparation: Preparation.md
   - Virus scan: Wolfpack.md
   - Coverage plots: Covplot.md
-  - Other - Dockerised: Docker.md
 
 markdown_extensions:
   - pymdownx.extra
