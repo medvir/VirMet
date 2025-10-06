@@ -28,9 +28,6 @@ install everything, the tools VirMet depends on are:
 - samtools >= 1.3
 - seqtk
 
-Alternatively, we provide a [docker](http://docker.com) image with everything
-installed, see instructions for [dockerised VirMet](Docker.md).
-
 ## Commands
 On a Ubuntu 14.04 the following commands should provide a system wide
 installation of the tools mentioned above (sudo required).
