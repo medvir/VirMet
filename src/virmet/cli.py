@@ -27,6 +27,7 @@ from virmet import (
     index,
     update,
     wolfpack,
+    covplot
 )
 from virmet.__init__ import __version__
 
@@ -161,6 +162,29 @@ def main():
         help="do not analyse ntc- or Undetermined samples. Default: analyse them"
     )
     parser_wolf.set_defaults(func=wolfpack_run)
+
+     # create the parser for command "covplot"
+    parser_covplot = subparsers.add_parser("covplot", help="create coverage plot")
+    parser_covplot.add_argument(
+        "--outdir", 
+        type=str,
+        nargs = '?',
+        default = "./",
+        help="path to store the coverage plots"
+    )
+    parser_covplot.add_argument(
+        "--organism", 
+        default = None,
+        help="ssciname of the organism of interest"
+    )
+    parser_covplot.add_argument(
+        "--dbdir",
+        type=str,
+        nargs = '?',
+        default = "/data/virmet_databases/",
+        help="path to find and use the Virmet database",
+    )
+    parser_covplot.set_defaults(func=covplot.main)
 
     # exit so that log file is not written
     if len(sys.argv) == 1 or sys.argv[1] == "-h" or sys.argv[1] == "--help":

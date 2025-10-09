@@ -22,7 +22,7 @@ from Bio.Seq import Seq
 from Bio.SeqIO.FastaIO import SimpleFastaParser
 from Bio.SeqRecord import SeqRecord
 
-from virmet.common import run_child
+from virmet.common import run_child, n_proc
 
 
 def best_species(orgs_list, org_name, best_spec_field_type="ssciname"):
@@ -150,7 +150,7 @@ def infer_species(
     return orgs_list
 
 
-def run_covplot(outdir, n_proc, DB_DIR):
+def run_covplot(outdir, n_proc, DB_DIR, chosen_organism=None):
     """Extract the best species, realign reads, run ``covplot.R`` script to create the plot"""
 
     assert os.path.isdir(outdir), "Ensure that output directory exists"
@@ -162,7 +162,13 @@ def run_covplot(outdir, n_proc, DB_DIR):
         warn("File orgs_list.tsv does not exist")
         return
 
-    orgs_list = infer_species(extended_org_file)
+    if chosen_organism is None:
+        orgs_list = infer_species(extended_org_file)
+    else:
+        orgs_list_raw = pd.read_csv(extended_org_file, sep="\t", header=0)
+        orgs_list = orgs_list_raw[
+            orgs_list_raw["ssciname"].str.lower() == chosen_organism.lower()
+        ].copy()
 
     for organism in set(orgs_list["ssciname"]):
         best_spec = best_species(orgs_list, organism, "ssciname")
@@ -264,3 +270,10 @@ def run_covplot(outdir, n_proc, DB_DIR):
             "acc:%s seq_len:%s n_reads:%d perc_obs:%s"
             % (acc, seq_len, n_reads, perc_obs_string)
         )
+
+def main(args):
+    """function doing the covplots on request"""
+    outdir = os.path.expandvars(args.outdir)
+    organism = os.path.expandvars(args.organism)
+    DB_DIR = os.path.expandvars(args.dbdir)
+    run_covplot(outdir, n_proc, DB_DIR, organism)
