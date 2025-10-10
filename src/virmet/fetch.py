@@ -125,12 +125,12 @@ def fetch_bact_fungal(DB_DIR, n_proc):
 
     # download taxonomy first
     logging.info("Downloading taxonomy files")
-    run_child(f"kraken2-build --download-taxonomy --threads {n_proc} --db {target_dir}")
+    run_child(f"k2 download-taxonomy --threads {n_proc} --db {target_dir}")
     # Download fungal and bacterial databases
     logging.info("Downloading fungal database")
-    run_child(f"kraken2-build --download-library fungi --threads {n_proc} --db {target_dir} --no-masking")
+    run_child(f"k2 download-library --library fungi --threads {n_proc} --db {target_dir} --no-masking")
     logging.info("Downloading bacterial database")
-    run_child(f"kraken2-build --download-library bacteria --threads {n_proc} --db {target_dir} --no-masking")
+    run_child(f"k2 download-library --library bacteria --threads {n_proc} --db {target_dir} --no-masking")
 
 
 def fetch_human(DB_DIR, n_proc):

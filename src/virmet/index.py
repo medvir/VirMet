@@ -62,7 +62,7 @@ def main(args):
 
     if args.bact_fungal:
         idx_dir = os.path.join(DB_DIR, "bact_fungi")
-        run_child(f"kraken2-build --build --threads {n_proc} --db {idx_dir}")
+        run_child(f"k2 build --threads {n_proc} --db {idx_dir}")
 
     index_pairs = []  # holds (fasta, index) tuples to run in parallel
     if args.human:
