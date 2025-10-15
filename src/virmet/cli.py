@@ -87,7 +87,7 @@ def main():
 
     # create the parser for command "update"
     parser_update = subparsers.add_parser(
-        "update", help="update viral/bacterial database"
+        "update", help="update viral database"
     )
     parser_update.add_argument(
         "--viral",
@@ -104,6 +104,12 @@ def main():
         "--update_min_date",
         help="update viral [n]ucleic/[p]rotein with sequences produced after the date YYYY/MM/DD",
         default=None,
+    )
+    parser_update.add_argument(
+        "--no_db_compression",
+        help="do not compress the viral database",
+        action="store_true",
+        default=False,
     )
     parser_update.add_argument(
         "--dbdir",

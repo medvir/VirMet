@@ -240,7 +240,6 @@ def random_reduction(viral_mode, DB_DIR_UPDATE):
         # filter out the unselected IDs from viral_info
         # (viral_info_subsampled['accn'] in selected_accn_ls)
         # Keep refseq sequence: all accn of refseq sequences contain char  '_'
-        # viral_info_subsampled['accn'].contain('_')  viral_info_subsampled['accn'].str.contains('ON8')
         viral_info_subsampled = viral_info_subsampled.loc[
             (viral_info_subsampled["TaxId"] != taxid_to_subsample)
             | viral_info_subsampled["accn_version"].isin(selected_accn_ls)
@@ -291,9 +290,9 @@ def viral_query(DB_DIR_UPDATE, viral_db, update_min_date=None):
             "Viral Database Update is performed with sequences added to NCBI after %s .\n"
             % update_min_date,
         )
-        query_text += "-datetype PDAT -mindate %s" % str(
-            update_min_date
-        )  # -datetype MDAT -mindate %s'
+        min_date_chosen = update_min_date
+    else:
+        min_date_chosen = "1980/01/01"
 
     if viral_db == "n":
         target_dir = os.path.join(DB_DIR_UPDATE, "viral_nuccore")
@@ -319,7 +318,7 @@ def viral_query(DB_DIR_UPDATE, viral_db, update_min_date=None):
         idtype='acc',
         term=query_text, 
         datetype = "pdat", 
-        mindate = "1980/01/01", 
+        mindate = min_date_chosen, 
         maxdate = str((datetime.today() - timedelta(2)).strftime('%Y/%m/%d')), 
         retstart = 0,
         retmax = 1)
@@ -331,21 +330,12 @@ def viral_query(DB_DIR_UPDATE, viral_db, update_min_date=None):
     ncbi_accs = np.empty(tot_accs, dtype="U16")
     for i in range(0,tot_accs, batch_size):
         sleep(2)
-        handle = Entrez.esearch(
-            db=db_text, 
-            idtype='acc', 
-            term=query_text, 
-            datetype = "pdat",
-            mindate = "1980/01/01",
-            maxdate = str((datetime.today() - timedelta(2)).strftime('%Y/%m/%d')),
-            retstart = i, 
-            retmax = batch_size)
         record = safe_entrez_read(
             db=db_text,
             idtype='acc',
             term=query_text,
             datetype="pdat",
-            mindate="1980/01/01",
+            mindate=min_date_chosen,
             maxdate=str((datetime.today() - timedelta(2)).strftime('%Y/%m/%d')),
             retstart=i,
             retmax=batch_size

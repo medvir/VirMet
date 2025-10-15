@@ -23,7 +23,7 @@ def fetch_viral(DB_DIR, viral_mode, n_proc, compression=True):
         target_dir = os.path.join(DB_DIR, "viral_nuccore")
         ncbi_acc = viral_query(DB_DIR, "n")
     elif viral_mode == "p":
-        logging.info("downloaded viral protein sequences")
+        logging.info("downloading viral protein sequences")
         target_dir = os.path.join(DB_DIR, "viral_protein")
         ncbi_acc = viral_query(DB_DIR, "p")
     else:
@@ -125,7 +125,7 @@ def fetch_bact_fungal(DB_DIR, n_proc):
 
     # download taxonomy first
     logging.info("Downloading taxonomy files")
-    run_child(f"k2 download-taxonomy --threads {n_proc} --db {target_dir}")
+    run_child(f"k2 download-taxonomy --db {target_dir}")
     # Download fungal and bacterial databases
     logging.info("Downloading fungal database")
     run_child(f"k2 download-library --library fungi --threads {n_proc} --db {target_dir} --no-masking")

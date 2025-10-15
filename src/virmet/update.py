@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
 """Update viral and bacterial database based on a new query to ncbi and a manually added list of GIs"""
 
-import glob
-import itertools
 import logging
 import os
-import sys
-import warnings
-from collections import Counter
+import re
 
 import pandas as pd
 
@@ -16,131 +12,102 @@ from virmet.common import (
     get_accs,
     run_child,
     viral_query,
+    random_reduction
 )
 
 
-def virupdate(DB_DIR, viral_type, picked=None, update_min_date=None):
+def virupdate(DB_DIR, viral_type, picked=None, update_min_date=None, compression=True):
     if viral_type == "n":
         db_type = "nuccore"
     elif viral_type == "p":
         db_type = "protein"
     else:
         raise ValueError(f'Invalid db_type value: "{db_type}".')
-    viral_dir = os.path.join(DB_DIR, f"viral_{db_type}")
+    target_dir = os.path.join(DB_DIR, f"viral_{db_type}")
+    viral_database = os.path.join(target_dir, "viral_database_updated.fasta")
+    viral_seqs_info = os.path.join(target_dir, "viral_seqs_info_updated.tsv")
+    final_database = os.path.join(target_dir, "viral_database.fasta")
+    final_viral_seqs = os.path.join(target_dir, "viral_seqs_info.tsv")
 
-    # this query downloads a new viral_seqs_info.tsv and parses the GI
-    logging.info("interrogating NCBI again")
-    os.chdir(viral_dir)
-    cml_search = viral_query(viral_type, update_min_date)
-    run_child(cml_search)
-    efetch_xtract = "efetch -format docsum < ncbi_search | xtract"
-    efetch_xtract += " -pattern DocumentSummary -element Caption TaxId Slen Organism Title AccessionVersion > viral_seqs_info.tsv"
-    run_child(efetch_xtract)
-    info_file = os.path.join(viral_dir, "viral_seqs_info.tsv")
-    info_seqs = pd.read_csv(
-        info_file,
-        sep="\t",
-        names=[
-            "Caption",
-            "TaxId",
-            "Slen",
-            "Organism",
-            "Title",
-            "AccessionVersion",
-        ],
-    )
-    new_ids = [str(acc) for acc in info_seqs["Caption"].tolist()]
-    logging.info("NCBI reports %d sequences" % len(new_ids))
+    # Set temporal file
+    out_file = os.path.join(target_dir, "ncbi_dataset")
 
-    # read ids already present in fasta file
-    fasta_db = os.path.join(viral_dir, "viral_database.fasta")
-    present_ids = get_accs(fasta_db)
-    logging.info("fasta file has %d sequences" % len(present_ids))
+    if update_min_date:
+        # this query downloads a new viral_seqs_info.tsv and parses the GI
+        logging.info("Interrogating NCBI")
+        ncbi_acc = viral_query(DB_DIR, viral_type, update_min_date)
+        ncbi_file = os.path.join(target_dir, "ncbi_batch.txt")
 
-    # sequences given manually by specifying file with GI
+        for i in range(0,len(ncbi_acc), 10000):
+            n_missing = min(len(ncbi_acc)-i, 10000)
+            newfile = open(ncbi_file,'w')
+            for acc_numb in ncbi_acc[i:i+n_missing]:
+                newfile.write(re.sub(r"[']", "", str(acc_numb))+"\n")
+            newfile.close()
+            cml_download = "datasets download virus genome accession --inputfile %s --api-key $NCBI_API_KEY --filename %s.zip " % (ncbi_file, out_file)
+            run_child(cml_download)
+            cml_extract = (
+                "unzip -o %s.zip -d %s/; rm %s.zip; cat %s/data/genomic.fna >> %s ; \
+                dataformat tsv virus-genome --inputfile %s/data/data_report.jsonl --fields accession,virus-tax-id,length,virus-name --elide-header >> %s; \
+                rm -r %s" 
+                % (out_file, target_dir, out_file, out_file, viral_database, out_file, viral_seqs_info, out_file)
+                )
+            run_child(cml_extract)
+        os.remove(ncbi_file)
+
+        # Report information about the download
+        with open(viral_seqs_info) as f:
+            total_acc_output = sum(1 for _ in f)
+        logging.info("downloaded updated viral database info in %s" % target_dir)
+        logging.info("downloaded %d from a total of %d accession numbers" % (total_acc_output, len(ncbi_acc)))  
+    
+    # sequences given manually by specifying file with ACCs
     if picked:
-        manual_ids = [l.strip() for l in open(picked)]
-        logging.info("%d sequences specified manually" % len(manual_ids))
-    else:
-        manual_ids = []
-
-    # update fasta: ids to add are union of picked plus those in ncbi minus those present
-    ids_to_add = set(manual_ids) | set(new_ids)
-    ids_to_add = ids_to_add - set(present_ids)
-    if not ids_to_add:
-        logging.info("no sequences to add to fasta file")
-        print("no sequences to add to fasta file", file=sys.stderr)
-    elif len(ids_to_add) > 2000:
-        logging.error("cannot add %d sequences, exiting" % len(ids_to_add))
-        sys.exit("too many sequences to add: run `virmet fetch` first")
-    else:
-        logging.info("adding %d sequences to fasta file" % len(ids_to_add))
-        s_code = run_child(
-            "efetch -db %s -id " % db_type
-            + ",".join(ids_to_add)
-            + " -format fasta >> %s" % fasta_db
-        )
-        logging.debug(s_code)
-
-    # update viral_seqs_info.tsv and taxonomy
-    ids_to_add = set(present_ids) | set(manual_ids)
-    ids_to_add = ids_to_add - set(new_ids)
-    if not ids_to_add:
-        logging.info("no sequences to add to viral_seqs_info")
-        print("no sequences to add to viral_seqs_info", file=sys.stderr)
-    else:
-        logging.info(
-            "adding %d line(s) to viral_seqs_info.tsv" % len(ids_to_add)
-        )
-        # loop needed as efetch with format docsum only takes one id at a time
-        # (change introduced in edirect 3.30, December 2015)
-        # slow, but other solutions seem complicated with edirect
-        for ita in ids_to_add:
-            cml = "efetch -db %s -id %s" % (db_type, ita)
-            cml = (
-                cml
-                + " -format docsum | xtract -pattern DocumentSummary \
-            -element Caption TaxId Slen Organism Title >> %s"
-                % info_file
+        cml_download = "datasets download virus genome accession --inputfile %s --api-key $NCBI_API_KEY --filename %s.zip " % (picked, out_file)
+        run_child(cml_download)
+        cml_extract = (
+            "unzip -o %s.zip -d %s/; rm %s.zip; cat %s/data/genomic.fna >> %s ; \
+            dataformat tsv virus-genome --inputfile %s/data/data_report.jsonl --fields accession,virus-tax-id,length,virus-name --elide-header >> %s; \
+            rm -r %s" 
+            % (out_file, target_dir, out_file, out_file, viral_database, out_file, viral_seqs_info, out_file)
             )
-            run_child(cml)
+        run_child(cml_extract)
+    
+    # Create new dmp file from viral_seqs_info.tsv, which contains Accn TaxId
+    cml = "cut -f 1,2 %s > %s/viral_accn_taxid_updated.dmp" % (viral_seqs_info, target_dir)
+    run_child(cml)
+    accs_1 = set(get_accs(viral_database))
+    vir_acc = open("%s/viral_accn_taxid_updated.dmp" % target_dir)
+    accs_2 = set([line.split()[0] for line in vir_acc])
+    vir_acc.close()
+    if accs_1 == accs_2:
+        logging.info("taxonomy and fasta sequences match")
+    else: 
+        logging.info("taxonomy and fasta sequences do not match")
+        logging.info("fasta sequences: %s" % len(accs_1))
+        logging.info("taxonomy information: %s" % len(accs_2))
+    
+    # Merge with current database and remove duplicates
+    cml_merge = f'mv {final_database} {target_dir}/viral_database_outdated.fasta ; \
+                cat {target_dir}/viral_database_outdated.fasta {viral_database} > {final_database} ; \
+                mv {final_viral_seqs} {target_dir}/viral_seqs_info_outdated.tsv ; \
+                cat {target_dir}/viral_seqs_info_outdated.tsv {viral_seqs_info} > {final_viral_seqs} ; \
+                mv {target_dir}/viral_accn_taxid.dmp {target_dir}/viral_accn_taxid_outdated.dmp ; \
+                cat {target_dir}/viral_accn_taxid_outdated.dmp {target_dir}/viral_accn_taxid_updated.dmp > {target_dir}/viral_accn_taxid.dmp; \
+                rm -f {target_dir}/viral_database_original.fasta'
+    run_child(cml_merge)
 
-    logging.info("updating taxonomy")
-    s_code = run_child(
-        "cut -f 1,2 %s > %s"
-        % (info_file, os.path.join(viral_dir, "viral_accn_taxid.dmp"))
-    )
+    rmdup_cmd = f'seqkit rmdup {final_database} --threads {n_proc} -i -o {target_dir}/viral_database_rmdup.fasta -D {target_dir}/duplicated_names.txt'
+    run_child(rmdup_cmd)
+    os.rename(final_database, "%s/viral_database_original.fasta" % target_dir)
+    os.rename("%s/viral_database_rmdup.fasta" % target_dir, final_database)
 
-    # perform tests
-    gids_1 = Counter(get_accs("viral_database.fasta"))
-    gids_2 = Counter([l.split()[0] for l in open("viral_accn_taxid.dmp")])
-    assert set(gids_1) == set(gids_2), (
-        "taxonomy/viral_seqs_info not matching with fasta"
-    )
-    duplicates = [k for k, v in gids_1.items() if v > 1]
-    if duplicates:
-        warnings.warn(
-            "Duplicate sequences in viral_database.fasta: %s"
-            % " ".join(duplicates)
-        )
-        logging.warning(
-            "Duplicate sequences in viral_database.fasta: %s",
-            " ".join(duplicates),
-        )
-    for l in open("viral_database.fasta"):
-        if ">" in l and not l.startswith(">") or l.count(">") > 1:
-            warnings.warn("Invalid line in viral_database.fasta: %s" % l)
-            logging.warning("Invalid line in viral_database.fasta: %s" % l)
-
+    if compression:
+        logging.info("Compress the database\n")
+        random_reduction(viral_type, DB_DIR)
 
 def main(args):
     DB_DIR = os.path.expandvars(args.dbdir)
     logging.info("now in update_db")
     logging.info("Database real path: %s" % os.path.realpath(DB_DIR))
-    if bool(args.viral) + args.bact + args.fungal > 1:
-        logging.error(
-            "update either viral or bacterial or fungal in a single call"
-        )
-        sys.exit("update either viral or bacterial or fungal in a single call")
-    if args.viral:
-        virupdate(DB_DIR, args.viral, args.picked, args.update_min_date)
+    virupdate(DB_DIR, args.viral, args.picked, args.update_min_date, compression=not args.no_db_compression)
