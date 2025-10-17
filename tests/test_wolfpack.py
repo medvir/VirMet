@@ -6,7 +6,7 @@ import unittest
 
 import pandas as pd
 
-from virmet.common import DB_DIR, n_proc, run_child
+from virmet.common import n_proc, run_child
 from virmet.wolfpack import get_nodes_names, hunter, viral_blast
 
 virmet_dir = os.path.dirname(
@@ -50,21 +50,24 @@ class TestHunter(unittest.TestCase):
 class TestViralBlast(unittest.TestCase):
     def setUp(self):
         self.tmpdir = tempfile.gettempdir()
-        self.nodes, self.names = get_nodes_names(DB_DIR)
+        self.dbdir = os.path.join(
+            virmet_dir, "VirMet", "data", "test_db"
+        )
+        self.nodes, self.names = get_nodes_names(self.dbdir)
         self.reads = os.path.join(
             virmet_dir, "VirMet", "data", "hq_decont_reads.fastq"
         )
 
     def test_viral_blast(self):
-        viral_blast(self.reads, 4, self.nodes, self.names, self.tmpdir)
+        viral_blast(self.reads, 4, self.nodes, self.names, self.tmpdir, self.dbdir)
 
         orgs_file = os.path.join(os.path.split(self.reads)[0], "orgs_list.tsv")
         df_org_list = pd.read_csv(
             orgs_file, index_col="species", delimiter="\t"
         )
 
-        MG212469_reads = df_org_list.loc["Enterovirus C", "reads"].sum()
-        MG212469_reads_expected = 261
+        MG212469_reads = df_org_list.loc["Enterovirus coxsackiepol", "reads"].sum()
+        MG212469_reads_expected = 287
         self.assertEqual(MG212469_reads, MG212469_reads_expected)
     
     def tearDown(self):

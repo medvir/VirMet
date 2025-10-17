@@ -4,10 +4,11 @@ import os
 import tempfile
 import unittest
 
+from datetime import date, timedelta
+
 from virmet.common import (
-    bact_fung_query,
+    viral_query,
     ftp_down,
-    multiple_download,
     run_child,
 )
 
@@ -25,8 +26,6 @@ def parse_file_line(line):
 class TestFTPDown(unittest.TestCase):
     def setUp(self):
         self.tmpdir = tempfile.gettempdir()
-        # big file, 39 MB
-        # self.remote_1 = 'https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_24/gencode.v24.primary_assembly.annotation.gtf.gz'
         # small file, 335 KB
         self.remote_1 = "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_24/gencode.v24.2wayconspseudos.gtf.gz"
         # again small file
@@ -69,70 +68,22 @@ class TestMisc(unittest.TestCase):
         self.fasta.close()
         self.remote_2 = "https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_24/_README.TXT"
 
-    def test_bact_query(self):
-        all_urls = bact_fung_query(
-            query_type="bacteria", download=True, target_folder=self.tmpdir
+    def test_viral_query(self):
+        all_accs = viral_query(
+            DB_DIR_UPDATE = self.tmpdir,
+            viral_db = "n",
+            update_min_date=(date.today() - timedelta(days=10)).strftime("%Y/%m/%d")
         )
-        bac_lines = len(all_urls)
-        self.assertGreater(bac_lines, 100)
-        self.assertTrue(
-            os.path.exists(
-                os.path.join(self.tmpdir, "bacteria_refseq_info.tsv")
-            )
-        )
-        os.rename(
-            os.path.join(self.tmpdir, "bacteria_refseq_info.tsv"),
-            os.path.join(self.tmpdir, "xyz.tsv"),
-        )
-        urls_again = bact_fung_query(
-            query_type="bacteria",
-            download=False,
-            info_file="xyz.tsv",
-            target_folder=self.tmpdir,
-        )
-        bac_lines_again = len(urls_again)
-        self.assertEqual(bac_lines, bac_lines_again)
-        os.remove(os.path.join(self.tmpdir, "xyz.tsv"))
 
-    def test_fung_query(self):
-        all_urls = bact_fung_query(
-            query_type="fungi", download=True, target_folder=self.tmpdir
+        vir_acc = len(all_accs)
+        self.assertGreater(vir_acc, 2)
+        accs_again = viral_query(
+            DB_DIR_UPDATE = self.tmpdir,
+            viral_db = "n",
+            update_min_date=(date.today() - timedelta(days=10)).strftime("%Y/%m/%d")
         )
-        fung_lines = len(all_urls)
-        self.assertGreater(fung_lines, 10)
-        self.assertTrue(
-            os.path.exists(os.path.join(self.tmpdir, "fungi_refseq_info.tsv"))
-        )
-        os.rename(
-            os.path.join(self.tmpdir, "fungi_refseq_info.tsv"),
-            os.path.join(self.tmpdir, "xyz.tsv"),
-        )
-        urls_again = bact_fung_query(
-            query_type="fungi",
-            download=False,
-            info_file="xyz.tsv",
-            target_folder=self.tmpdir,
-        )
-        fung_lines_again = len(urls_again)
-        self.assertEqual(fung_lines, fung_lines_again)
-        os.remove(os.path.join(self.tmpdir, "xyz.tsv"))
-
-    def test_multi_download(self):
-        tmpf = os.path.join(self.tmpdir, "tmp_multi_down.txt")
-        open(tmpf, "w").close()
-        # download same file twice
-        dl_pair = tmpf, [self.remote_2, self.remote_2]
-        multiple_download(dl_pair)
-        self.assertTrue(os.path.exists(tmpf))
-        with open(tmpf) as f:
-            lines = list(f)
-        os.remove(tmpf)
-        m = len(lines)
-        # even number of lines
-        self.assertEqual(m % 2, 0)
-        halfm = int(m / 2)
-        self.assertEqual(lines[0], lines[halfm])
-        self.assertEqual(lines[1], lines[1 + halfm])
+        vir_acc_again = len(accs_again)
+        self.assertEqual(vir_acc, vir_acc_again)
 
 
 if __name__ == "__main__":
