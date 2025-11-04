@@ -596,7 +596,13 @@ def main(args):
                 )
             except ValueError:
                 logging.info("running on directory %s" % miseq_dir)
-            bc_dir = os.path.join(miseq_dir, "Data/Intensities/BaseCalls/")
+            
+            # Check where the base calls actually are
+            possible_bc_dir = os.path.join(miseq_dir, "Data", "Intensities", "BaseCalls")
+            if os.path.isdir(possible_bc_dir):
+                bc_dir = possible_bc_dir
+            else:
+                bc_dir = miseq_dir
         else:
             bc_dir = miseq_dir
 
