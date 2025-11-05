@@ -1,0 +1,17 @@
+site_name: ""
+
+theme:
+  name: material
+  logo: assets/logo.svg
+  features:
+    - toc.integrate 
+
+nav:
+  - Home: index.md
+  - Installation: Installation.md
+  - Preparation: Preparation.md
+  - Virus scan: Wolfpack.md
+  - Coverage plots: Covplot.md
+
+markdown_extensions:
+  - pymdownx.extra
