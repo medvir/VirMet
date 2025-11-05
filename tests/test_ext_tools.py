@@ -1,47 +1,42 @@
-#!/usr/bin/env python3
+"""Tests for ext_tools module."""
+
 import os
-import sys
-import glob
-import unittest
 import tempfile
-import subprocess
+import unittest
 
-virmet_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-os.sys.path.insert(1, virmet_dir)
-mod = __import__('virmet')
-sys.modules["virmet"] = mod
-
+from shutil import which
 from virmet.common import run_child
 
 
 class TestToolsCallable(unittest.TestCase):
-    '''calls help of external tools just to check that they are installed
-    '''
+    """check that external tools are installed"""
 
     def setUp(self):
-        self.genome_file = os.path.join(tempfile.gettempdir(), 'HIV.fasta')
+        self.tmpdir = tempfile.gettempdir()
 
-    def test_edirect(self):
-        run_child('efetch -db nuccore -id K03455 -format fasta > %s' % self.genome_file)
-        self.assertTrue(os.path.isfile(self.genome_file))
-        os.remove(self.genome_file)
+    def test_seqkit(self):
+        self.assertIsNotNone(which("seqkit"))
+    
+    def test_samtools(self):
+        self.assertIsNotNone(which("samtools"))
 
-    def test_bwa_index(self):
-        run_child('efetch -db nuccore -id K03455 -format fasta > %s' % self.genome_file)
-        run_child('bwa index %s &> /dev/null' % self.genome_file)
-        self.assertTrue(os.path.join(tempfile.gettempdir(), 'HIV.bwt'))
-        os.remove(self.genome_file)
-        for f in glob.glob('%s/HIV.*' % tempfile.gettempdir()):
-            os.remove(f)
+    def test_bwa(self):
+        self.assertIsNotNone(which("bwa"))
+    
+    def test_kraken(self):
+        self.assertIsNotNone(which("kraken2"))
+
+    def test_fastp(self):
+        self.assertIsNotNone(which("fastp"))
+    
+    def test_datasets(self):
+        self.assertIsNotNone(which("datasets"))
+        self.assertIsNotNone(which("dataformat"))
 
     def test_blast(self):
-        log_file = os.path.join(tempfile.gettempdir(), 'tmp.log')
-        run_child('blastn -help > %s 2>&1' % log_file)
-        with open(log_file) as f:
-            l = sum(1 for _ in f)
-        self.assertGreater(l, 6)
-        os.remove(log_file)
-
-    # def tearDown(self):
-    #     os.remove(self.log_file)
-    #     os.remove(self.genome_file)
+        self.assertIsNotNone(which("blastn"))
+        self.assertIsNotNone(which("makeblastdb"))
+        self.assertIsNotNone(which("blastdbcmd"))
+    
+    def test_bgzip(self):
+        self.assertIsNotNone(which("bgzip"))

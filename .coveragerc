@@ -7,11 +7,5 @@ omit =
     *numpy*
     /usr/local/lib*
 
-include =
-    virmet/covplot.py
-    virmet/common.py
-    virmet/wolfpack.py
-
-
 source =
     virmet

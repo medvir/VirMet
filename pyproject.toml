@@ -1,0 +1,80 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "virmet"
+authors = [{ name = "Osvaldo Zagordi" }]
+maintainers = [{ name = "Judith Bergadà", email = "bergada.judith@virology.uzh.ch" }]
+description = "Viral metagenomics in clinical applications"
+readme = "README.md"
+license = { text = "MIT" }
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "License :: MIT",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+requires-python = ">=3.9"
+dependencies = ["pandas", "Bio", "numpy"]
+dynamic = ['version']
+
+[project.urls]
+Documentation = "https://virmet.readthedocs.io/"
+Source = "http://github.com/medvir/VirMet"
+Tracker = "http://github.com/medvir/VirMet/issues"
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-cov", "ruff", "flake8-pyproject"]
+
+[project.scripts]
+virmet = "virmet.cli:main"
+
+[tool.setuptools.package-data]
+virmet = ["*.R"]
+
+[tool.setuptools_scm]
+
+[tool.isort]
+profile = "black"
+src_paths = ["src", "tests"]
+
+[tool.pytest.ini_options]
+addopts = "--cov-report xml:coverage.xml --cov src --cov-fail-under 0 --cov-append"
+pythonpath = ["src"]
+testpaths = "tests"
+
+[tool.ruff]
+line-length = 80
+target-version = "py311"
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+# Enable auto-formatting of code examples in docstrings. Markdown,
+# reStructuredText code/literal blocks and doctests are all supported.
+docstring-code-format = true
+
+# Set the line length limit used when formatting code snippets in
+# docstrings.
+#
+# This only has an effect when the `docstring-code-format` setting is
+# enabled.
+docstring-code-line-length = "dynamic"

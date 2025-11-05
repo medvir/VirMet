@@ -14,7 +14,9 @@ documentation/site/
 coverage.xml
 old_data/
 VirMet.egg-info/
+*/virmet.egg-info/
 build/
 dist/
 installed_files.txt
+.venv/
 virmet.log
