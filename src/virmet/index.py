@@ -8,10 +8,11 @@ import os
 
 from virmet.common import run_child, n_proc
 
+
 def single_bwa_index(index_params):
     """run a single bwa indexing job"""
     in_fasta, index_prefix = index_params
-    size_indx = int(os.path.getsize(in_fasta)/8)
+    size_indx = int(os.path.getsize(in_fasta) / 8)
     cml = "bwa index -b %d -p %s %s &> %s_bwa_index.log" % (
         size_indx,
         index_prefix,
@@ -20,6 +21,7 @@ def single_bwa_index(index_params):
     )
     run_child(cml)
     return "index %s done" % index_prefix
+
 
 def single_samtols(index_params):
     """run a single samtools faidx job"""
@@ -43,7 +45,7 @@ def main(args):
         -out {pth_dir}/viral_db \
         -logfile {pth_dir}/blast.log \
         -parse_seqids -taxid_map {pth_dir}/viral_accn_taxid.dmp'.format(
-            pth_dir = target_dir, dt_info = dt
+            pth_dir=target_dir, dt_info=dt
         )
         run_child(cml)
 
@@ -56,7 +58,7 @@ def main(args):
         -out {pth_dir}/viral_db \
         -logfile {pth_dir}/blast.log \
         -parse_seqids -taxid_map {pth_dir}/viral_accn_taxid.dmp'.format(
-            pth_dir = target_dir, dt_info = dt
+            pth_dir=target_dir, dt_info=dt
         )
         run_child(cml)
 
@@ -91,12 +93,12 @@ def main(args):
         index_pairs.append((fasta_file, index_prefix))
 
     # Indexing
-    pool_idx = mp.Pool(processes = n_proc)
+    pool_idx = mp.Pool(processes=n_proc)
     results_idx = pool_idx.map(single_bwa_index, index_pairs)
     for r in results_idx:
         logging.info(r)
     # Run in parallel
-    pool = mp.Pool(processes = n_proc)
+    pool = mp.Pool(processes=n_proc)
     results = pool.map(single_samtols, index_pairs)
     for r in results:
         logging.info(r)

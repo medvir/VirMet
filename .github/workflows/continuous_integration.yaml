@@ -13,23 +13,59 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        tools: ["black", "bandit", "pylint", "flake8"]
+        include:
+          - tool: ruff-format
+            command: ruff format --check src tests
+
+          - tool: ruff-lint
+            command: ruff check src tests
+
+          - tool: bandit
+            command: bandit -r src
+    
     steps:
       - uses: actions/checkout@v4
-      - name: ${{ matrix.tools }}
-        uses: microsoft/action-python@0.7.3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          ${{ matrix.tools }}: true
-          args: ${{ matrix.args }}
-          workdir: "."
-          python_version: 3.12.8
+          python-version: 3.12.8
+
+      - name: Install dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+        working-directory: ${{ github.workspace }}
+
+      - name: Run ${{ matrix.tool }}
+        run: ${{ matrix.command }}
 
   testing:
     runs-on: ubuntu-latest
-    steps:    
-      - name: Pytest
-        uses: microsoft/action-python@0.7.0
-        with:          
-          pytest: true
-          testdir: "tests"
-          python_version: 3.12.8
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12.8
+    
+      - name: Install external bioinformatics tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            ncbi-blast+ \
+            bwa \
+            samtools \
+            seqtk \
+            fastp \
+            htslib-tools
+
+      - name: Install dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+        working-directory: ${{ github.workspace }}
+
+      - name: Run tests
+        run: pytest

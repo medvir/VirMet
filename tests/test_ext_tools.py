@@ -1,11 +1,9 @@
 """Tests for ext_tools module."""
 
-import os
 import tempfile
 import unittest
 
 from shutil import which
-from virmet.common import run_child
 
 
 class TestToolsCallable(unittest.TestCase):
@@ -16,19 +14,19 @@ class TestToolsCallable(unittest.TestCase):
 
     def test_seqkit(self):
         self.assertIsNotNone(which("seqkit"))
-    
+
     def test_samtools(self):
         self.assertIsNotNone(which("samtools"))
 
     def test_bwa(self):
         self.assertIsNotNone(which("bwa"))
-    
+
     def test_kraken(self):
         self.assertIsNotNone(which("kraken2"))
 
     def test_fastp(self):
         self.assertIsNotNone(which("fastp"))
-    
+
     def test_datasets(self):
         self.assertIsNotNone(which("datasets"))
         self.assertIsNotNone(which("dataformat"))
@@ -37,6 +35,6 @@ class TestToolsCallable(unittest.TestCase):
         self.assertIsNotNone(which("blastn"))
         self.assertIsNotNone(which("makeblastdb"))
         self.assertIsNotNone(which("blastdbcmd"))
-    
+
     def test_bgzip(self):
         self.assertIsNotNone(which("bgzip"))

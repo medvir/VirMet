@@ -32,7 +32,7 @@ Source = "http://github.com/medvir/VirMet"
 Tracker = "http://github.com/medvir/VirMet/issues"
 
 [project.optional-dependencies]
-dev = ["pytest", "pytest-cov", "ruff", "flake8-pyproject"]
+dev = ["pytest", "pytest-cov", "ruff", "bandit"]
 
 [project.scripts]
 virmet = "virmet.cli:main"

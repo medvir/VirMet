@@ -271,6 +271,7 @@ def run_covplot(outdir, n_proc, DB_DIR, chosen_organism=None):
             % (acc, seq_len, n_reads, perc_obs_string)
         )
 
+
 def main(args):
     """function doing the covplots on request"""
     outdir = os.path.expandvars(args.outdir)

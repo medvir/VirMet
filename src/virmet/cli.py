@@ -22,13 +22,7 @@ import os
 import shutil
 import sys
 
-from virmet import (
-    fetch,
-    index,
-    update,
-    wolfpack,
-    covplot
-)
+from virmet import fetch, index, update, wolfpack, covplot
 from virmet.__init__ import __version__
 
 
@@ -65,7 +59,9 @@ def main():
     )
     parser_fetch.add_argument("--human", help="human", action="store_true")
     parser_fetch.add_argument(
-        "--bact_fungal", help="bacterial and fungal(RefSeq)", action="store_true"
+        "--bact_fungal",
+        help="bacterial and fungal(RefSeq)",
+        action="store_true",
     )
     parser_fetch.add_argument(
         "--bovine", help="bovine (Bos taurus)", action="store_true"
@@ -79,8 +75,8 @@ def main():
     parser_fetch.add_argument(
         "--dbdir",
         type=str,
-        nargs = '?',
-        default = "/data/virmet_databases_update/",
+        nargs="?",
+        default="/data/virmet_databases_update/",
         help="path to store the new Virmet database",
     )
     parser_fetch.set_defaults(func=fetch.main)
@@ -114,8 +110,8 @@ def main():
     parser_update.add_argument(
         "--dbdir",
         type=str,
-        nargs = '?',
-        default = "/data/virmet_databases_update/",
+        nargs="?",
+        default="/data/virmet_databases_update/",
         help="path to store the updated Virmet database",
     )
     parser_update.set_defaults(func=update.main)
@@ -141,8 +137,8 @@ def main():
     parser_index.add_argument(
         "--dbdir",
         type=str,
-        nargs = '?',
-        default = "/data/virmet_databases_update/",
+        nargs="?",
+        default="/data/virmet_databases_update/",
         help="path to store the indexed Virmet database",
     )
     parser_index.set_defaults(func=index.main)
@@ -154,40 +150,41 @@ def main():
     parser_wolf.add_argument(
         "--dbdir",
         type=str,
-        nargs = '?',
-        default = "/data/virmet_databases",
+        nargs="?",
+        default="/data/virmet_databases",
         help="path to find and use the Virmet database",
     )
     parser_wolf.add_argument(
         "--nocovplot",
         action="store_true",
-        help="do not make the covplots. Default: make them")
+        help="do not make the covplots. Default: make them",
+    )
     parser_wolf.add_argument(
         "--noctrls",
         action="store_true",
-        help="do not analyse ntc- or Undetermined samples. Default: analyse them"
+        help="do not analyse ntc- or Undetermined samples. Default: analyse them",
     )
     parser_wolf.set_defaults(func=wolfpack_run)
 
-     # create the parser for command "covplot"
-    parser_covplot = subparsers.add_parser("covplot", help="create coverage plot")
-    parser_covplot.add_argument(
-        "--outdir", 
-        type=str,
-        nargs = '?',
-        default = "./",
-        help="path to store the coverage plots"
+    # create the parser for command "covplot"
+    parser_covplot = subparsers.add_parser(
+        "covplot", help="create coverage plot"
     )
     parser_covplot.add_argument(
-        "--organism", 
-        default = None,
-        help="ssciname of the organism of interest"
+        "--outdir",
+        type=str,
+        nargs="?",
+        default="./",
+        help="path to store the coverage plots",
+    )
+    parser_covplot.add_argument(
+        "--organism", default=None, help="ssciname of the organism of interest"
     )
     parser_covplot.add_argument(
         "--dbdir",
         type=str,
-        nargs = '?',
-        default = "/data/virmet_databases/",
+        nargs="?",
+        default="/data/virmet_databases/",
         help="path to find and use the Virmet database",
     )
     parser_covplot.set_defaults(func=covplot.main)

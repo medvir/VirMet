@@ -2,7 +2,6 @@
 
 import gzip
 import logging
-import multiprocessing as mp
 import os
 import random
 import re
@@ -18,7 +17,7 @@ import pandas as pd
 import numpy as np
 
 MAX_TAXID = 10000  # max number of sequences belonging to the same taxid in compressed viral database
-n_proc = int((os.cpu_count() or 8)*0.75)
+n_proc = int((os.cpu_count() or 8) * 0.75)
 
 
 # decorator for taken from RepoPhlan
@@ -68,6 +67,7 @@ def retry(tries, delay=3, backoff=2):
 
     return deco_retry  # @retry(arg[, ...]) -> true decorator
 
+
 def safe_entrez_read(**kwargs):
     retries = 5
     for attempt in range(retries):
@@ -80,6 +80,7 @@ def safe_entrez_read(**kwargs):
                 sleep(3)
             else:
                 raise
+
 
 def run_child(cmd):
     """Use subrocess.check_output to run an external program with arguments."""
@@ -155,11 +156,10 @@ def ftp_down(remote_url, local_url=None):
             outhandle = open(outname, "w")
         logging.debug("Downloading %s", remote_url)
         with urllib.request.urlopen(remote_url, timeout=30) as f:
-            outhandle.write(
-                f.read().decode("utf-8", "replace")
-            )
+            outhandle.write(f.read().decode("utf-8", "replace"))
 
     outhandle.close()
+
 
 def find_file(base_url, file_regex):
     """
@@ -176,11 +176,14 @@ def find_file(base_url, file_regex):
     # Look for file matches
     match = list(set(re.findall(file_regex, response.text)))[0]
     if not match:
-        raise ValueError(f"No matching files found at {base_url} with pattern {file_regex}")
+        raise ValueError(
+            f"No matching files found at {base_url} with pattern {file_regex}"
+        )
 
     logging.info(f"Found file: {match}.")
 
     return match
+
 
 def random_reduction(viral_mode, DB_DIR_UPDATE):
     # This code, identify sequences from the same species using their taxid.
@@ -207,8 +210,7 @@ def random_reduction(viral_mode, DB_DIR_UPDATE):
     viral_fasta_file = os.path.join(target_dir, "viral_database.fasta")
 
     viral_info = pd.read_table(
-        viral_info_file,
-        names=["accn_version", "TaxId", "seq_len", "Organism"]
+        viral_info_file, names=["accn_version", "TaxId", "seq_len", "Organism"]
     )
     viral_info.drop_duplicates(subset=["accn_version"], inplace=True)
     # Do compression at the texid ID level,
@@ -271,6 +273,7 @@ def random_reduction(viral_mode, DB_DIR_UPDATE):
         os.path.join(target_dir, "filtered_taxids.csv"), sep=",", index=False
     )
 
+
 def viral_query(DB_DIR_UPDATE, viral_db, update_min_date=None):
     # Viruses, Taxonomy ID: 10239
     # Human adenovirus A, Taxonomy ID: 129875 (only for testing, 7 hits)
@@ -278,11 +281,14 @@ def viral_query(DB_DIR_UPDATE, viral_db, update_min_date=None):
     # Alphatorquevirus Taxonomy ID: 687331
     # Cellular organisms, Taxonomy ID: 131567 (to avoid chimeras)
     txid = "10239"  # change here for viruses or smaller taxa
-    query_text = 'txid%s [orgn] AND \
-        (\"complete genome\" [Title] OR \
-        \"complete segment\" [Title] OR \
-        srcdb_refseq[prop])' % txid
-    query_text += ' NOT \"cellular organisms\"[Organism] NOT \
+    query_text = (
+        'txid%s [orgn] AND \
+        ("complete genome" [Title] OR \
+        "complete segment" [Title] OR \
+        srcdb_refseq[prop])'
+        % txid
+    )
+    query_text += ' NOT "cellular organisms"[Organism] NOT \
         AC_000001[PACC] : AC_999999[PACC]'
 
     if update_min_date:
@@ -302,50 +308,51 @@ def viral_query(DB_DIR_UPDATE, viral_db, update_min_date=None):
         db_text = "protein"
     else:
         raise ValueError(f"Invalid viral_db value: '{viral_db}'.")
-    
+
     # Create output folder if it doesn't exist
     os.makedirs(target_dir, exist_ok=True)
     logging.info("Database real path: %s" % os.path.realpath(target_dir))
-    
+
     # Obtain Accessions until 2 days ago so all databases should be updated & match
     Entrez.email = "virmet@virmet.ch"
     try:
-        Entrez.api_key = os.environ['NCBI_API_KEY']
-    except:
+        Entrez.api_key = os.environ["NCBI_API_KEY"]
+    except KeyError:
         logging.info("Please, export a NCBI_API_KEY in your .bashrc")
     handle = Entrez.esearch(
-        db=db_text, 
-        idtype='acc',
-        term=query_text, 
-        datetype = "pdat", 
-        mindate = min_date_chosen, 
-        maxdate = str((datetime.today() - timedelta(2)).strftime('%Y/%m/%d')), 
-        retstart = 0,
-        retmax = 1)
+        db=db_text,
+        idtype="acc",
+        term=query_text,
+        datetype="pdat",
+        mindate=min_date_chosen,
+        maxdate=str((datetime.today() - timedelta(2)).strftime("%Y/%m/%d")),
+        retstart=0,
+        retmax=1,
+    )
     record = Entrez.read(handle)
-    tot_accs = int(record['Count'])
+    tot_accs = int(record["Count"])
     batch_size = 6000
 
     # Retreive Accession numbers
     ncbi_accs = np.empty(tot_accs, dtype="U16")
-    for i in range(0,tot_accs, batch_size):
+    for i in range(0, tot_accs, batch_size):
         sleep(2)
         record = safe_entrez_read(
             db=db_text,
-            idtype='acc',
+            idtype="acc",
             term=query_text,
             datetype="pdat",
             mindate=min_date_chosen,
-            maxdate=str((datetime.today() - timedelta(2)).strftime('%Y/%m/%d')),
+            maxdate=str((datetime.today() - timedelta(2)).strftime("%Y/%m/%d")),
             retstart=i,
-            retmax=batch_size
+            retmax=batch_size,
         )
-        id_list = np.array(record['IdList'])
-        ncbi_accs[i:i+len(id_list)] = id_list
+        id_list = np.array(record["IdList"])
+        ncbi_accs[i : i + len(id_list)] = id_list
     return ncbi_accs
 
 
 def get_accs(fasta_file):
-    cml = f'seqkit seq -i -n {fasta_file} --threads {n_proc}'
+    cml = f"seqkit seq -i -n {fasta_file} --threads {n_proc}"
     accs = run_child(cml).strip().split("\n")
     return accs

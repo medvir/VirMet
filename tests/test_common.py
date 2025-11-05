@@ -70,17 +70,21 @@ class TestMisc(unittest.TestCase):
 
     def test_viral_query(self):
         all_accs = viral_query(
-            DB_DIR_UPDATE = self.tmpdir,
-            viral_db = "n",
-            update_min_date=(date.today() - timedelta(days=10)).strftime("%Y/%m/%d")
+            DB_DIR_UPDATE=self.tmpdir,
+            viral_db="n",
+            update_min_date=(date.today() - timedelta(days=10)).strftime(
+                "%Y/%m/%d"
+            ),
         )
 
         vir_acc = len(all_accs)
         self.assertGreater(vir_acc, 2)
         accs_again = viral_query(
-            DB_DIR_UPDATE = self.tmpdir,
-            viral_db = "n",
-            update_min_date=(date.today() - timedelta(days=10)).strftime("%Y/%m/%d")
+            DB_DIR_UPDATE=self.tmpdir,
+            viral_db="n",
+            update_min_date=(date.today() - timedelta(days=10)).strftime(
+                "%Y/%m/%d"
+            ),
         )
         vir_acc_again = len(accs_again)
         self.assertEqual(vir_acc, vir_acc_again)
