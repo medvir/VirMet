@@ -745,13 +745,11 @@ def main(args):
     if len(s_dirs) > 1:
         run_tidytable(out_dir)
     else:
-        if os.path.exists("%s/orgs_list.tsv" % out_dir):
-            shutil.copyfile(
-                f"{out_dir}/orgs_list.tsv", f"{out_dir}/orgs_species_found.tsv"
-            )
-        shutil.copyfile(
-            f"{out_dir}/stats.tsv", f"{out_dir}/run_reads_summary.tsv"
-        )
+        orgs_file_path = os.path.join(s_dirs[0], "orgs_list.tsv")
+        stats_file_path = os.path.join(s_dirs[0], "stats.tsv")
+        if os.path.exists(orgs_file_path):
+            shutil.copyfile(orgs_file_path, f"{out_dir}/orgs_species_found.tsv")
+        shutil.copyfile(stats_file_path, f"{out_dir}/run_reads_summary.tsv")
 
     # Move results to final directory
     shutil.move(out_dir, out_dir_final)
