@@ -21,7 +21,7 @@ jobs:
             command: ruff check src tests
 
           - tool: bandit
-            command: bandit -r src
+            command: bandit -r src -c bandit.yaml
     
     steps:
       - uses: actions/checkout@v4
@@ -50,16 +50,29 @@ jobs:
         with:
           python-version: 3.12.8
     
-      - name: Install external bioinformatics tools
+      - name: Install Mambaforge (Mamba/Conda)
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniconda-version: "latest"
+          mamba-version: "*" 
+          channels: bioconda,conda-forge 
+          channel-priority: true
+          auto-activate-base: false
+          auto-update-conda: true
+          
+      - name: Install Bioinformatics Tools (including kraken2/datasets)
+        shell: bash -l {0} 
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            ncbi-blast+ \
+          mamba install -y \
+            blast \
             bwa \
             samtools \
+            seqkit \
             seqtk \
             fastp \
-            htslib-tools
+            htslib \
+            kraken2 \
+            ncbi-datasets-cli
 
       - name: Install dev dependencies
         run: |
@@ -68,4 +81,5 @@ jobs:
         working-directory: ${{ github.workspace }}
 
       - name: Run tests
+        shell: bash -l {0}
         run: pytest

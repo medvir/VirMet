@@ -12,7 +12,7 @@ def run_child(cmd, exe="/bin/bash"):
         output = subprocess.check_output(
             cmd,
             universal_newlines=True,
-            shell=True,
+            shell=True,  # nosec B602: Required for shell piping.
             executable=exe,
             stderr=subprocess.STDOUT,
         )

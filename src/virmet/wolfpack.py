@@ -11,6 +11,7 @@ import re
 import shlex
 import shutil
 import subprocess
+import tempfile
 import warnings
 
 import pandas as pd
@@ -675,7 +676,7 @@ def main(args):
         logging.error("directory %s already exists" % out_dir_final)
         raise ValueError("directory %s already exists" % out_dir_final)
 
-    out_dir = "/tmp/virmet_output_%s" % run_name
+    out_dir = os.path.join(tempfile.gettempdir(), "virmet_output_%s" % run_name)
     out_dir = os.path.abspath(out_dir)
 
     try:
@@ -745,12 +746,11 @@ def main(args):
         run_tidytable(out_dir)
     else:
         if os.path.exists("%s/orgs_list.tsv" % out_dir):
-            os.system(
-                "cp %s/orgs_list.tsv %s/orgs_species_found.tsv"
-                % (out_dir, out_dir)
+            shutil.copyfile(
+                f"{out_dir}/orgs_list.tsv", f"{out_dir}/orgs_species_found.tsv"
             )
-        os.system(
-            "cp %s/stats.tsv %s/run_reads_summary.tsv" % (out_dir, out_dir)
+        shutil.copyfile(
+            f"{out_dir}/stats.tsv", f"{out_dir}/run_reads_summary.tsv"
         )
 
     # Move results to final directory

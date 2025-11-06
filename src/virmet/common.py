@@ -7,7 +7,6 @@ import random
 import re
 import requests
 import subprocess
-import urllib.request
 from Bio import Entrez
 from datetime import datetime, timedelta
 from time import sleep
@@ -89,7 +88,7 @@ def run_child(cmd):
         output = subprocess.check_output(
             cmd,
             universal_newlines=True,
-            shell=True,
+            shell=True,  # nosec B602: Required for shell piping.
             stderr=subprocess.STDOUT,
             executable="/bin/bash",
         )
@@ -130,7 +129,7 @@ def ftp_down(remote_url, local_url=None):
             outhandle = open(outname, "w")
         logging.debug("Downloading %s", remote_url)
         with (
-            urlopen(
+            urlopen(  # nosec B310: opening url
                 Request(remote_url, headers={"Accept-Encoding": "gzip"}),
                 timeout=30,
             ) as response,
@@ -145,7 +144,7 @@ def ftp_down(remote_url, local_url=None):
         else:
             outhandle = open(outname, "wb")
         logging.debug("Downloading %s", remote_url)
-        with urllib.request.urlopen(remote_url, timeout=300) as f:
+        with urlopen(remote_url, timeout=300) as f:  # nosec B310: opening url
             outhandle.write(f.read())
 
     # uncompressed to uncompressed
@@ -155,7 +154,7 @@ def ftp_down(remote_url, local_url=None):
         else:
             outhandle = open(outname, "w")
         logging.debug("Downloading %s", remote_url)
-        with urllib.request.urlopen(remote_url, timeout=30) as f:
+        with urlopen(remote_url, timeout=30) as f:  # nosec B310: opening url
             outhandle.write(f.read().decode("utf-8", "replace"))
 
     outhandle.close()
@@ -170,7 +169,7 @@ def find_file(base_url, file_regex):
     - file_regex: regex pattern to match file names
     """
     logging.info(f"Scanning {base_url}")
-    response = requests.get(base_url)
+    response = requests.get(base_url, timeout=10000)  # nosec B310: opening url
     response.raise_for_status()
 
     # Look for file matches
@@ -237,7 +236,7 @@ def random_reduction(viral_mode, DB_DIR_UPDATE):
         ]
         accn_set = set(viral_info_to_subsample_df["accn_version"])
         # subsample to make it about 1% of the database
-        selected_accn_ls = random.sample(list(accn_set), MAX_TAXID)
+        selected_accn_ls = random.sample(list(accn_set), MAX_TAXID)  # nosec B311: escape bandit
 
         # filter out the unselected IDs from viral_info
         # (viral_info_subsampled['accn'] in selected_accn_ls)

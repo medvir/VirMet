@@ -12,6 +12,7 @@ import logging
 import os
 import subprocess
 import sys
+import shutil
 from warnings import warn
 from importlib import resources
 
@@ -236,10 +237,9 @@ def run_covplot(outdir, n_proc, DB_DIR, chosen_organism=None):
             )
             run_child("samtools index %s -@ %d" % (bam_file, n_proc))
         n_reads = int(
-            subprocess.check_output(
+            run_child(
                 'samtools stats %s -@ %d | grep ^SN | grep "reads mapped:" | cut -f 3'
-                % (bam_file, n_proc),
-                shell=True,
+                % (bam_file, n_proc)
             ).strip()
         )
         depth_file = os.path.join(outdir, organism, "depth.txt")
@@ -253,7 +253,7 @@ def run_covplot(outdir, n_proc, DB_DIR, chosen_organism=None):
         logging.info("Plotting coverage")
         perc_obs = subprocess.check_output(
             [
-                "Rscript",
+                shutil.which("Rscript"),
                 resources.files("virmet").joinpath("covplot.R"),
                 str(depth_file),
                 str(acc),
