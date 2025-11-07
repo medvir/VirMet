@@ -20,3 +20,5 @@ dist/
 installed_files.txt
 .venv/
 virmet.log
+.ruff_cache
+.pytest_cache
