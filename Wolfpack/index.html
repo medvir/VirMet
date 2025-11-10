@@ -316,29 +316,23 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Wolfpack">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#additional-files" class="md-nav__link">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outputs" class="md-nav__link">
     <span class="md-ellipsis">
-      Additional files
+      Outputs
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#hot-run" class="md-nav__link">
     <span class="md-ellipsis">
       Hot run
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -390,109 +384,210 @@
 
 <h1 id="running-a-virus-scan-wolfpack">Running a virus scan: <code>wolfpack</code></h1>
 <h2 id="wolfpack">Wolfpack</h2>
-<p>This can be run on a single file or on a directory. It will try to guess from
-the naming scheme if it is a Miseq output directory (<em>i.e.</em> with
-<code>Data/Intensities/BaseCalls/</code> structure) and analyze all fastq files in there.
-The extension must be <code>.fastq</code> or <code>.fastq.gz</code>. It will then run a filtering
-step based on quality, length and entropy (in short: reads with a lot of
-repeats will be discarded), followed by a decontamination step where reads
-of human/bacterial/bovine/fungal origin will be discarded. Finally, remaining
-reads are <em>blasted</em> against the viral database. The list of organisms with the
-count of reads is in files <code>orgs_list.csv</code> in the output directory
-(naming is <code>virmet_output_...</code>). For example, if we have a directory named
-<code>exp_01</code> with files</p>
-<pre><code>exp_01/AR-1_S1_L001_R1_001.fastq.gz
-exp_01/AR-2_S2_L001_R1_001.fastq.gz
-exp_01/AR-3_S3_L001_R1_001.fastq.gz
-exp_01/AR-4_S4_L001_R1_001.fastq.gz
-</code></pre>
-<p>we could run</p>
-<pre><code>virmet wolfpack --run exp_01
-</code></pre>
-<p>and, after some time, find the results in <code>virmet_output_exp01</code>. Many files are
-present, the most important ones being <code>orgs_list.csv</code> and <code>stats.tsv</code>. The
-first lists the viral organisms found with a count of reads that could be
-matched to them.</p>
-<pre><code>[user@host test_virmet]$ cat virmet_output_exp_01/AR-1_S1/orgs_list.tsv
-organism    reads
-Human adenovirus 7  126
-Human poliovirus 1 strain Sabin 45
-Human poliovirus 1 Mahoney  29
-Human adenovirus 3+11p  19
-Human adenovirus 16 1
-</code></pre>
-<p>The second file is a summary of all reads analyzed for this sample and how many
-were passing a specific step of the pipeline or matching a specific database.</p>
-<pre><code>[user@host test_virmet]$ cat virmet_output_exp01/AR-1_S1/stats.tsv
-raw_reads       6250
-trimmed_too_short       462
-low_entropy     1905
-low_quality     0
-passing_filter  3883
-matching_humanGRCh38    3463
-matching_bact1  0
-matching_bact2  0
-matching_bact3  0
-matching_fungi1 0
-matching_bt_ref 0
-reads_to_blast  420
-viral_reads     257
-undetermined_reads      163
-</code></pre>
-<h3 id="additional-files">Additional files</h3>
-<p>At the end of a run a directory for each sample (fastq file analyzed) is
-created containing the following files:</p>
-<pre><code>good_humanGRCh38_bact1_bact2_bact3_fungi1_bt_ref.cram
-good_humanGRCh38_bact1_bact2_bact3_fungi1_bt_ref.err
-...
-good_humanGRCh38_bact1.cram
-good_humanGRCh38_bact1.err
-good_humanGRCh38.cram
-good_humanGRCh38.err
+<p>Wolfpack is the main subcommand of VirMet and it allows to perform
+mNGS analyses of the given samples (virus scan).</p>
+<p>Information on how to use it can be obtained with <code>-h</code>:</p>
+<div class="highlight"><pre><span></span><code>virmet wolfpack -h
+usage: virmet wolfpack [options]
 
-orgs_list.tsv
-prinseq.err
-prinseq.log
-stats.tsv
-undetermined_reads.fastq.gz
-unique.tsv.gz
-viral_reads.fastq.gz
-</code></pre>
-<p>Files <code>orgs_list.tsv</code> and <code>stats.tsv</code> report the main output of the tool as
-reported above, while <code>unique.tsv.gz</code> reports blast hits to viral database.</p>
+Options:
+  -h, --help       show this help message and exit
+  --run RUN        Miseq run directory
+  --file FILE      single fastq file
+  --dbdir [DBDIR]  path to find and use the Virmet database. Default: /data/virmet_databases/
+  --nocovplot      do not make the covplots. Default: make them
+  --noctrls        do not analyse ntc- or Undetermined samples. Default: analyse them
+</code></pre></div>
+<p>Wolfpack can be run on a single file (<code>--file</code>) or on a directory (<code>--run</code>).
+If a directory is provided, it analyses all the FASTQ files in there.
+Please, note that Wolfpack works if the structure of the <code>--run</code> directory is
+any of these 2:</p>
+<div class="highlight"><pre><span></span><code># Structure 1
+run_directory/
+├── FASTQ_file_1
+├── FASTQ_file_2
+├── ...
+└── FASTQ_file_n
+
+# Structure 2
+run_directory/
+└── Data/
+    └── Intensities/
+        └── BaseCalls/
+            ├── FASTQ_file_1
+            ├── FASTQ_file_2
+            ├── ...
+            └── FASTQ_file_n
+</code></pre></div>
+<p>Importantly, the extension of the FASTQ files must be
+<code>.fastq</code> or <code>.fastq.gz</code>.</p>
+<p>To run Wolfpack, users have the option to specify <code>--dbdir</code>, which is
+the path to the VirMet database and must include the viral, human, bovine, 
+bacterial and fungal (bact_fungi) databases.
+See how to <a href="../Preparation/">prepare for a VirMet run</a> before running
+Wolfpack.
+If <code>-dbdir</code> is not specified, VirMet will assume that it is located in
+<code>/data/virmet_databases/</code>.</p>
+<p>Users also have the option to run the mNGS analyses on all the FASTQ files
+(the default behaviour), which usually include negative controls and 
+undertermined reads, or to skip those with <code>--noctrls</code>.
+In this case, all files named <code>ntc-*</code> or <code>Undetermined*</code> will be ignored.</p>
+<p>To carry out the virus scan, Wolfpack will first run a filtering step (QC)
+based on quality, length and entropy of the given reads (named quality-control).
+Then, it will perform a decontamination step, where reads of human, bovine,
+bacterial and fungal origin will be discarded.
+Finally, remaining reads will be <em>blasted</em> against the viral database and
+the viruses present in the mNGS samples will be identified.</p>
+<p>Before providing the results, Wolfpack will (by default) automatically check
+which of the identified viral organisms fulfill these criteria:</p>
+<ul>
+<li>≥3 sequencing reads match this specific viral organism.</li>
+<li>The weighted mean coverage score for this viral organism is ≥10%.</li>
+<li>The viral organism is not a phage nor a non-human virus (host is human).</li>
+</ul>
+<p>For all the viral organisms meeting these criteria, Wolfpack will generate
+<a href="../Covplot/">Coverage plots</a>, where users can see what fraction of the genome is covered
+by the sequenncing reads. This will provide them with further evidence
+supporting (or not) the presence of the organism in the sample.</p>
+<p>If users want to avoid this last step and are not interested in getting the
+coverage plots, they can disable such option with <code>--nocovplot</code>.</p>
+<h2 id="outputs">Outputs</h2>
+<p>Virmet Wolfpack provides several outputs that can be found in the
+output folder <code>virmet_output_RUN_NAME</code>, located at the current working directory.</p>
+<p>For example, if users have a directory named <code>Exp01</code> with files:</p>
+<div class="highlight"><pre><span></span><code>exp_01/ABC-DNA_S9.fastq.gz
+exp_01/DEF-RNA_S11.fastq.gz
+</code></pre></div>
+<p>and run <code>virmet wolfpack --run Exp01</code>, their results will
+appear into <code>virmet_output_Exp01</code>.</p>
+<p>The most important output files are:</p>
+<ul>
+<li><strong>Orgs_species_found.csv</strong>: table showing the viral organisms identified per
+FASTQ file as well as the read counts matching each organism.
+It looks as follows:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>species                accn        reads  stitle               ssciname               covered_region  seq_len  sample       run
+Tunavirus T1           MK213796.1  455    Phage T1             Escherichia phage T1   30152           48836    ABC-DNA_S9   Exp01
+Varicellovirus a5      KY559403.2  79     Alphaherpesvirus 5   Alphaherpesvirus 5     321             137741   ABC-DNA_S9   Exp01
+Lentivirus humimdef1   MT222957.1  13     HIV-1 isolate X      HIV-1                  141             9372     DEF-RNA_S11  Exp01
+Emesvirus zinderi      EF204940.1  6265   Phage MS2 isolate Y  Escherichia phage MS2  2836            3569     DEF-RNA_S11  Exp01
+</code></pre></div>
+<ul>
+<li><strong>Run_reads_summary.tsv</strong>: summary of all reads analyzed per sample, showing the
+number of reads passing each step of the pipeline (e.g., QC, decontamination),
+and the number of reads matching the human, bovine, bacterial, fungal and
+viral database.
+It looks as follows:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>category              reads     sample       run
+raw_reads             2656448   ABC-DNA_S9   Exp01
+trimmed_too_short     46        ABC-DNA_S9   Exp01
+low_entropy           25        ABC-DNA_S9   Exp01
+low_quality           1081      ABC-DNA_S9   Exp01
+passing_filter        2655296   ABC-DNA_S9   Exp01
+matching_humanGRCh38  339020    ABC-DNA_S9   Exp01
+matching_bt_ref       1319509   ABC-DNA_S9   Exp01
+matching_bacteria     46024     ABC-DNA_S9   Exp01
+matching_fungi        10        ABC-DNA_S9   Exp01
+matching_other_cells  7403      ABC-DNA_S9   Exp01
+reads_to_blast        943330    ABC-DNA_S9   Exp01
+viral_reads           70579     ABC-DNA_S9   Exp01
+undetermined_reads    872751    ABC-DNA_S9   Exp01
+raw_reads             2202164   DEF-RNA_S11  Exp01
+trimmed_too_short     259441    DEF-RNA_S11  Exp01
+low_entropy           18        DEF-RNA_S11  Exp01
+low_quality           1277      DEF-RNA_S11  Exp01
+passing_filter        1941428   DEF-RNA_S11  Exp01
+matching_humanGRCh38  526874    DEF-RNA_S11  Exp01
+matching_bt_ref       819466    DEF-RNA_S11  Exp01
+matching_bacteria     8721      DEF-RNA_S11  Exp01
+matching_fungi        21        DEF-RNA_S11  Exp01
+matching_other_cells  299       DEF-RNA_S11  Exp01
+reads_to_blast        586047    DEF-RNA_S11  Exp01
+viral_reads           168247    DEF-RNA_S11  Exp01
+undetermined_reads    417800    DEF-RNA_S11  Exp01
+</code></pre></div>
+<p>In addition to these main outputs, Wolfpack creates inside
+<code>virmet_output_RUN_NAME</code> a subdirectory for each sample (FASTQ file).
+There, users can find these additional files: </p>
+<ul>
+<li>Unique.tsv.gz</li>
+<li>Viral_reads.fastq.gz</li>
+<li>Undetermined_reads.fastq.gz</li>
+<li>Orgs_list.tsv</li>
+<li>Stats.tsv</li>
+<li>Fastp.html</li>
+<li><strong>Folders named as viral organisms</strong></li>
+<li>Other.err</li>
+</ul>
+<p>Files <code>orgs_list.tsv</code> and <code>stats.tsv</code> report the main output of the tool for
+each sample. They are the same as <code>Orgs_species_found.csv</code> and <code>Run_reads_summary.tsv</code>,
+respectively, but containing information only of one sample. Therefore, the
+last two columns (<em>sample</em> and <em>run</em>) are missing.</p>
+<p>The <code>unique.tsv.gz</code> reports all BLAST hits to the viral database. These are
+not the same as in <code>orgs_list.tsv</code> because VirMet further filters the
+BLAST hits (<code>unique.tsv.gz</code>) to ensure that only those with ≥75% pident and
+≥75% qcov are ultimately considered viral reads for diagnosis. </p>
 <p>As the names say, <code>viral_reads.fastq.gz</code> and <code>undetermined_reads.fastq.gz</code>
 contain, respectively, reads identified as of viral origin and reads not
 matching any of the considered genomes.</p>
-<p><code>prinseq.err</code> and <code>prinseq.log</code> are, respectively, the standard error and log
-file of prinseq, used to filter reads. By inspecting this log file, VirMet
-determines how many reads were discarded because of low entropy or low quality.</p>
-<p>In the <em>decontamination</em> step, reads are aligned against human genome first,
+<p>Finally, <code>fastp.html</code> shows the quality-control statistics and information
+about the QC-filtering step.</p>
+<p>In the <em>decontamination</em> step, reads are aligned against the human genome first,
 those matching are discarded while those not matching are aligned against
-the first set of bacterial genomes, and so on.
-File <code>good_humanGRCh38.cram</code> is the alignment of high quality reads (good) to
-human genome, saved in CRAM format. File <code>good_humanGRCh38_bact1.cram</code> contains
-the alignment to bacterial genomes in set bact1 of high quality reads (good) minus
-those that were identified as matching human genome, and so on. File ending in
-<code>err</code> contain the standard error of the conversion bam -&gt; cram.</p>
-<h3 id="hot-run">Hot run</h3>
-<p>A virus scan on a full MiSeq run typically lasts a few hours, many of which are spent
+the bovine genome, and so on. In each step, some files ending with <em>.err</em>
+are generated, and they can be used for inspection, if needed. However, they
+do not provide valuable information for the users (unless there is any error)
+and can be removed if desired.</p>
+<p>Besides all these files, Wolfpack automatically creates (unless disabled with
+<code>--nocovplot</code>) a few folders with the names of viral organisms. Such folders
+contain the coverage plots of the viral assignments, named <code>Viral_organism_coverage.pdf</code>.
+It is recommended to manually have a look at them before a final viral diagnosis.</p>
+<p>Overall, users can expect the following structure for the outputs:</p>
+<div class="highlight"><pre><span></span><code>virmet_output_Exp01/
+│
+├── ABC-DNA_S9
+│   ├── Virus_X/
+│   │    └── Virus_X_coverage.pdf
+│   ├── unique.tsv.gz, viral_reads.fastq.gz, undetermined_reads.fastq.gz
+│   ├── orgs_list.tsv, stats.tsv, fastp.html
+│   └── Others.err
+│ 
+├── DEF-RNA_S11
+│   ├── Virus_Y/
+│   │   └── Virus_Y_coverage.pdf
+│   ├── Virus_Z/
+│   │   └── Virus_Z_coverage.pdf
+│   ├── unique.tsv.gz, viral_reads.fastq.gz, undetermined_reads.fastq.gz
+│   ├── orgs_list.tsv, stats.tsv, fastp.html
+│   └── Others.err
+│
+├── run_reads_summary.tsv
+└── orgs_species_found.tsv
+</code></pre></div>
+<p>More information about the <a href="../Covplot/">Coverage plots</a> is provided in the corresponding
+section.</p>
+<h2 id="hot-run">Hot run</h2>
+<p>A virus scan on a full MiSeq run typically lasts a few hours, most of which are spent
 in the decontamination phase. Sometimes, after a run is completed, we would like to
 run it again with a new viral database. In these cases, <code>wolfpack</code> would run skipping
 the previous phases to save time. It relies on the presence of intermediate files that,
 if present, signals the pipeline that a specific step must be skipped.</p>
 <p>These are the rules (must be intended for each sample):</p>
 <ul>
-<li>if both <code>prinseq.log</code> and <code>prinseq.err</code> exist, skip quality filtering,</li>
-<li>if <code>good_humanGRCh38.err</code> exists, skip the human reads decontamination,</li>
-<li>if <code>good_humanGRCh38_bact1.err</code> exists, skip the decontamination against first bacterial
-  database, and so on.</li>
+<li>If <code>fastp.html</code> exists, skip quality filtering.</li>
+<li>If <code>good_humanGRCh38.err</code> exists, skip the human reads decontamination.</li>
+<li>If <code>good_humanGRCh38_bt_ref.err</code> exists, skip the bovine reads decontamination.</li>
+<li>if <code>good_humanGRCh38_bt_ref_bact_fungi.err.err</code> exists, skip the 
+decontamination bacterial and fungal database.</li>
 </ul>
 <p>Blasting against viral database will always be performed. If both <code>viral_reads.fastq.gz</code>
 and <code>undetermined_reads.fastq.gz</code> exist, their content will be copied into a file,
 they will be removed, and this new file will be blasted against the viral database.</p>
-<p>In short, if we change the viral database after a run has already been analyzed, simply
-running <code>virmet wolfpack</code> again will skip the quality filtering and go straight to
-blast against viral database.</p>
+<p>Therefore, if users change the viral database after a run has already been analyzed,
+running <code>virmet wolfpack</code> again will skip the quality filtering and decontamination steps
+and proceed directly with the viral assignment.</p>
+<p><strong>Enjoy with your viral classification!</strong></p>
 
 
 

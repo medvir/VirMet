@@ -62,7 +62,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#preparing-for-a-real-run-fetch-or-upload-and-index" class="md-skip">
+        <a href="#preparing-for-a-real-run-fetch-or-update-and-index" class="md-skip">
           Skip to content
         </a>
       
@@ -303,27 +303,21 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Update">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#adding-sequences-manually" class="md-nav__link">
-    <span class="md-ellipsis">
-      Adding sequences manually
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
         <li class="md-nav__item">
   <a href="#index" class="md-nav__link">
     <span class="md-ellipsis">
       Index
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#database-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Database structure
     </span>
   </a>
   
@@ -397,44 +391,121 @@
 
 
 
-<h1 id="preparing-for-a-real-run-fetch-or-upload-and-index">Preparing for a real run: <code>fetch</code> or <code>upload</code>, and <code>index</code></h1>
+<h1 id="preparing-for-a-real-run-fetch-or-update-and-index">Preparing for a real run: <code>fetch</code> or <code>update</code>, and <code>index</code></h1>
 <h2 id="fetch">Fetch</h2>
 <p>After installation, one needs to populate the database directory. By default
-this will be <code>/data/virmet_databases</code> and will occupy about 60 GB. In order to
-populate this, use the subcommand <code>fetch</code>, for example as follows</p>
-<pre><code>virmet fetch --viral n  # this downloads viral sequences, nucleotide only
+this will be <code>/data/virmet_databases_update</code>, but it can be modified by the users.
+In order to populate this database, use the subcommand <code>fetch</code> as follows:</p>
+<div class="highlight"><pre><span></span><code>virmet fetch --viral n
 virmet fetch --human
-virmet fetch --bact
-virmet fetch --fungal
+virmet fetch --bact_fungal
 virmet fetch --bovine
-</code></pre>
-<p>This might take long. If it's taking too long, you might want to include the
-above commands in a <code>down.sh</code> file and run them overnight.</p>
-<p>Only the option <code>--viral</code> takes an argument: <code>n</code> for nucleotide and <code>p</code> for
-protein viral database. Currently only nucleotide sequences are used, while the
-protein ones are foreseen as useful in discovery of novel viral sequences
-(in a future version).</p>
+</code></pre></div>
+<p>This might take long, because databases are big.
+Therefore, we strongly recommend running it inside a <code>tmux</code> session.</p>
+<p>By default, the download of the viral database performs a
+compression step. Users can avoid it with <code>--no_db_compression</code>.
+However, we highly discourage to do that because subsequent analyses
+will be much slower and the senstivity improvement during the 
+viral classification process is minimal.</p>
+<p>Remarkably, only the option <code>--viral</code> takes an argument: <code>n</code> for nucleotide and <code>p</code> for
+the protein viral database. However, please note that only nucleotide sequences
+are used currently by <a href="../Wolfpack/">Wolfpack</a>, while the protein sequences 
+are planned for future expansions of the tool.</p>
+<p>Further information on the <code>fetch</code> subcommand can be obtained using <code>-h</code>:</p>
+<div class="highlight"><pre><span></span><code>virmet fetch -h
+usage: virmet &lt;command&gt; [options]
+
+options:
+  -h, --help           show this help message and exit
+  --viral {n,p}        viral [nucleic acids/proteins]
+  --human              human
+  --bact_fungal        bacterial and fungal(RefSeq)
+  --bovine             bovine (Bos taurus)
+  --no_db_compression  do not compress the viral database
+  --dbdir [DBDIR]      path to store the new Virmet database
+</code></pre></div>
 <h2 id="update">Update</h2>
-<p>More and more sequences are uploaded to NCBI database every month.</p>
+<p>More and more genomes are uploaded to NCBI database every month.</p>
 <p>VirMet provides a simple way to update the viral database without the need to download
-all the genomes again. This can be done with the subcommand
-<code>update</code> as in the example</p>
-<pre><code>virmet update --viral n
-</code></pre>
-<p>Similarly, new bacterial sequences can be added as well as fungal. Human
-and bovine database, since they consist of a single organism, don't need to be
-updated so often.</p>
-<p>Don't forget to index the database again once it has been updated.</p>
-<h3 id="adding-sequences-manually">Adding sequences manually</h3>
-<p>By adding the switch <code>--picked file_with_ids</code> users can add sequences by
-writing their ids in a file, one per line.</p>
+all the genomes again. This can be done with the subcommand <code>update</code> as follows:</p>
+<p><code>virmet update --viral n --update_min_date YYYY/MM/DD</code></p>
+<p>Information on how to use the <code>update</code> subcomand can be obtained with <code>-h</code>:</p>
+<div class="highlight"><pre><span></span><code>virmet update -h
+usage: virmet &lt;command&gt; [options] 
+
+options:
+  -h, --help            show this help message and exit
+  --viral {n,p}         update viral [n]ucleic/[p]rotein
+  --picked              PICKED       
+                        file with additional sequences, one ACC per line
+  --update_min_date     UPDATE_MIN_DATE
+                        update viral database with sequences produced after date YYYY/MM/DD
+  --no_db_compression   do not compress the viral database
+  --dbdir [DBDIR]       path to store the updated Virmet database
+</code></pre></div>
+<p>In addition to choosing a specific date from which to look for reference sequences (<code>--update_min_date</code>),
+users can also provide a <em>.txt</em> file with specific viral genomes to include in the database (<code>--picked</code>).
+For that, they need to provide all the Accession Numbers (ACC) of these genomes
+as they appear in the NCBI RefSeq database.
+The .txt file should contain one Accession Number per row.</p>
+<p>As mentioned for the <code>fetch</code> subcommand, <code>update</code> also allows users to skip
+the compression step (<code>--no_db_compression</code>) of the viral database, although this is
+highly discouraged. Users can also change the default database path (<code>--dbdir</code>) if 
+their whole VirMet database is in another location.</p>
+<p>Important: don't forget to index the viral database again once it has been updated.</p>
 <h2 id="index">Index</h2>
 <p>After dowloading or updating the databases, it's always needed to index them.
-The subcommand <code>virmet index</code> is used for that, and it can take multiple arguments, 
-so you can run</p>
-<pre><code>virmet index --viral n --human --bact --fungal --bovine
-</code></pre>
+The subcommand <code>virmet index</code> is used for that, and it can take multiple arguments.
+Therefore, if users need to index the whole VirMet database, they can run: </p>
+<p><code>virmet index --viral n --human --bact_fungal --bovine</code></p>
 <p>and wait for the indexing to finish.</p>
+<p>Alternatively, if they need to index only the viral database, they can do it as follows:
+<code>virmet index --viral n</code></p>
+<p>Further information on how to use the <code>index</code> subcommand can be obtained with <code>-h</code>:</p>
+<div class="highlight"><pre><span></span><code>virmet index -h
+usage: virmet &lt;command&gt; [options]
+
+options:
+  -h, --help       show this help message and exit
+  --viral {n,p}    make blast index of viral database
+  --human          make bwa index of human database
+  --bact_fungal    build kraken2 bacterial and fungal database
+  --bovine         make bwa index of bovine database
+  --dbdir [DBDIR]  path to store the indexed Virmet database
+</code></pre></div>
+<h2 id="database-structure">Database structure</h2>
+<p>If everything works as expected, your database directory should have the following structure:</p>
+<p><div class="highlight"><pre><span></span><code>virmet_databases_update/
+├── viral_nuccore/
+│   ├── viral_database.fasta
+│   ├── viral_accn_taxid.dmp
+│   └── viral_seqs_info.tsv
+├── human/
+│   ├── fasta/
+│   │   └── GRCh38.fasta.gz
+│   └── bwa/
+│       └── bwa_files
+├── bovine/
+│   ├── fasta/
+│   │   └── ref_Bos_taurus.fasta.gz
+│   └── bwa/
+│       └── bwa_files
+├── bact_fungi/
+│   ├── library/
+│   │   ├── bacteria
+│   │   │   └── library.fna
+│   │   └── fungi
+│   │       └── library.fna
+│   └── taxonomy/
+│       └── taxdump.tar.gz
+├── names.dmp.gz
+└── nodes.dmp.gz
+</code></pre></div>
+Please, note that the name of the database doesn't need to be necessarily
+<code>virmet_databases_update</code>. This is the default name.</p>
+<p>If you read until here, you are ready to use <a href="../Wolfpack/">VirMet Wolfpack</a>!</p>
+<p><strong>Enjoy analysing your mNGS samples!</strong></p>
 
 
 

@@ -322,19 +322,38 @@
 
 
 <h1 id="welcome-to-virmet">Welcome to VirMet</h1>
-<p>VirMet is a software suite designed to help users running viral metagenomics (mNGS) experiments: unspecific massively parallel NGS sequencing with the aim of discovering and characterizing the virus fraction of biological samples.</p>
-<p>To see and download the code, visit our <a href="https://github.com/medvir/VirMet/">GitHub</a>.</p>
+<p>VirMet is a software suite designed to help users running viral metagenomics 
+(mNGS) experiments: unspecific massively parallel NGS sequencing with the aim 
+of discovering and characterizing the virus fraction of biological samples.</p>
+<p>To see and download the code, visit our <a href="https://github.com/medvir/VirMet/">GitHub</a>.
+Information on how to install VirMet can be found in the <a href="Installation/">Installation</a> section.</p>
 <p>VirMet is called with a command-subcommand syntax. All the possible subcommands are:</p>
 <ul>
 <li><a href="Preparation/"><code>fetch</code></a>: download genomes</li>
-<li><a href="Preparation/"><code>update</code></a>: update viral/bacterial database</li>
+<li><a href="Preparation/"><code>update</code></a>: update viral database</li>
 <li><a href="Preparation/"><code>index</code></a>: index genomes</li>
-<li><a href="Wolfpack/"><code>wolfpack</code></a>: analyze a Miseq run</li>
+<li><a href="Wolfpack/"><code>wolfpack</code></a>: analyze a Miseq run or file</li>
 <li><a href="Covplot/"><code>covplot</code></a>: plot coverage for a specific organism</li>
 </ul>
-<p>Some help can be obtained with <code>virmet &lt;subcommand&gt; -h</code>.</p>
-<p>As an example, if you want to download the viral nucleotide database, you can use it as follows:
-<code>virmet fetch --viral n</code>.</p>
+<p>Some help can be obtained with <code>virmet &lt;subcommand&gt; -h</code> or simply <code>virmet -h</code>:</p>
+<div class="highlight"><pre><span></span><code>virmet -h
+usage: virmet &lt;command&gt; [options]
+
+positional arguments:
+  {fetch,update,index,wolfpack,covplot}
+                        available sub-commands
+    fetch               download genomes
+    update              update viral database
+    index               index genomes
+    wolfpack            analyze a Miseq run
+    covplot             create coverage plot
+
+options:
+  -h, --help            show this help message and exit
+  -v, --version         show program&#39;s version number and exit
+
+Run `virmet subcommand -h` for more help
+</code></pre></div>
 <p><strong>Enjoy using VirMet!</strong></p>
 <p><img alt="" src="assets/logo.svg" style="display:block; margin-left:auto; margin-right:auto; width:50%;" /></p>
 
