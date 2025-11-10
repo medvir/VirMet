@@ -472,6 +472,16 @@ Varicellovirus a5      KY559403.2  79     Alphaherpesvirus 5   Alphaherpesvirus 
 Lentivirus humimdef1   MT222957.1  13     HIV-1 isolate X      HIV-1                  141             9372     DEF-RNA_S11  Exp01
 Emesvirus zinderi      EF204940.1  6265   Phage MS2 isolate Y  Escherichia phage MS2  2836            3569     DEF-RNA_S11  Exp01
 </code></pre></div>
+<p>with each column meaning:</p>
+<p><code>species</code>: scientific name of the species corresponding to the database sequence.<br />
+<code>accn</code>: accession number of the viral species corresponding to the database sequence. <br />
+<code>reads</code>: number of reads assigned to this specific sequence.<br />
+<code>stitle</code>: title of the sequence in the database (fasta header).<br />
+<code>ssciname</code>: scientific name of the sequence.<br />
+<code>covered_region</code>: number of nucleotides covered by at least one read.<br />
+<code>seq_len</code>: length of the sequence.<br />
+<code>sample</code>: name of the FASTQ file that lead to the results.<br />
+<code>run</code>: name of the sequencing run or main folder.  </p>
 <ul>
 <li><strong>Run_reads_summary.tsv</strong>: summary of all reads analyzed per sample, showing the
 number of reads passing each step of the pipeline (e.g., QC, decontamination),
