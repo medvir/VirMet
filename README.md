@@ -1,48 +1,40 @@
 VirMet
 ------
 
-[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat-square)](http://bioconda.github.io/recipes/virmet/README.html)
+VirMet is a software designed to help users running viral metagenomics 
+(mNGS) experiments.
 
-Watch out: only a few files are counted in coverage statistics.
+For full Documentation, please [Read the Docs](https://medvir.github.io/VirMet/).
 
-Full documentation on [Read the Docs](https://medvir.github.io/VirMet/).
+VirMet is called with a command-subcommand syntax. All the possible subcommands are:
 
-A set of tools for viral metagenomics.
+* [`fetch`](https://medvir.github.io/VirMet/Preparation/): download all databases
+* [`update`](https://medvir.github.io/VirMet/Preparation/): update viral database
+* [`index`](https://medvir.github.io/VirMet/Preparation/): index all genomes
+* [`wolfpack`](https://medvir.github.io/VirMet/Wolfpack/): analyze a Miseq run or file
+* [`covplot`](https://medvir.github.io/VirMet/Covplot/): plot coverage for a specific organism
 
-virmet is called with a command subcommand
-syntax: `virmet fetch --viral n`, for example, downloads the bacterial
-database. Other available subcommands so far are
+Some help can be obtained with `virmet <subcommand> -h` or simply `virmet -h`:
 
-- `fetch`               download genomes
-- `update`              update viral/bacterial database
-- `index`               index genomes
-- `wolfpack`            analyze a Miseq run
-- `covplot`             plot coverage for a specific organism
+```
+virmet -h
+usage: virmet <command> [options]
 
+positional arguments:
+  {fetch,update,index,wolfpack,covplot}
+                        available sub-commands
+    fetch               download databases
+    update              update viral database
+    index               index genomes
+    wolfpack            analyze a Miseq run
+    covplot             create coverage plot
 
-A short help is obtained with `virmet subcommand -h`.
+options:
+  -h, --help            show this help message and exit
+  -v, --version         show program's version number and exit
+```
 
-#### The simplest example
-
-    [user@host ~]$ virmet wolfpack --run path_to_run_directory
-    ... some time later ...
-    [user@host ~]$ wc virmet_output_name_of_the_run/sample_name/orgs_list.csv
-       9     128     963 orgs_list2.tsv
-
-Reads are filtered, decontaminated, and finally blasted against a (large)
-set of viral sequences. Results for each database sequence to which similar reads
-were found are summarised in a tsv file is with columns
-
-- `species`: scientific name of the species corresponding to the database sequence;
-- `reads`: number of reads assigned to this specific sequence;
-- `stitle`: title of the sequence in the database (fasta header);
-- `ssciname`: scientific name of the sequence;
-- `covered_region`: number of nucleotides covered by at least one read;
-- `seq_len`: length of the sequence.
-
-An example of such a file is reported here.
-
-![Figure 1](output.png " Figure 1")
+Run `virmet subcommand -h` for more help.
 
 ### Installation
 
@@ -54,80 +46,163 @@ conda is [installed](https://bioconda.github.io/#install-conda) and the
 [channels](https://bioconda.github.io/#set-up-channels) are set up,
 `conda install virmet` installs the package with all its dependencies.
 
-#### `setuptools` or Docker
-
-The classic `python setup.py install` will work, but see the relevant
-[page](http://virmet.readthedocs.io/en/latest/installation/) of the
-documentation to install third-party tools, or follow the instructions
-to run the [docker version](http://virmet.readthedocs.io/en/latest/dockerised/).
-
 ### Preparation
 
 VirMet contains programs to download and index the genome sequences,
-instructions [here](http://virmet.readthedocs.io/en/latest/preparation/).
+instructions [here](https://medvir.github.io/VirMet/Preparation/).
 
 ### Running a virus scan
 
-This can be run on a single file or on a directory. It will try to guess from
-the naming scheme if it is a Miseq output directory (_i.e._ with
-`Data/Intensities/BaseCalls/` structure) and analyze all fastq files in there.
-The extension must be `.fastq` or `.fastq.gz`. It will then run a filtering
-step based on quality, length and entropy (in short: reads with a lot of
-repeats will be discarded), followed by a decontamination step where reads
-of human/bacterial/bovine/fungal origin will be discarded. Finally, remaining
-reads are _blasted_ against the viral database. The list of organisms with the
-count of reads is in files `orgs_list.csv` in the output directory
-(naming is `virmet_output_...`). For example, if we have a directory named
-`exp_01` with files
+Once the `fetch` and `index` subcommands have ben run and the databases are downloaded and indexed, users can
+use [`Wolfpack`](https://medvir.github.io/VirMet/Wolfpack/), the main subcommand of VirMet.
 
-    exp_01/AR-1_S1_L001_R1_001.fastq.gz
-    exp_01/AR-2_S2_L001_R1_001.fastq.gz
-    exp_01/AR-3_S3_L001_R1_001.fastq.gz
-    exp_01/AR-4_S4_L001_R1_001.fastq.gz
+A very simple way to use Wolfpack is the following:
+`virmet wolfpack --run path_to_run_directory`
 
-we could run
+With that, sequencing reads are filtered (quality-control), decontaminated, and finally blasted against a (large)
+set of viral sequences. 
 
-    [user@host test_virmet]$ virmet wolfpack --dir exp_01
+Virmet Wolfpack provides several outputs that can be found in the
+output folder `virmet_output_RUN_NAME`, located at the current working directory.
 
-and, after some time, find the results in `virmet_output_exp01`. Many files are
-present, the most important ones being `orgs_list.csv` and `stats.tsv`. The
-first lists the viral organisms found with a count of reads that could be
-matched to them.
+For example, if users have a directory named `Exp01` with files:
 
-    [user@host test_virmet]$ cat virmet_output_test_dir_150123/3-1-65_S5/orgs_list.tsv
-    organism	reads
-    Human adenovirus 7	126
-    Human poliovirus 1 strain Sabin	45
-    Human poliovirus 1 Mahoney	29
-    Human adenovirus 3+11p	19
-    Human adenovirus 16	1
+```
+exp_01/ABC-DNA_S9.fastq.gz
+exp_01/DEF-RNA_S11.fastq.gz
+```
 
-The second file is a summary of all reads analyzed for this sample and how many
-were passing a specific step of the pipeline or matching a specific database.
+and run ```virmet wolfpack --run Exp01```, their results will
+appear into `virmet_output_Exp01`.
 
-    [user@host test_virmet]$ cat virmet_output_exp01/AR-1_S1/stats.tsv
-    raw_reads       6250
-    trimmed_too_short       462
-    low_entropy     1905
-    low_quality     0
-    passing_filter  3883
-    matching_humanGRCh38    3463
-    matching_bact1  0
-    matching_bact2  0
-    matching_bact3  0
-    matching_fungi1 0
-    matching_bt_ref 0
-    reads_to_blast  420
-    viral_reads     257
-    undetermined_reads      163
+The most important output files are:
 
+* **Orgs_species_found.csv**: table showing the viral organisms identified per
+FASTQ file as well as the read counts matching each organism.
+It looks as follows:
 
-### Updating the database
+```
+species                accn        reads  stitle	           ssciname	              covered_region  seq_len  sample	    run
+Tunavirus T1	       MK213796.1  455	  Phage T1             Escherichia phage T1	  30152	          48836	   ABC-DNA_S9	Exp01
+Varicellovirus a5	   KY559403.2  79	  Alphaherpesvirus 5   Alphaherpesvirus 5	  321	          137741   ABC-DNA_S9	Exp01
+Lentivirus humimdef1   MT222957.1  13	  HIV-1 isolate X 	   HIV-1	              141	          9372	   DEF-RNA_S11  Exp01
+Emesvirus zinderi	   EF204940.1  6265	  Phage MS2 isolate Y  Escherichia phage MS2  2836	          3569	   DEF-RNA_S11  Exp01
+```
 
-More and more sequences are uploaded to NCBI database every month. The figure
-shows the number of viral sequences with _complete genome_ in the title
-that are submitted every month to NCBI ([code](https://gist.github.com/ozagordi/c1e1c4158ab4e94e4683)).
+with each column meaning:
 
-![Code used to create the figure is [here](https://gist.github.com/ozagordi/c1e1c4158ab4e94e4683)](./docs/viral_genomes.png "NCBI complete viral genomes per month")
+`species`: scientific name of the species corresponding to the database sequence.  
+`accn`: accession number of the viral species corresponding to the database sequence.   
+`reads`: number of reads assigned to this specific sequence.  
+`stitle`: title of the sequence in the database (fasta header).  
+`ssciname`: scientific name of the sequence.  
+`covered_region`: number of nucleotides covered by at least one read.  
+`seq_len`: length of the sequence.  
+`sample`: name of the FASTQ file that lead to the results.  
+`run`: name of the sequencing run or main folder.  
 
-VirMet provides a simple way to [update the viral database](http://virmet.readthedocs.io/en/latest/updating/).
+* **Run_reads_summary.tsv**: summary of all reads analyzed per sample, showing the
+number of reads passing each step of the pipeline (e.g., QC, decontamination),
+and the number of reads matching the human, bovine, bacterial, fungal and
+viral database.
+It looks as follows:
+
+```
+category	          reads	    sample	     run
+raw_reads	          2656448	ABC-DNA_S9	 Exp01
+trimmed_too_short	  46	    ABC-DNA_S9	 Exp01
+low_entropy	          25	    ABC-DNA_S9	 Exp01
+low_quality	          1081	    ABC-DNA_S9	 Exp01
+passing_filter	      2655296	ABC-DNA_S9	 Exp01
+matching_humanGRCh38  339020	ABC-DNA_S9	 Exp01
+matching_bt_ref	      1319509	ABC-DNA_S9	 Exp01
+matching_bacteria	  46024	    ABC-DNA_S9	 Exp01
+matching_fungi	      10	    ABC-DNA_S9	 Exp01
+matching_other_cells  7403	    ABC-DNA_S9	 Exp01
+reads_to_blast	      943330	ABC-DNA_S9	 Exp01
+viral_reads	          70579	    ABC-DNA_S9	 Exp01
+undetermined_reads	  872751	ABC-DNA_S9	 Exp01
+raw_reads	          2202164	DEF-RNA_S11	 Exp01
+trimmed_too_short	  259441	DEF-RNA_S11	 Exp01
+low_entropy	          18	    DEF-RNA_S11	 Exp01
+low_quality	          1277	    DEF-RNA_S11	 Exp01
+passing_filter	      1941428	DEF-RNA_S11	 Exp01
+matching_humanGRCh38  526874	DEF-RNA_S11	 Exp01
+matching_bt_ref	      819466	DEF-RNA_S11	 Exp01
+matching_bacteria	  8721	    DEF-RNA_S11	 Exp01
+matching_fungi	      21	    DEF-RNA_S11	 Exp01
+matching_other_cells  299	    DEF-RNA_S11	 Exp01
+reads_to_blast	      586047	DEF-RNA_S11	 Exp01
+viral_reads	          168247	DEF-RNA_S11	 Exp01
+undetermined_reads	  417800	DEF-RNA_S11	 Exp01
+```
+
+In addition to these main outputs, Wolfpack creates inside
+`virmet_output_RUN_NAME` a subdirectory for each sample (FASTQ file).
+There, users can find these additional files: 
+
+* Unique.tsv.gz
+* Viral_reads.fastq.gz
+* Undetermined_reads.fastq.gz
+* Orgs_list.tsv
+* Stats.tsv
+* Fastp.html
+* **Folders named as viral organisms**
+* Other.err
+
+Files `orgs_list.tsv` and `stats.tsv` report the main output of the tool for
+each sample. They are the same as `Orgs_species_found.csv` and `Run_reads_summary.tsv`,
+respectively, but containing information only of one sample. Therefore, the
+last two columns (_sample_ and _run_) are missing.
+
+The `unique.tsv.gz` reports all BLAST hits to the viral database. These are
+not the same as in `orgs_list.tsv` because VirMet further filters the
+BLAST hits (`unique.tsv.gz`) to ensure that only those with ≥75% pident and
+≥75% qcov are ultimately considered viral reads for diagnosis. 
+
+As the names say, `viral_reads.fastq.gz` and `undetermined_reads.fastq.gz`
+contain, respectively, reads identified as of viral origin and reads not
+matching any of the considered genomes.
+
+Finally, `fastp.html` shows the quality-control statistics and information
+about the QC-filtering step.
+
+In the _decontamination_ step, reads are aligned against the human genome first,
+those matching are discarded while those not matching are aligned against
+the bovine genome, and so on. In each step, some files ending with _.err_
+are generated, and they can be used for inspection, if needed. However, they
+do not provide valuable information for the users (unless there is any error)
+and can be removed if desired.
+
+Besides all these files, Wolfpack automatically creates (unless disabled with
+`--nocovplot`) a few folders with the names of viral organisms. Such folders
+contain the coverage plots of the viral assignments, named `Viral_organism_coverage.pdf`.
+It is recommended to manually have a look at them before a final viral diagnosis.
+
+Overall, users can expect the following structure for the outputs:
+
+```
+virmet_output_Exp01/
+│
+├── ABC-DNA_S9
+│   ├── Virus_X/
+│   │    └── Virus_X_coverage.pdf
+│   ├── unique.tsv.gz, viral_reads.fastq.gz, undetermined_reads.fastq.gz
+│   ├── orgs_list.tsv, stats.tsv, fastp.html
+│   └── Others.err
+│ 
+├── DEF-RNA_S11
+│   ├── Virus_Y/
+│   │   └── Virus_Y_coverage.pdf
+│   ├── Virus_Z/
+│   │   └── Virus_Z_coverage.pdf
+│   ├── unique.tsv.gz, viral_reads.fastq.gz, undetermined_reads.fastq.gz
+│   ├── orgs_list.tsv, stats.tsv, fastp.html
+│   └── Others.err
+│
+├── run_reads_summary.tsv
+└── orgs_species_found.tsv
+```
+
+Please, see [VirMet Documentation](https://medvir.github.io/VirMet/) for a more extensive
+explanation on how to use `fetch`, `index`, `wolfpack` and `covplot` subcommands.

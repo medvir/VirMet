@@ -111,6 +111,18 @@ Lentivirus humimdef1   MT222957.1  13	  HIV-1 isolate X 	   HIV-1	              
 Emesvirus zinderi	   EF204940.1  6265	  Phage MS2 isolate Y  Escherichia phage MS2  2836	          3569	   DEF-RNA_S11  Exp01
 ```
 
+with each column meaning:
+
+`species`: scientific name of the species corresponding to the database sequence.  
+`accn`: accession number of the viral species corresponding to the database sequence.   
+`reads`: number of reads assigned to this specific sequence.  
+`stitle`: title of the sequence in the database (fasta header).  
+`ssciname`: scientific name of the sequence.  
+`covered_region`: number of nucleotides covered by at least one read.  
+`seq_len`: length of the sequence.  
+`sample`: name of the FASTQ file that lead to the results.  
+`run`: name of the sequencing run or main folder.  
+
 * **Run_reads_summary.tsv**: summary of all reads analyzed per sample, showing the
 number of reads passing each step of the pipeline (e.g., QC, decontamination),
 and the number of reads matching the human, bovine, bacterial, fungal and
