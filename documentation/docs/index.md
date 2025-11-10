@@ -5,7 +5,7 @@ VirMet is a software suite designed to help users running viral metagenomics
 of discovering and characterizing the virus fraction of biological samples.
 
 To see and download the code, visit our [GitHub](https://github.com/medvir/VirMet/).
-Information on how to install VirMet can be found in the [`Installation`](./Installation.md) section.
+Information on how to install VirMet can be found in the [Installation](./Installation.md) section.
 
 VirMet is called with a command-subcommand syntax. All the possible subcommands are:
 
@@ -13,7 +13,7 @@ VirMet is called with a command-subcommand syntax. All the possible subcommands 
 * [`update`](./Preparation.md): update viral database
 * [`index`](./Preparation.md): index genomes
 * [`wolfpack`](./Wolfpack.md): analyze a Miseq run or file
-* [`covplot`](./Wolfpack.md): plot coverage for a specific organism
+* [`covplot`](./Covplot.md): plot coverage for a specific organism
 
 Some help can be obtained with `virmet <subcommand> -h` or simply `virmet -h`:
 

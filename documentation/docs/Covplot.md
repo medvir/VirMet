@@ -2,54 +2,100 @@
 
 ## Covplot
 
-After a run of [`wolfpack`](./Wolfpack.md) we have a count of how many reads
-in a sample are assigned to a given organism, but we might be interested to
-know what fraction of the genome is covered by our reads because this would
-give further evidence to the presence of the organism in our sample. In other
-words, thirty reads from three different regions of the genome provide a stronger
-evidence than thirty reads all from the same region. With `covplot` we can
-easily create a plot of the coverage for an organism of interest.
+After a run of [`Wolfpack`](./Wolfpack.md), the `orgs_list.tsv` files show
+how many reads per sample are assigned to a given viral organism, and 
+(unless `--nocovplot` is requested), the tool also creates coverage plots
+for a few viral organisms of interest, given that:
 
-Let's suppose we want to investigate sample `AR-1_S1` in the directory
-`virmet_output_exp_01`; we first look at the file listing organisms and reads
-count
+* ≥3 sequencing reads match a specific viral organism.
+* The weighted mean coverage score for a viral organism is ≥10%.
+* The viral organism is not a phage nor a non-human virus.
 
-    [user@host test_virmet]$ cat virmet_output_exp_01/AR-1_S1/orgs_list.tsv
-    organism	reads
-    Human adenovirus 7	126
-    Human poliovirus 1 strain Sabin	45
-    Human poliovirus 1 Mahoney	29
-    Human adenovirus 3+11p	19
-    Human adenovirus 16	1
+See documentation of [Virus scan](./Wolfpack.md) for more information.
 
-This seems to be populated by two viruses, some adenovirus and some polivirus.
-Let's run `covplot` with `--help` to list the available options
+In some cases, however, users may be interested in generating coverage plots
+of other viral organisms, even if such organisms don't meet the mentioned criteria.
 
-    [user@host test_virmet]$ virmet covplot --help
-    usage: virmet <command> [options] covplot [-h] [--outdir OUTDIR]
-                                              [--organism ORGANISM]
+For that, they can use the subcommand `virmet covplot`. 
+Information on how to use it can be obtained with `-h`:
 
-    optional arguments:
-      -h, --help           show this help message and exit
-      --outdir OUTDIR      path to sample results directory
-      --organism ORGANISM  name of the organism as reported in orgs_list.tsv file
+```
+virmet covplot -h
+usage: virmet covplot [options]
 
-If we want the coverage of reads on the genome of adenovirus we can run
+Options:
+  -h, --help           show this help message and exit
+  --outdir [OUTDIR]    path to store the coverage plots
+  --organism ORGANISM  ssciname of the organism of interest
+  --dbdir [DBDIR]      path to find and use the Virmet database
 
-    [user@host test_virmet]$ virmet covplot --outdir virmet_output_exp_01/AR-1_S1 \
-    --organism "Human adenovirus"
+```
 
-`covplot` will perform the following steps:
+Importantly, users must specify the `virmet_output_RUN_NAME/SAMPLE_NAME` with
+ `--outdir`. Otherwise, VirMet doesn't know where to look for the analysed
+mNGS outputs. The resulting coverage plots will be saved in the same folder.
 
-1. identify all mappings read-organism *where the organism name starts with "Human adenovirus"*,
-2. identify the organism with the highest number of reads mapped,
-3. download the genome from Genbank and align *all viral reads* to it,
-4. compute the coverage, write it to `depth.txt` and plot it.
+Covplot also requires users to specify the `ssciname` of the organism of
+interest, which can be found in the `orgs_list.tsv` file.
 
-The final result is a pdf file `Human_adenovirus_coverage.pdf`. Regarding point
-1, it is important to note that giving `"Human adenovirus"` will chose the
-genome with most hits from adenovirus 7 (top in the list). If one wants to see
-how well viral reads would cover another adenovirus then one needs to give, _e.g._,
-`--organism "Human adenovirus 3"`.
+To create coverage plots, VirMet will assume that the viral database
+is stored into `/data/virmet_databases` and follows the usual VirMet
+structure. If another path should be considered, users must specify it with
+`--dbdir`.
+
+## Example
+
+As an example, let's suppose users want to investigate sample `ABC-DNA_S9` in the
+directory `virmet_output_Exp01`. First, they go to the directory
+`virmet_output_Exp01/ABC-DNA_S9` and check which coverage plots have already
+been created automatically by [VirMet Wolfpack](./Wolfpack.md).
+
+They see the following:
+
+```
+virmet_output_Exp01/
+├── ABC-DNA_S9
+│   ├── Virus_X/
+│   │    └── Virus_X_coverage.pdf
+│   ├── unique.tsv.gz, viral_reads.fastq.gz, undetermined_reads.fastq.gz
+│   ├── orgs_list.tsv, stats.tsv, fastp.html
+│   └── Others.err
+├── run_reads_summary.tsv
+└── orgs_species_found.tsv
+```
+
+After that, users may inspect the `orgs_list.tsv` file and look for
+any other interesting viruses that didn't meet the above criteria but may
+still be worth considering.
+
+```
+species             accn        reads  stitle	           ssciname	              covered_region  seq_len
+Tunavirus T1	    MK213796.1  455	   Phage T1            Escherichia phage T1	  30152	          48836
+Virus X	            XX123412.1  79	   Virus X, isolate R  Virus X	              321	          137741
+Coronavirus BCoV    XX000111.1  40	   Coronavirus ABC     Bovine coronavirus	  141	          9372
+```
+
+Users know that Virus X seems to be a good candidate and inspect the created coverage plot (`Virus_X_coverage.pdf`).
+However, they think that Bovine Coronavirus may also be interesting.
+
+Therefore, they run:
+
+```virmet covplot --outdir virmet_output_Exp01/ABC-DNA_S9 --organism "Bovine coronavirus" ```.
+
+The subcommand `covplot` will perform the following steps:
+
+1. Identify all mappings read-organism *where the organism name starts with "Bovine coronavirus"*,
+2. Identify the genome (or strain of this organism) with the highest number of reads mapped,
+3. Align *all viral reads* to it,
+4. Compute the coverage, write it to `depth.txt` and plot it.
+
+The final result is a pdf file with the name `Bovine_coronavirus_coverage.pdf`, saved into:
+
+```virmet_output_Exp01/ABC-DNA_S9/Bovine_coronavirus```.
+
+This allows users to see how reads spread across the genome of this virus and to determine
+whether it could be a true positive or whether it is just an artifact or contamination.
+
+An example of a coverage plot generated by VirMet would be the following:
 
 ![](assets/coverage_example.png){: style="display:block; margin-left:auto; margin-right:auto; width:75%;" }

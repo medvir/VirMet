@@ -1,4 +1,4 @@
-# Preparing for a real run: `fetch` or `upload`, and `index`
+# Preparing for a real run: `fetch` or `update`, and `index`
 
 ## Fetch
 
@@ -110,6 +110,40 @@ options:
   --dbdir [DBDIR]  path to store the indexed Virmet database
 ```
 
+## Database structure
+
+If everything works as expected, your database directory should have the following structure:
+
+```
+virmet_databases_update/
+├── viral_nuccore/
+│   ├── viral_database.fasta
+│   ├── viral_accn_taxid.dmp
+│   └── viral_seqs_info.tsv
+├── human/
+│   ├── fasta/
+│   │   └── GRCh38.fasta.gz
+│   └── bwa/
+│       └── bwa_files
+├── bovine/
+│   ├── fasta/
+│   │   └── ref_Bos_taurus.fasta.gz
+│   └── bwa/
+│       └── bwa_files
+├── bact_fungi/
+│   ├── library/
+│   │   ├── bacteria
+│   │   │   └── library.fna
+│   │   └── fungi
+│   │       └── library.fna
+│   └── taxonomy/
+│       └── taxdump.tar.gz
+├── names.dmp.gz
+└── nodes.dmp.gz
+```
+Please, note that the name of the database doesn't need to be necessarily
+`virmet_databases_update`. This is the default name.
+
 If you read until here, you are ready to use [VirMet Wolfpack](./Wolfpack.md)!
 
-**Enjoy analysing your mNGS analyses!**
+**Enjoy analysing your mNGS samples!**
