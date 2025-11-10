@@ -10,6 +10,7 @@ matching sequence among those starting with ``organism``
 import datetime
 import logging
 import os
+import re
 import subprocess
 import sys
 import shutil
@@ -124,12 +125,69 @@ def infer_species(
     )
 
     # Define patterns that should be excluded or blocked
-    phages_patterns = r"emesvirus zinderi|tunavirus|phage|escherichia|streptococcus|staphylococcus|bacillus|actinomyces|ostreococcus|myoviridae|clostridium|shigella|haemophilus"
-    uninteresting_patterns = r"endogenous retrovirus|baboon|bovine|ungulate|bosavirus|betabaculovirus|porcellio scaber|sheep|citrus exocorti|saccharomyces|ymantria dispar"
+    phages_patterns = r"""
+    emesvirus 
+    | zinderi
+    | tunavirus
+    | phage
+    | escherichia
+    | streptococcus
+    | staphylococcus
+    | pseudomonas
+    | podoviridae
+    | bacillus
+    | actinomyces
+    | ostreococcus
+    | myoviridae
+    | clostridium
+    | shigella
+    | haemophilus
+    | peduovirus
+    | caudovir
+    | prokaryotic
+    | leviviridae
+    | citexvirus
+    | inovirus
+    | bertelyvirus
+    | microvir
+    | lactococcus
+    | skunavirus
+    | salmonella
+    | halorubrum
+    | geobacillus
+    | pbunalikevirus
+    """
+    uninteresting_patterns = r"""
+    endogenous\ retrovirus
+    | baboon
+    | bovine
+    | porcine
+    | ungulate
+    | pigeon
+    | bosavirus
+    | betabaculovirus
+    | bat
+    | swine
+    | duck
+    | rhinolophus
+    | pangolin
+    | avian
+    | civet
+    | equine
+    | horse
+    | porcellio
+    | sheep
+    | citrus
+    | saccharomyces
+    | ymantria
+    """
+
     # Drop organisms with blocked or excluded patterns in the name
     orgs_list.drop(
         orgs_list[
-            orgs_list["ssciname"].str.lower().str.contains(phages_patterns)
+            orgs_list["ssciname"]
+            .str.lower()
+            .str.contains(phages_patterns, flags=re.VERBOSE)
         ].index,
         inplace=True,
     )
@@ -137,7 +195,7 @@ def infer_species(
         orgs_list[
             orgs_list["ssciname"]
             .str.lower()
-            .str.contains(uninteresting_patterns)
+            .str.contains(uninteresting_patterns, flags=re.VERBOSE)
         ].index,
         inplace=True,
     )

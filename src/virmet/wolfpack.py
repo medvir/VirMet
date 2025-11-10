@@ -164,7 +164,7 @@ def hunter(fq_file, out_dir, n_proc):
         s_dir = out_dir
 
     # skip if this is a hot run
-    if os.path.exists(os.path.join(s_dir, "fastp.json")):
+    if os.path.exists(os.path.join(s_dir, "fastp.html")):
         logging.info("hunter was already run in %s, skipping" % s_dir)
         return s_dir
 
@@ -227,7 +227,7 @@ def victor(input_reads, contaminant, n_proc):
     # skipping if hot run
     if os.path.exists(err_name):
         logging.info("decontamination already performed, skipping")
-        return clean_name
+        return os.path.split(clean_name)[1]
 
     # alignment with bwa
     cont_real_link = os.path.realpath(contaminant)
@@ -295,7 +295,7 @@ def victor_bact_fungal(input_reads, decont_db, n_proc):
     # skipping if hot run
     if os.path.exists(err_name):
         logging.info("decontamination already performed, skipping")
-        return clean_name
+        return os.path.split(clean_name)[1]
 
     # alignment with kraken2
     cont_real_link = os.path.realpath(decont_db)
@@ -673,17 +673,19 @@ def main(args):
     out_dir_final = os.path.abspath(out_dir_final)
 
     if os.path.isdir(out_dir_final):
-        logging.error("directory %s already exists" % out_dir_final)
-        raise ValueError("directory %s already exists" % out_dir_final)
-
-    out_dir = os.path.join(tempfile.gettempdir(), "virmet_output_%s" % run_name)
-    out_dir = os.path.abspath(out_dir)
-
-    try:
-        os.mkdir(out_dir)
-    except OSError:
-        shutil.rmtree(out_dir)
-        os.mkdir(out_dir)
+        logging.info("directory %s already exists" % out_dir_final)
+        logging.info("performing hot run, results will be overwritten")
+        out_dir = out_dir_final
+    else:
+        out_dir = os.path.join(
+            tempfile.gettempdir(), "virmet_output_%s" % run_name
+        )
+        out_dir = os.path.abspath(out_dir)
+        try:
+            os.mkdir(out_dir)
+        except OSError:
+            shutil.rmtree(out_dir)
+            os.mkdir(out_dir)
 
     # run hunter on all fastq files
     s_dirs = []
@@ -752,5 +754,6 @@ def main(args):
         shutil.copyfile(stats_file_path, f"{out_dir}/run_reads_summary.tsv")
 
     # Move results to final directory
-    shutil.move(out_dir, out_dir_final)
+    if os.path.abspath(out_dir) != os.path.abspath(out_dir_final):
+        shutil.move(out_dir, out_dir_final)
     return out_dir_final
