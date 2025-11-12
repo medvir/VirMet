@@ -28,3 +28,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [1.1] - 2017-04-26
 ### Added
 - Subcommand `tidytable` creates two tables with summary information for samples/runs.
+
+## [2.0.0] - 2025-11-12
+### Changed
+- Subcommand `fetch` is optimized and uses different software. The resulting database is also slightly different.
+- Subcommand `upgrade` has been modified to match the modifications in `fetch`.
+- Subcommand `index` has been modified to match the modifications in `fetch` and `upgrade`.
+- Subcommand `wolfpack` has been changed substantially. It uses state-of-the-art software and is much faster.
+- Subcommand `covplot` is now integrated into `wolfpack` but it can also be called separately.
+- Subcommand `tidytable` is now integrated into `wolfpack` and is not a subcommand itself.
