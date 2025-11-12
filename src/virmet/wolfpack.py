@@ -729,7 +729,7 @@ def main(args):
             n_proc,
             nodes,
             names,
-            out_dir,
+            sample_dir,
             DB_DIR,
         )
         logging.info("sample %s blasted" % sample_dir)

@@ -27,7 +27,7 @@ dependencies = ["pandas", "Bio", "numpy"]
 dynamic = ['version']
 
 [project.urls]
-Documentation = "https://virmet.readthedocs.io/"
+Documentation = "https://medvir.github.io/VirMet/"
 Source = "http://github.com/medvir/VirMet"
 Tracker = "http://github.com/medvir/VirMet/issues"
 
