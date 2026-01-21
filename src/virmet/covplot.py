@@ -147,7 +147,7 @@ def infer_species(
     | prokaryotic
     | leviviridae
     | citexvirus
-    | inovirus
+    | \binovirus\b
     | bertelyvirus
     | microvir
     | lactococcus
