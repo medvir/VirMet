@@ -693,6 +693,12 @@ def main(args):
         logging.info("running hunter on %s" % fq)
         sd = hunter(fq, out_dir, n_proc)
         s_dirs.append(sd)
+    if args.only_qc:
+        logging.info("Stopping pipeline after QC")
+        # Move results to final directory
+        if os.path.abspath(out_dir) != os.path.abspath(out_dir_final):
+            shutil.move(out_dir, out_dir_final)
+        return out_dir_final
 
     # run mapping against contaminants to remove
     cont_reads = "good.fastq"  # first run on good.fastq

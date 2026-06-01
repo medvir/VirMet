@@ -164,6 +164,11 @@ def main():
         action="store_true",
         help="do not analyse ntc- or Undetermined samples. Default: analyse them",
     )
+    parser_wolf.add_argument(
+        "--only_qc",
+        action="store_true",
+        help="stop the pipeline immediately after the quality control step",
+    )
     parser_wolf.set_defaults(func=wolfpack_run)
 
     # create the parser for command "covplot"
