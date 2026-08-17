@@ -7,6 +7,7 @@ import random
 import re
 import requests
 import subprocess
+import http.client
 from Bio import Entrez
 from datetime import datetime, timedelta
 from time import sleep
@@ -73,7 +74,7 @@ def safe_entrez_read(**kwargs):
         try:
             with Entrez.esearch(**kwargs) as handle:
                 return Entrez.read(handle)
-        except RuntimeError as e:
+        except (RuntimeError, http.client.IncompleteRead, http.client.HTTPException) as e:
             logging.warning(f"Entrez failed: {e}")
             if attempt < retries - 1:
                 sleep(3)

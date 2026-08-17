@@ -4,6 +4,7 @@
 import logging
 import os
 import re
+import time
 
 from virmet.common import (
     n_proc,
@@ -47,7 +48,17 @@ def fetch_viral(DB_DIR, viral_mode, n_proc, compression=True):
             "datasets download virus genome accession --inputfile %s --api-key $NCBI_API_KEY --filename %s.zip "
             % (ncbi_file, out_file)
         )
-        run_child(cml_download)
+        # Retry logic for download to avoid unexpected server closures or network issues
+        download_success = False
+        for attempt in range(5):
+            result = run_child(cml_download)
+            if result is not None:
+                download_success = True
+                break
+            logging.warning(f"NCBI dataset download failed. Retrying attempt {attempt + 1} of 5...")
+            time.sleep(5)
+        if not download_success:
+            raise RuntimeError("Failed to download viral datasets from NCBI after 5 attempts.")
         cml_extract = (
             "unzip -o %s.zip -d %s/; rm %s.zip; cat %s/data/genomic.fna >> %s ; \
             dataformat tsv virus-genome --inputfile %s/data/data_report.jsonl --fields accession,virus-tax-id,length,virus-name --elide-header >> %s; \
@@ -148,13 +159,33 @@ def fetch_bact_fungal(DB_DIR, n_proc):
     run_child(f"k2 download-taxonomy --db {target_dir}")
     # Download fungal and bacterial databases
     logging.info("Downloading fungal database")
-    run_child(
-        f"k2 download-library --library fungi --threads {n_proc} --db {target_dir} --no-masking"
-    )
+    fungal_success = False
+    for attempt in range(5):
+        result = run_child(f"k2 download-library --library fungi --threads 10 --db {target_dir} --no-masking")
+        if result is not None:
+            logging.debug(f"Fungal DB download succeeded")
+            fungal_success = True
+            break
+        # If it failed (result is None), wait and retry
+        logging.warning(f"Fungal DB download failed. Retrying attempt {attempt + 1} of 5...")
+        time.sleep(120)
+    if not fungal_success:
+        raise RuntimeError("Failed to download Fungal database after 5 attempts.")
+
+    # Download bacterial database with retry logic
     logging.info("Downloading bacterial database")
-    run_child(
-        f"k2 download-library --library bacteria --threads {n_proc} --db {target_dir} --no-masking"
-    )
+    bact_success = False
+    for attempt in range(10): # Giving bacteria 10 attempts since it's much larger
+        result = run_child(f"k2 download-library --library bacteria --threads 10 --db {target_dir} --no-masking")
+        if result is not None:
+            logging.debug(f"Bacterial DB download succeeded. Output: {result}")
+            bact_success = True
+            break
+        # If it failed, wait and retry
+        logging.warning(f"Bacterial DB download failed. Retrying attempt {attempt + 1} of 10...")
+        time.sleep(120)
+    if not bact_success:
+        raise RuntimeError("Failed to download Bacterial database after 10 attempts.")
 
 
 def fetch_human(DB_DIR, n_proc):
